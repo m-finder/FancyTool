@@ -13,7 +13,7 @@ struct ContentView: View {
   var body: some View {
     Text("FancyTool")
       .foregroundStyle(LinearGradient(
-        colors: colorModel.getColor(index: 1),
+        colors: colorModel.getColor(index: 6),
         startPoint: .topLeading,
         endPoint: .bottomTrailing)
       )
