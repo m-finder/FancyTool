@@ -25,7 +25,7 @@ class Runner {
   }
   
   private func initHostingView(){
-    let hostingView = NSHostingView(rootView: ContentView().fixedSize())
+    let hostingView = NSHostingView(rootView: RunnerView().fixedSize())
     // 将视图挂载到状态栏按钮
     item?.button?.addSubview(hostingView)
     // 配置自动布局
