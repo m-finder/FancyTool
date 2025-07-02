@@ -11,7 +11,7 @@ class Runner {
   
   private var item: NSStatusItem?
   
-  public func handle(){
+  public func mount(){
     initMainIcon()
     initHostingView()
     initMainMenu()

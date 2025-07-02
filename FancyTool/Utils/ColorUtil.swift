@@ -8,7 +8,7 @@
 import SwiftUI
 import Foundation
 
-class ColorModel: ObservableObject{
+class ColorUtil: ObservableObject{
     
     let colors: [[Color]] = [
         [.white],

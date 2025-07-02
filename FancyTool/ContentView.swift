@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct ContentView: View {
-  @ObservedObject var colorModel: ColorModel = ColorModel()
+  @ObservedObject var colorUtil: ColorUtil = ColorUtil()
   
   var body: some View {
     Text("FancyTool")
       .foregroundStyle(LinearGradient(
-        colors: colorModel.getColor(index: 12),
+        colors: colorUtil.getColor(index: 12),
         startPoint: .topLeading,
         endPoint: .bottomTrailing)
       )

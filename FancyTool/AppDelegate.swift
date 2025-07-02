@@ -13,6 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate{
   private let runner = Runner()
   
   func applicationDidFinishLaunching(_ aNotification: Notification) {
-    runner.handle()
+    // runner 挂载
+    runner.mount()
   }
 }
