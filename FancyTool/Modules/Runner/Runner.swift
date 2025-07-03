@@ -6,12 +6,17 @@
 //
 
 import SwiftUI
+import SwiftData
 
 class Runner {
   
   private var item: NSStatusItem?
   
-  public func mount(){
+  deinit {
+    item = nil
+  }
+  
+  @MainActor public func mount(){
     initMainIcon()
     initHostingView()
     initMainMenu()
@@ -21,11 +26,15 @@ class Runner {
   private func initMainIcon(){
     // 主状态栏初始化
     item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    item?.button?.title = " "
+    item?.button?.imagePosition = .imageLeading
+    item?.button?.title = ""
   }
   
+  @MainActor
   private func initHostingView(){
-    let hostingView = NSHostingView(rootView: RunnerView().fixedSize())
+    let sharedModelContainer = RunnerHandler.shared.container
+    
+    let hostingView = NSHostingView(rootView: RunnerView(width: 22, height: 22).modelContainer(sharedModelContainer).fixedSize())
     // 将视图挂载到状态栏按钮
     item?.button?.addSubview(hostingView)
     // 配置自动布局

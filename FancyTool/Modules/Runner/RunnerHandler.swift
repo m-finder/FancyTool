@@ -16,6 +16,8 @@ class RunnerHandler {
   
   init(inMemory: Bool = false) {
     do {
+      
+      
       // 配置容器选项
       var configuration = ModelConfiguration(for: RunnerModel.self)
       if inMemory {
@@ -26,6 +28,9 @@ class RunnerHandler {
         for: RunnerModel.self,
         configurations: configuration
       )
+      
+      print("RunnerHandler 的 ModelContainer 地址: \(Unmanaged.passUnretained(container).toOpaque())")
+      
     } catch {
       fatalError("Failed to create model container: \(error)")
     }
@@ -34,7 +39,6 @@ class RunnerHandler {
     Task { @MainActor in
       let context = container.mainContext
       _ = fillWithDefaultRunner(context: context)
-      _ = createDefaultDiyRunner(context: context)
     }
   }
   
@@ -46,6 +50,7 @@ class RunnerHandler {
   
   func fillWithDefaultRunner(context: ModelContext) -> Int {
     guard let urls = Bundle.main.urls(forResourcesWithExtension: "gif", subdirectory: nil) else {
+      print("No GIF resources found in the bundle.")
       return 0
     }
     
@@ -63,8 +68,8 @@ class RunnerHandler {
         if let data = try? Data(contentsOf: url) {
           let runner = RunnerModel(
             id: id,
-            type: conf.1,
-            frame_number: getRealFrameCount(data),
+            isDefault: true,
+            frameNumber: getRealFrameCount(data),
             data: data
           )
           context.insert(runner)
@@ -93,8 +98,8 @@ class RunnerHandler {
   func createNewRunner(context: ModelContext, id: UUID, type: String, data: Data) -> RunnerModel {
     let runner = RunnerModel(
       id: id,
-      type: type,
-      frame_number: getRealFrameCount(data),
+      isDefault: true,
+      frameNumber: getRealFrameCount(data),
       data: data
     )
     context.insert(runner)
@@ -105,80 +110,5 @@ class RunnerHandler {
   private func getRealFrameCount(_ data: Data) -> Int {
     guard let imageSrc = CGImageSourceCreateWithData(data as CFData, nil) else { return 0 }
     return CGImageSourceGetCount(imageSrc)
-  }
-  
-  // 创建默认DIY跑者
-  func createDefaultDiyRunner(context: ModelContext) -> RunnerModel {
-    let descriptor = FetchDescriptor<RunnerModel>(
-      predicate: #Predicate { $0.type == "diy" }
-    )
-    
-    if let existingRunner = try? context.fetch(descriptor).first {
-      return existingRunner
-    }
-    
-    guard let url = Bundle.main.url(forResource: "mariohello", withExtension: "gif"),
-          let data = try? Data(contentsOf: url) else {
-      fatalError("无法找到默认资源文件")
-    }
-    
-    return createNewRunner(
-      context: context,
-      id: UUID(),
-      type: "diy",
-      data: data
-    )
-  }
-}
-
-// RunnerModel 扩展方法
-extension RunnerModel {
-  
-  private static var imageCache: [ObjectIdentifier: [Int: CGImage]] = [:]
-  static var defaultImage = NSImage(named: "AppIcon")!.cgImage(forProposedRect: nil, context: nil, hints: nil)!
-  
-  // 获取图像选项
-  private func getImageOptions() -> [CFString: Any] {
-    [
-      kCGImageSourceShouldCache: kCFBooleanTrue as Any,
-      kCGImageSourceTypeIdentifierHint: "public.gif" as CFString
-    ]
-  }
-  
-  // 获取CGImageSource
-  private func getCGImageSource(_ data: Data?) -> CGImageSource? {
-    guard let rawData = data else { return nil }
-    return CGImageSourceCreateWithData(rawData as CFData, getImageOptions() as CFDictionary)
-  }
-  
-  // 获取图像
-  func getImage(_ index: Int) -> CGImage {
-    // 创建对象唯一标识作为缓存键
-    let objectId = ObjectIdentifier(self)
-    
-    // 确保索引有效
-    var safeIndex = index
-    if safeIndex >= frame_number || safeIndex < 0 {
-      safeIndex = 0
-    }
-    
-    // 尝试从缓存获取
-    if let cachedImg = Self.imageCache[objectId]?[safeIndex] {
-      return cachedImg
-    }
-    
-    // 缓存未命中，创建新图像
-    guard let imgSrc = getCGImageSource(data),
-          let cgImage = CGImageSourceCreateImageAtIndex(imgSrc, safeIndex, getImageOptions() as CFDictionary) else {
-      return Self.defaultImage
-    }
-    
-    // 更新缓存
-    if Self.imageCache[objectId] == nil {
-      Self.imageCache[objectId] = [:]
-    }
-    Self.imageCache[objectId]?[safeIndex] = cgImage
-    
-    return cgImage
   }
 }
