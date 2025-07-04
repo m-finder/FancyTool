@@ -9,9 +9,8 @@ import SwiftUI
 import SwiftData
 
 struct RunnerView: View {
-
+  
   @Environment(\.modelContext) private var modelContext
-  @AppStorage("currentImageId") private var currentImageId: String = "A1AF9595-F3FC-4A4F-A134-8F9CED4B761D"
   
   @StateObject var cpuUtil = CpuUtil()
   @AppStorage("runnerSpeed") private var runnerSpeed = 0.5
@@ -19,49 +18,22 @@ struct RunnerView: View {
   
   @State var width: CGFloat
   @State var height: CGFloat
+  @Binding var currentImageId: String
   
-  init(width:CGFloat, height: CGFloat ) {
-      self.width = width
-      self.height = height
+  init(width:CGFloat, height: CGFloat, currentRunnerId: Binding<String>) {
+    self.width = width
+    self.height = height
+    self._currentImageId = currentRunnerId
   }
   
-  // private var currentRunner: RunnerModel? {
-            
-  //   get {
-  //     guard let targetId = UUID(uuidString: currentImageId) else {
-  //       print("Invalid currentImageId: \(currentImageId)")
-  //       return nil
-  //     }
-      
-  //     print("currentImageId: \(currentImageId)")
-      
-  //     let descriptor = FetchDescriptor<RunnerModel>(predicate: #Predicate { $0.id == targetId })
-    
-  //     // 执行查询
-  //     do {
-  //       if let fetchedRunner = try modelContext.fetch(descriptor).first {
-  //               print("runner id: \(fetchedRunner.id)")
-  //               print("runner isDefault: \(fetchedRunner.isDefault)")
-  //               print("runner frameNumber: \(fetchedRunner.frameNumber)")
-  //               print("runner data size: \(fetchedRunner.data.count) bytes")
-  //               return fetchedRunner
-  //           } else {
-  //               print("未查询到任何 RunnerModel 对象。")
-  //               return nil
-  //           }
-  //     } catch {
-  //       fatalError("数据出现了问题: \(error)")
-  //     }
-  //   }
-  // }
   @Query private var runners: [RunnerModel]
   private var currentRunner: RunnerModel? {
-      return runners.first { $0.id?.uuidString == currentImageId }
+    return runners.first { $0.id.uuidString == currentImageId }
   }
   
   var body: some View {
     // CPU使用率百分比 (0-100)
-    let cpuUsage = Double(cpuUtil.cpuUsage) 
+    let cpuUsage = Double(cpuUtil.cpuUsage)
     let speedFactor = speedProportional ? (1.0 - cpuUsage/100.0) : (cpuUsage/100.0)
     let factor = Float(speedFactor / 5 * (1.1 - runnerSpeed))
     let minInterval: Float = 0.012
@@ -83,7 +55,6 @@ struct MainView: View {
   
   @State private var direction = 1
   @State private var imageIndex = 0
-  
   
   var body: some View {
     

@@ -45,7 +45,9 @@ class RunnerHandler {
   // 默认 Runner 配置
   let defaultRunners: [String: (String, String)] = [
     "mario": ("A1AF9595-F3FC-4A4F-A134-8F9CED4B761D", "default"),
-    "hello": ("A2AF9595-F3FC-4A4F-A134-8F9CED4B767D", "default"),
+    "hello": ("A2AF9595-F3FC-4A4F-A134-8F9CED4B761D", "default"),
+    "dark": ("A3AF9595-F3FC-4A4F-A134-8F9CED4B761D", "default"),
+    "specter": ("A4AF9595-F3FC-4A4F-A134-8F9CED4B761D", "default"),
   ]
   
   func fillWithDefaultRunner(context: ModelContext) -> Int {
