@@ -37,7 +37,6 @@ class Runner {
     let sharedModelContainer = RunnerHandler.shared.container
     let size: CGFloat = 24
     let hostingView = NSHostingView(rootView: RunnerView(
-      width: size,
       height: size,
       currentRunnerId: $currentRunnerId
     ).modelContainer(sharedModelContainer).fixedSize())

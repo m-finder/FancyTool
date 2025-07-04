@@ -17,7 +17,6 @@ class RunnerHandler {
   init(inMemory: Bool = false) {
     do {
       
-      
       // 配置容器选项
       var configuration = ModelConfiguration(for: RunnerModel.self)
       if inMemory {
@@ -28,8 +27,6 @@ class RunnerHandler {
         for: RunnerModel.self,
         configurations: configuration
       )
-      
-      print("RunnerHandler 的 ModelContainer 地址: \(Unmanaged.passUnretained(container).toOpaque())")
       
     } catch {
       fatalError("Failed to create model container: \(error)")

@@ -28,6 +28,7 @@ class RunnerModel {
   
 }
 
+// 扩展图片的相关功能
 extension RunnerModel {
     
   private static var imageCache: [ObjectIdentifier: [Int: CGImage]] = [:]

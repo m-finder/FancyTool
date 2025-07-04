@@ -16,12 +16,10 @@ struct RunnerView: View {
   @AppStorage("runnerSpeed") private var runnerSpeed = 0.5
   @AppStorage("speedProportional") private var speedProportional = true
   
-  @State var width: CGFloat
   @State var height: CGFloat
   @Binding var currentImageId: String
   
-  init(width:CGFloat, height: CGFloat, currentRunnerId: Binding<String>) {
-    self.width = width
+  init(height: CGFloat, currentRunnerId: Binding<String>) {
     self.height = height
     self._currentImageId = currentRunnerId
   }
@@ -43,7 +41,7 @@ struct RunnerView: View {
     MainView(
       runner: currentRunner,
       factor: clampedFactor,
-    ).frame(width: width, height: height)
+    ).frame(height: height).aspectRatio(contentMode: .fit)
   }
 }
 
@@ -62,9 +60,10 @@ struct MainView: View {
     
     VStack {
       if runner != nil {
-        Image(runner!.getImage(imageIndex), scale: 1, label: Text("RunnerView")).resizable()
+        Image(runner!.getImage(imageIndex), scale: 1, label: Text("RunnerView")).resizable().aspectRatio(contentMode: .fit)
+        .scaledToFit()
       } else {
-        Image("default").resizable()
+        Image("default").resizable().aspectRatio(contentMode: .fit).scaledToFit()
       }
     }.onReceive(timer) { _ in
       guard let frame_number = runner?.frameNumber else {
