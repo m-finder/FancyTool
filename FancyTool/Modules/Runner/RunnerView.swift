@@ -17,16 +17,16 @@ struct RunnerView: View {
   @AppStorage("speedProportional") private var speedProportional = true
   
   @State var height: CGFloat
-  @Binding var currentImageId: String
+  @Binding var runnerId: String
   
-  init(height: CGFloat, currentRunnerId: Binding<String>) {
+  init(height: CGFloat, runnerId: Binding<String>) {
     self.height = height
-    self._currentImageId = currentRunnerId
+    self._runnerId = runnerId
   }
   
   @Query private var runners: [RunnerModel]
   private var currentRunner: RunnerModel? {
-    return runners.first { $0.id.uuidString == currentImageId }
+    return runners.first { $0.id.uuidString == runnerId }
   }
   
   var body: some View {
@@ -41,6 +41,7 @@ struct RunnerView: View {
     MainView(
       runner: currentRunner,
       factor: clampedFactor,
+      isRunning: true
     ).frame(height: height).aspectRatio(contentMode: .fit)
   }
 }
@@ -50,6 +51,7 @@ struct MainView: View {
   var runner: RunnerModel?
   var factor: Float
   var autoReverse = true
+  var isRunning: Bool = false
   
   @State private var direction = 1
   @State private var imageIndex = 0
@@ -66,7 +68,7 @@ struct MainView: View {
         Image("default").resizable().aspectRatio(contentMode: .fit).scaledToFit()
       }
     }.onReceive(timer) { _ in
-      guard let frame_number = runner?.frameNumber else {
+      guard isRunning, let frame_number = runner?.frameNumber else {
         return
       }
       

@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "西瓜.png",
+      "filename" : "18.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "西瓜 1.png",
+      "filename" : "18 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "西瓜 2.png",
+      "filename" : "18 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

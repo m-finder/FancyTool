@@ -12,34 +12,38 @@ class Runner {
   
   private var item: NSStatusItem?
   private var settingsWindow: NSWindow?
-  @AppStorage("currentRunnerId") private var currentRunnerId: String = "A3AF9595-F3FC-4A4F-A134-8F9CED4B761D"
-    
+  @AppStorage("runnerId") private var runnerId: String = "10001b46-eb35-4625-bb4a-bc0a25c3310b"
   
   deinit {
     item = nil
   }
   
+  // 挂载
   @MainActor public func mount(){
     initMainIcon()
     initHostingView()
     initMainMenu()
   }
   
+  // 主状态栏初始化
   private func initMainIcon(){
-    // 主状态栏初始化
     item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     item?.button?.imagePosition = .imageLeading
     item?.button?.title = ""
   }
   
+  // 初始化 runner 视图
   @MainActor
   private func initHostingView(){
     let sharedModelContainer = RunnerHandler.shared.container
-    let size: CGFloat = 24
+    let size: CGFloat = 20
     let hostingView = NSHostingView(rootView: RunnerView(
       height: size,
-      currentRunnerId: $currentRunnerId
-    ).modelContainer(sharedModelContainer).fixedSize())
+      runnerId: $runnerId
+    ).fixedSize()
+      .frame(minWidth: 40, maxWidth: .infinity)
+      .modelContainer(sharedModelContainer))
+    
     // 将视图挂载到状态栏按钮
     item?.button?.addSubview(hostingView)
     // 配置自动布局
@@ -51,6 +55,7 @@ class Runner {
     hostingView.trailingAnchor.constraint(equalTo: (item?.button!.trailingAnchor)!).isActive = true
   }
   
+  // 初始化菜单
   private func initMainMenu(){
     
     let menu = NSMenu()
@@ -66,28 +71,35 @@ class Runner {
     item?.menu = menu
   }
   
+  // 设置页面
   @IBAction func settingView(_ sender: Any) {
-    let sharedModelContainer = RunnerHandler.shared.container
-    if settingsWindow == nil {
-        
-      let settingsView = SettingsView()
-            .frame(width: 455, height: 580)
-            .modelContainer(sharedModelContainer)
-        
-        settingsWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 0, height: 0),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        settingsWindow?.center()
-        settingsWindow?.title = String(localized: "Setting")
-        settingsWindow?.isReleasedWhenClosed = false
-        settingsWindow?.contentView = NSHostingView(rootView: settingsView)
-    }
-    settingsWindow?.makeKeyAndOrderFront(nil)
-    settingsWindow?.orderFrontRegardless()
-    NSApp.activate(ignoringOtherApps: true)
+      let sharedModelContainer = RunnerHandler.shared.container
+      if settingsWindow == nil {
+          // 创建可滚动视图
+          let scrollableSettingsView = ScrollView {
+            SettingsView().frame(maxWidth: .infinity)
+          }.frame(width: 440, height: 500)
+          .modelContainer(sharedModelContainer)
+          
+          settingsWindow = NSWindow(
+              contentRect: NSRect(x: 0, y: 0, width: 425, height: 800),
+              styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+              backing: .buffered,
+              defer: false
+          )
+          settingsWindow?.center()
+          settingsWindow?.title = String(localized: "Setting")
+          settingsWindow?.isReleasedWhenClosed = false
+          settingsWindow?.contentView = NSHostingView(rootView: scrollableSettingsView)
+          
+          // 固定窗口大小
+          settingsWindow?.styleMask.remove(.resizable)
+          settingsWindow?.minSize = NSSize(width: 425, height: 800)
+          settingsWindow?.maxSize = NSSize(width: 425, height: 800)
+      }
+    
+      settingsWindow?.makeKeyAndOrderFront(nil)
+      NSApp.activate(ignoringOtherApps: true)
   }
   
   @IBAction func quit(_ sender: Any){

@@ -1,0 +1,24 @@
+/* 
+  Localizable.strings
+  M-Tools
+
+  Created by 吴雲放 on 2023/9/22.
+  
+*/
+
+
+// 设置
+"Launch on Startup" = "开机自启";
+"Quit App" = "退出应用";
+"Setting" = "设置";
+
+// runner 版权
+"Drag and drop GIF here." = "拖拽GIF到此处";
+"The image is sourced from the internet." = "图片来自网络";
+"Please contact us for removal if it infringes any copyrights." = "侵权请联系删除";
+
+// texter
+"MenuBar Text" = "菜单栏文本";
+"Colorful Text" = "炫彩文字";
+"Drink more water." = "多喝水";
+"Input something" = "输入些什么";
