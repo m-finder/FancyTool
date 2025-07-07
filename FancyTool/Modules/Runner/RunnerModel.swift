@@ -30,10 +30,10 @@ class RunnerModel {
 
 // 扩展图片的相关功能
 extension RunnerModel {
-    
+  
   private static var imageCache: [ObjectIdentifier: [Int: CGImage]] = [:]
   private static var defaultImage = #imageLiteral(resourceName: "AppLogo").cgImage(forProposedRect: nil, context: nil, hints: nil)!
-    
+  
   // 获取图像选项
   private func getImageOptions() -> [CFString: Any] {
     [
@@ -48,23 +48,23 @@ extension RunnerModel {
   }
   
   private func getRealFrameCount(_ data: Data?) -> Int {
-      guard let imageSrc = getCGImageSource(data) else {
-          return 0
-      }
-      
-      return CGImageSourceGetCount(imageSrc)
+    guard let imageSrc = getCGImageSource(data) else {
+      return 0
+    }
+    
+    return CGImageSourceGetCount(imageSrc)
   }
   
   func setGIF(data: Data) -> Bool {
-      let num = getRealFrameCount(data)
-      
-      if num < 0 {
-          return false
-      }
-
-      self.frameNumber = Int(num)
-      self.data = data
-      return true
+    let num = getRealFrameCount(data)
+    
+    if num < 0 {
+      return false
+    }
+    
+    self.frameNumber = Int(num)
+    self.data = data
+    return true
   }
   
   // 按帧获取图像
@@ -96,5 +96,10 @@ extension RunnerModel {
     Self.imageCache[objectId]?[safeIndex] = cgImage
     
     return cgImage
+  }
+  
+  static func cleanupCache() {
+    imageCache.removeAll()
+    print("Cleared GIF frame cache")
   }
 }
