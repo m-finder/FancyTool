@@ -12,12 +12,13 @@ import SwiftData
 
 struct SettingsView: View {
   
+  @ObservedObject private var state = AppState.shared
   @Query(sort: \RunnerModel.id, order: .forward) private var runners: [RunnerModel]
   
-  @AppStorage("runnerId") private var runnerId: String = "10001b46-eb35-4625-bb4a-bc0a25c3310b"
-  @AppStorage("startUp") var startUp: Bool = false
-  
-  @AppStorage("texter") var texter: String = String(localized: "Drink more water.")
+//  @AppStorage("runnerId") private var runnerId: String = "10001b46-eb35-4625-bb4a-bc0a25c3310b"
+//  @AppStorage("startUp") var startUp: Bool = false
+//  
+//  @AppStorage("texter") var texter: String = String(localized: "Drink more water.")
 
   
   var body: some View {
@@ -28,29 +29,27 @@ struct SettingsView: View {
           VStack {
             MainView(
               runner: runner,
-              factor: runnerId == runner.id.uuidString ? 0.1 : 0.2,
-              isRunning: runnerId == runner.id.uuidString ? true : false
+              factor: state.runnerId == runner.id.uuidString ? 0.1 : 0.2,
+              isRunning: state.runnerId == runner.id.uuidString ? true : false
             )
             .frame(width: 90, height: 90)
             .cornerRadius(8)
-          }
-          .background(Color.secondary.colorInvert())
+          }.background(Color.secondary.colorInvert())
           .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
           .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
-            .stroke(runnerId == runner.id.uuidString ? Color.accentColor : Color.clear, lineWidth: 2))
+            .stroke(state.runnerId == runner.id.uuidString ? Color.accentColor : Color.clear, lineWidth: 2))
           .onTapGesture {
-            runnerId = runner.id.uuidString
+            state.runnerId = runner.id.uuidString
           }.id(runner.id.uuidString)
         }
       }
-    }.frame(maxWidth: .infinity, maxHeight: .infinity)
-      .padding()
+    }.frame(maxWidth: .infinity, maxHeight: .infinity).padding()
     
     VStack(alignment: .center){
       Divider().padding(20)
       
-      Toggle(String(localized: "Launch on Startup"), isOn: $startUp)
-        .onChange(of: startUp) { _, newValue in
+      Toggle(String(localized: "Launch on Startup"), isOn: state.$startUp)
+        .onChange(of: state.startUp) { _, newValue in
           if #available(macOS 13.0, *) {
             if newValue {
               if SMAppService.mainApp.status == .enabled {
