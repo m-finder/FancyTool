@@ -11,8 +11,9 @@ import SwiftData
 
 class RunnerHandler {
   
-  static let shared = RunnerHandler()
   let container: ModelContainer
+  static let shared = RunnerHandler()
+  private(set) var cachedRunners: [RunnerModel] = []
   
   init(inMemory: Bool = false) {
     do {
@@ -36,7 +37,13 @@ class RunnerHandler {
     Task { @MainActor in
       let context = container.mainContext
       _ = fillWithDefaultRunner(context: context)
+      cachedRunners = try! context.fetch(FetchDescriptor<RunnerModel>())
     }
+  }
+  
+  // id 查询
+  func getRunnerById(_ id: String) -> RunnerModel? {
+    return cachedRunners.first { $0.id.uuidString == id }
   }
   
   // 默认 Runner 配置
@@ -45,13 +52,13 @@ class RunnerHandler {
     "fish2": ("10002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "rock": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "gold": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-   
+    
     
     "sheep": ("20001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "sheep2": ("20002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "sheep3": ("20003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "explosion": ("20004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-
+    
     "bushe": ("30001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "bushe2": ("30002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "bushe3": ("30003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
@@ -65,7 +72,7 @@ class RunnerHandler {
     "run2": ("50002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "run3": ("50003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "run4": ("50004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
- 
+    
   ]
   
   func fillWithDefaultRunner(context: ModelContext) -> Int {

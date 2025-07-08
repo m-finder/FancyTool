@@ -16,7 +16,7 @@ class AppState : ObservableObject{
   // Runner
   @AppStorage("runnerSpeed") var runnerSpeed = 0.5
   @AppStorage("speedProportional") var speedProportional = true
-  @AppStorage("runnerId") var runnerId: String = "10001b46-eb35-4625-bb4a-bc0a25c3310b"
+  @AppStorage("runnerId") var runnerId: String = ""
   
   // Hidder
   @AppStorage("showHidder") var showHidder: Bool = false

@@ -9,23 +9,24 @@ import SwiftUI
 import AppKit
 
 class Menu {
-
-  private let state = AppState.shared
-  private var settingsWindow: NSWindow?
-
   
-  func setup() -> NSMenu {
+  var hidder: Hidder!
+  var state = AppState.shared
+  private var settingsWindow: NSWindow?
+  
+  
+  func getMenu() -> NSMenu {
     
     let menu = NSMenu()
     
-//    let hidderMenu = NSMenuItem(
-//      title: "Hidder",
-//      action: #selector(toggleHidder(_:)),
-//      keyEquivalent: ""
-//    )
-//    hidderMenu.target = self
-//    hidderMenu.state = state.showHidder ? .on : .off
-//    menu.addItem(hidderMenu)
+    let hidderMenu = NSMenuItem(
+      title: "Hidder",
+      action: #selector(toggleHidder(_:)),
+      keyEquivalent: ""
+    )
+    hidderMenu.target = self
+    hidderMenu.state = state.showHidder ? .on : .off
+    menu.addItem(hidderMenu)
     
     menu.addItem(NSMenuItem.separator())
     let settingItem = NSMenuItem(
@@ -51,8 +52,9 @@ class Menu {
     let sharedModelContainer = RunnerHandler.shared.container
     if settingsWindow == nil {
       // 创建可滚动视图
+      let settingsView = SettingsView()
       let scrollableSettingsView = ScrollView {
-        SettingsView().frame(maxWidth: .infinity)
+        settingsView.frame(maxWidth: .infinity)
       }.frame(width: 440, height: 500)
         .modelContainer(sharedModelContainer)
       
@@ -83,7 +85,28 @@ class Menu {
   
   // 关闭窗口时释放资源
   func windowWillClose(_ notification: Notification) {
-    settingsWindow = nil
-    RunnerModel.cleanupCache()
+    
+    if let window = notification.object as? NSWindow, window == settingsWindow {
+      // 释放宿主视图
+      settingsWindow?.contentView = nil
+      // 释放窗口引用
+      settingsWindow = nil
+      // 清理缓存
+      RunnerModel.cleanupCache()
+    }
   }
+  
+  // 显示或隐藏 Hidder
+  @IBAction func toggleHidder(_ sender: NSStatusBarButton){
+    state.showHidder.toggle()
+    sender.state = state.showHidder ? .on : .off
+    hidder.update()
+  }
+  
+  // Hidder 点击事件
+  @IBAction func hidderClick(_ sender: NSStatusBarButton?) {
+    // 从两个图标中获取靠左的一个，然后执行 toggle
+    hidder.hidderCollapseMenuBar()
+  }
+  
 }

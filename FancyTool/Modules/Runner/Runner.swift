@@ -10,54 +10,40 @@ import SwiftData
 
 class Runner: NSObject, NSWindowDelegate {
   
-  var item: NSStatusItem?
-  private var settingsWindow: NSWindow?
-  @ObservedObject var state = AppState.shared
+  private var size: CGFloat = 20
+  private var sharedModelContainer = RunnerHandler.shared.container
+  private var item: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
   
-  deinit {
-    item = nil
-  }
-  
-  // 挂载
-  @MainActor public func mount(menu: NSMenu){
-    // 主状态栏初始化
-    initMainIcon()
-    // 初始化 runner 视图
-    initHostingView()
-    // 初始化菜单
-    item?.menu = menu
-  }
-  
-  // 主状态栏初始化
-  private func initMainIcon(){
-    item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    item?.button?.imagePosition = .imageLeading
-    item?.button?.title = ""
-  }
-  
-  // 初始化 runner 视图
-  @MainActor
-  private func initHostingView(){
+  @MainActor func mount(menu: NSMenu){
     
-    let sharedModelContainer = RunnerHandler.shared.container
-    
-    let size: CGFloat = 20
-    
-    let hostingView = NSHostingView(
-      rootView: RunnerView(
-      height: size,
-    ).fixedSize().frame(minWidth: 40, maxWidth: .infinity).modelContainer(sharedModelContainer))
-    
-    // 将视图挂载到状态栏按钮
-    item?.button?.addSubview(hostingView)
+    if let button = item.button {
+      
+      // 创建视图
+      let runnerView = RunnerView(height: size)
+        .fixedSize()
+        .frame(
+          minWidth: 40,
+          maxWidth: .infinity
+        )
+        .modelContainer(sharedModelContainer)
+      let hostingView = NSHostingView(rootView: runnerView)
+      button.addSubview(hostingView)
+      
+      // 将宿主视图四边锚定到按钮边界，也就是将视图展开
+      hostingView.translatesAutoresizingMaskIntoConstraints = false
+      NSLayoutConstraint.activate([
+        hostingView.topAnchor.constraint(equalTo: item.button!.topAnchor),
+        hostingView.bottomAnchor.constraint(equalTo: item.button!.bottomAnchor),
+        hostingView.leadingAnchor.constraint(equalTo: item.button!.leadingAnchor),
+        hostingView.trailingAnchor.constraint(equalTo: item.button!.trailingAnchor)
+      ])
+      
+      // 设置按钮
+      button.title = ""
+      button.target = self
+    }
 
-    // 配置自动布局
-    hostingView.translatesAutoresizingMaskIntoConstraints = false
-    // 将宿主视图四边锚定到按钮边界，也就是将视图展开
-    hostingView.topAnchor.constraint(equalTo: (item?.button!.topAnchor)!).isActive = true
-    hostingView.bottomAnchor.constraint(equalTo: (item?.button!.bottomAnchor)!).isActive = true
-    hostingView.leadingAnchor.constraint(equalTo: (item?.button!.leadingAnchor)!).isActive = true
-    hostingView.trailingAnchor.constraint(equalTo: (item?.button!.trailingAnchor)!).isActive = true
+    // 绑定菜单
+    item.menu = menu
   }
-  
 }
