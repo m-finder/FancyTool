@@ -50,14 +50,14 @@ class RunnerHandler {
   let defaultRunners: [String: (String, String)] = [
     "whale": ("10001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "whale2": ("10002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "whale3": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "whale4": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "cucumber": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "cucumber2": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     
-    "cucumber": ("20001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "cucumber2": ("20002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "cucumber3": ("20003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "cucumber4": ("20004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-   
+    "big-guy": ("20001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "run": ("20002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "sheep": ("20003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "sheep2": ("20004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    
     "bushe": ("30001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "bushe2": ("30002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "bushe3": ("30003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
@@ -68,20 +68,10 @@ class RunnerHandler {
     "tree3": ("40003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "tree4": ("40004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     
-    "big-guy": ("50001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "big-guy2": ("50002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "big-guy3": ("50003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "big-guy4": ("50004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    
     "rock": ("90001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "gold": ("90002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "sheep": ("90003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "sheep2": ("90004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    
-    "bird": ("91001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "health": ("91002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "creb": ("91002b36-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "shell": ("91004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "health": ("90003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "card": ("90004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
 
   ]
   
