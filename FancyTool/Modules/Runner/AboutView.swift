@@ -18,6 +18,12 @@ struct AboutView: View {
   
   private var credits: [CreditItem] = [
     CreditItem(
+      name: "Tiny Swords",
+      license: "MIT",
+      url: "https://pixelfrog-assets.itch.io/tiny-swords",
+      description: "Spanish Deck"
+    ),
+    CreditItem(
       name: "Spanish Deck from Jose Angel Canabal",
       license: "Custom License Terms",
       url: "https://jcanabal.itch.io/spanish-deck-pixel-art",
