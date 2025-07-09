@@ -57,6 +57,8 @@ struct SettingsView: View {
       }
     }.frame(maxWidth: .infinity, maxHeight: .infinity).padding()
     
+    
+    
     VStack(alignment: .center){
       
       Divider().padding(20)
@@ -88,7 +90,7 @@ struct SettingsView: View {
       .font(.body)
       .cornerRadius(10)
       
-      Text("© M-finder 2025")
+      Text("© FancyTool by M-finder 2025")
         .font(.footnote)
         .fontWeight(.light)
         .padding(.top)

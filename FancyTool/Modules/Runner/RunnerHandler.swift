@@ -50,29 +50,24 @@ class RunnerHandler {
   let defaultRunners: [String: (String, String)] = [
     "fish": ("10001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "fish2": ("10002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "rock": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "gold": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    
-    
-    "sheep": ("20001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "sheep2": ("20002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "sheep3": ("20003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "explosion": ("20004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    
+    "sheep": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "sheep2": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+
+    "rock": ("20001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "gold": ("20002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "run": ("20003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "run2": ("20004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+
     "bushe": ("30001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "bushe2": ("30002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "bushe3": ("30003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "card": ("30004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     
     "tree": ("40001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "tree2": ("40002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "tree3": ("40003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "tree4": ("40004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    
-    "run": ("50001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "run2": ("50002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "run3": ("50003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "run4": ("50004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    
+
   ]
   
   func fillWithDefaultRunner(context: ModelContext) -> Int {
