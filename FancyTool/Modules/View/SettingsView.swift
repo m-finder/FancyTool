@@ -25,13 +25,15 @@ struct SettingsView: View {
       FlowStack(spacing: CGSize(width: 10, height: 10)){
         ForEach(runners) { runner in
           VStack {
+            
             MainView(
               runner: runner,
               factor: state.runnerId == runner.id.uuidString ? 0.1 : 0.2,
               isRunning: state.runnerId == runner.id.uuidString ? true : false
-            )
-            .frame(width: 90, height: 90)
+            ).frame(width: 90, height: 90)
             .cornerRadius(8)
+            .scaledToFit()
+            
           }.background(Color.secondary.colorInvert())
             .clipShape(RoundedRectangle(
               cornerRadius: 5,
@@ -90,11 +92,13 @@ struct SettingsView: View {
       .font(.body)
       .cornerRadius(10)
       
-      Text("© FancyTool by M-finder 2025")
-        .font(.footnote)
-        .fontWeight(.light)
-        .padding(.top)
-        .padding(.bottom)
+      FancyToolView()
     }
+  }
+}
+
+struct SettingsView_Previews: PreviewProvider {
+  static var previews: some View {
+    SettingsView()
   }
 }

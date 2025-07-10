@@ -36,7 +36,13 @@ extension RunnerModel {
   // 获取图像选项
   private func getImageOptions() -> [CFString: Any] {
     [
-      kCGImageSourceShouldCache: kCFBooleanTrue as Any
+      kCGImageSourceShouldCache: kCFBooleanTrue as Any,
+      // 启用图像变换
+      kCGImageSourceCreateThumbnailWithTransform: kCFBooleanTrue as Any,
+      // 始终创建缩略图
+      kCGImageSourceCreateThumbnailFromImageAlways: kCFBooleanTrue as Any,
+      // 设置缩略图最大像素尺寸
+      kCGImageSourceThumbnailMaxPixelSize: 200
     ]
   }
   

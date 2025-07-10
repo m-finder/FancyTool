@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import AppKit
 
 class Menu {
@@ -13,12 +14,14 @@ class Menu {
   var hidder: Hidder!
   var state = AppState.shared
   private var settingsWindow: NSWindow?
+  private var aboutWindow: NSWindow?
   
   
   func getMenu() -> NSMenu {
     
     let menu = NSMenu()
     
+    // hidder 菜单
     let hidderMenu = NSMenuItem(
       title: "Hidder",
       action: #selector(toggleHidder(_:)),
@@ -28,7 +31,10 @@ class Menu {
     hidderMenu.state = state.showHidder ? .on : .off
     menu.addItem(hidderMenu)
     
+    // 间隔线
     menu.addItem(NSMenuItem.separator())
+        
+    // 设置菜单
     let settingItem = NSMenuItem(
       title: String(localized: "Setting"),
       action: #selector(settingView),
@@ -37,6 +43,16 @@ class Menu {
     settingItem.target = self
     menu.addItem(settingItem)
     
+    // 关于菜单
+    let aboutItem = NSMenuItem(
+      title: String(localized: "About"),
+      action: #selector(aboutView),
+      keyEquivalent: "a"
+    )
+    aboutItem.target = self
+    menu.addItem(aboutItem)
+    
+    // 退出程序
     let quitItem = NSMenuItem(
       title: String(localized: "Quit App"),
       action: #selector(quit),
@@ -47,37 +63,62 @@ class Menu {
     return menu
   }
   
-  // 设置页面
-  @IBAction func settingView(_ sender: Any) {
-    let sharedModelContainer = RunnerHandler.shared.container
-    if settingsWindow == nil {
-      // 创建可滚动视图
-      let settingsView = SettingsView()
-      let scrollableSettingsView = ScrollView {
-        settingsView.frame(maxWidth: .infinity)
+  /// 创建并显示通用设置窗口
+  private func showWindow<T: View>(
+    window: inout NSWindow?,
+    title: String,
+    contentView: T
+  ) {
+    // 惰性创建窗口
+    if window == nil {
+      // 创建基础滚动视图
+      let rootView = ScrollView {
+        contentView.frame(maxWidth: .infinity)
       }.frame(width: 440, height: 500)
-        .modelContainer(sharedModelContainer)
+
       
-      settingsWindow = NSWindow(
+      // 配置窗口属性
+      window = NSWindow(
         contentRect: NSRect(x: 0, y: 0, width: 425, height: 800),
         styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
         backing: .buffered,
         defer: false
       )
-      settingsWindow?.center()
-      settingsWindow?.title = String(localized: "Setting")
-      settingsWindow?.isReleasedWhenClosed = false
-      settingsWindow?.contentView = NSHostingView(rootView: scrollableSettingsView)
+      window?.center()
+      window?.title = title
+      window?.isReleasedWhenClosed = false
+      window?.contentView = NSHostingView(rootView: rootView)
       
-      // 固定窗口大小
-      settingsWindow?.styleMask.remove(.resizable)
-      settingsWindow?.minSize = NSSize(width: 425, height: 800)
-      settingsWindow?.maxSize = NSSize(width: 425, height: 800)
+      // 固定窗口尺寸
+      window?.styleMask.remove(.resizable)
+      window?.minSize = NSSize(width: 425, height: 800)
+      window?.maxSize = NSSize(width: 425, height: 800)
     }
     
-    settingsWindow?.makeKeyAndOrderFront(nil)
+    // 激活并显示窗口
+    window?.makeKeyAndOrderFront(nil)
     NSApp.activate(ignoringOtherApps: true)
   }
+  
+  // 关于页面
+  @IBAction func aboutView(_ sender: Any) {
+    showWindow(
+      window: &aboutWindow,
+      title: String(localized: "About"),
+      contentView: AboutView()
+    )
+  }
+  
+  // 设置页面
+  @IBAction func settingView(_ sender: Any) {
+    showWindow(
+      window: &settingsWindow,
+      title: String(localized: "Setting"),
+      contentView: SettingsView()
+    )
+  }
+  
+  
   
   @IBAction func quit(_ sender: Any){
     NSApplication.shared.terminate(nil)

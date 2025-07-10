@@ -45,7 +45,9 @@ struct RunnerView: View {
       runner: currentRunner,
       factor: clampedFactor,
       isRunning: true
-    ).frame(height: height).padding(.bottom, 0).aspectRatio(contentMode: .fit)
+    ).frame(height: height)
+      .padding(.bottom, 0)
+      .aspectRatio(contentMode: .fit)
   }
 }
 
@@ -67,7 +69,15 @@ struct MainView: View {
     VStack {
       
       if let runner = runner {
-        Image(runner.getImage(imageIndex), scale: 1, label: Text("RunnerView")).resizable().aspectRatio(contentMode: .fit)
+        
+        Image(
+          runner.getImage(imageIndex),
+          scale: 1,
+          label: Text("RunnerView")
+        ).interpolation(.high)
+          .resizable()
+          .aspectRatio(contentMode: .fit)
+        
       } else {
         Image("default").resizable().aspectRatio(contentMode: .fit).scaledToFit()
       }
@@ -121,3 +131,4 @@ struct MainView: View {
 func clamp<T: Comparable>(_ value: T, lowerBound: T, upperBound: T) -> T {
   min(max(value, lowerBound), upperBound)
 }
+

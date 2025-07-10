@@ -50,28 +50,28 @@ class RunnerHandler {
   let defaultRunners: [String: (String, String)] = [
     "whale": ("10001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "whale2": ("10002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "cucumber": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "cucumber2": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "sheep": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "sheep2": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     
-    "big-guy": ("20001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "run": ("20002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "sheep": ("20003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "sheep2": ("20004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "bushe": ("20001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "bushe2": ("20002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "bushe3": ("20003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "bushe4": ("20004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     
-    "bushe": ("30001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "bushe2": ("30002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "bushe3": ("30003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "bushe4": ("30004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "tree": ("30001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "tree2": ("30002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "tree3": ("30003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "tree4": ("30004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     
-    "tree": ("40001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "tree2": ("40002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "tree3": ("40003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "tree4": ("40004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "rock": ("40001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "gold": ("40002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "big-guy": ("40003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "health": ("40004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     
-    "rock": ("90001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "gold": ("90002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "health": ("90003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "card": ("90004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "bat": ("90001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "bird": ("90002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "dragon": ("90003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "phoenix": ("90004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
 
   ]
   

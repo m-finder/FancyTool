@@ -11,8 +11,10 @@
 "Launch on Startup" = "开机自启";
 "Quit App" = "退出应用";
 "Setting" = "设置";
+"About" = "关于";
 
-// runner 版权
+// runner
+"Acknowledgments." = "鸣谢";
 "Drag and drop GIF here." = "拖拽GIF到此处";
 "The image is sourced from the internet." = "图片来自网络";
 "Please contact us for removal if it infringes any copyrights." = "侵权请联系删除";
