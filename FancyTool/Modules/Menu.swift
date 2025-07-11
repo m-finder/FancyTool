@@ -11,10 +11,15 @@ import AppKit
 
 class Menu {
   
+  
   var hidder: Hidder!
   var state = AppState.shared
   private var settingsWindow: NSWindow?
   private var aboutWindow: NSWindow?
+  
+  init() {
+          print("Menu initialized")
+  }
   
   
   func getMenu() -> NSMenu {
@@ -41,6 +46,7 @@ class Menu {
       keyEquivalent: "s"
     )
     settingItem.target = self
+    settingItem.isEnabled = true
     menu.addItem(settingItem)
     
     // 关于菜单
@@ -50,6 +56,7 @@ class Menu {
       keyEquivalent: "a"
     )
     aboutItem.target = self
+    aboutItem.isEnabled = true
     menu.addItem(aboutItem)
     
     // 退出程序
@@ -59,6 +66,7 @@ class Menu {
       keyEquivalent: "q"
     )
     quitItem.target = self
+    quitItem.isEnabled = true
     menu.addItem(quitItem)
     return menu
   }

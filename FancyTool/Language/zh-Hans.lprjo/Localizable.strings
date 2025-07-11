@@ -1,11 +1,9 @@
-/* 
-  Localizable.strings
-  M-Tools
-
-  Created by 吴雲放 on 2023/9/22.
-  
-*/
-
+//
+//  Localizable.strings
+//  FancyTool
+//
+//  Created by 吴雲放 on 2025/7/1.
+//
 
 // 设置
 "Launch on Startup" = "开机自启";

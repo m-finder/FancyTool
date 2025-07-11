@@ -4,15 +4,32 @@
 //
 //  Created by 吴雲放 on 2025/7/1.
 //
-
 import SwiftUI
 import SwiftData
 
 @main
 struct FancyToolApp: App {
   
-  // 代理适配器，托管应用的生命周期
-  @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+  @StateObject private var item: HostingViewItem
+  @ObservedObject var state = AppState.shared
+  
+  init(){
+    let container = RunnerHandler.shared.container
+    let actions = AppMenuActions()
+    let menuItems: [MenuItem] = MenuItem.menus()
+    let appMenu = AppMenu(actions: actions, items: menuItems)
+
+    _item = StateObject(
+      wrappedValue: HostingViewItem(
+        view: RunnerView(height: 22).frame(
+          minWidth: 40,
+          maxWidth: .infinity
+        ).fixedSize().modelContainer(container),
+        menu: appMenu.getMenus()
+      )
+    )
+    
+  }
   
   var body: some Scene {
     Settings{
