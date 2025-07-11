@@ -46,7 +46,6 @@ struct RunnerView: View {
       factor: clampedFactor,
       isRunning: true
     ).frame(height: height)
-      .padding(.bottom, 0)
       .aspectRatio(contentMode: .fit)
   }
 }

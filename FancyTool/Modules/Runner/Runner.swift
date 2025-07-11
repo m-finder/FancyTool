@@ -24,8 +24,7 @@ class Runner: NSObject, NSWindowDelegate {
         .frame(
           minWidth: 40,
           maxWidth: .infinity
-        )
-        .modelContainer(sharedModelContainer)
+        ).modelContainer(sharedModelContainer)
       let hostingView = NSHostingView(rootView: runnerView)
       button.addSubview(hostingView)
       
