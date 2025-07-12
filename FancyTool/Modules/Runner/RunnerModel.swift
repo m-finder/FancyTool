@@ -89,14 +89,4 @@ extension RunnerModel {
 
     return cgImage
   }
-  
-  static func cleanupCache() {
-    // 释放 SwiftData 上下文资源
-    let context = ModelContext(RunnerHandler.shared.container)
-    context.autosaveEnabled = false
-    
-    // 清理所有缓存对象
-    try? context.delete(model: RunnerModel.self)
-    print("Cleared GIF frame cache")
-  }
 }

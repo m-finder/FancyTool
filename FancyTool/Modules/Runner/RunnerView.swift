@@ -2,55 +2,13 @@
 //  RunnerView.swift
 //  FancyTool
 //
-//  Created by 吴雲放 on 2025/7/2.
+//  Created by 吴雲放 on 2025/7/1.
 //
-
 import SwiftUI
 import SwiftData
 import Combine
 
 struct RunnerView: View {
-  
-  @Environment(\.modelContext) private var modelContext
-  @ObservedObject var state = AppState.shared
-  
-  @StateObject var cpuUtil = CpuUtil()
-  
-  @State var height: CGFloat
-  
-  init(height: CGFloat) {
-    self.height = height
-  }
-  
-  private let runners = RunnerHandler.shared.cachedRunners
-
-  private var currentRunner: RunnerModel? {
-    return RunnerHandler.shared.getRunnerById(state.runnerId)
-  }
-  
-  var body: some View {
-    
-    // CPU 使用率百分比 (0-100)
-    let cpuUsage = Double(cpuUtil.cpuUsage)
-    let speedFactor = state.speedProportional ? (1.0 - cpuUsage / 100.0) : (cpuUsage / 100.0)
-    let factor = Float(speedFactor / 5 * (1.1 - state.runnerSpeed))
-    let minInterval: Float = 0.012
-    
-    // 设置上限避免过快，限制最大帧率（60FPS）
-    let maxFPS: Float = 60.0
-    let minFrameInterval = 1.0 / maxFPS
-    let clampedFactor = clamp(factor, lowerBound: max(minInterval, minFrameInterval), upperBound: 0.5)
-    
-    MainView(
-      runner: currentRunner,
-      factor: clampedFactor,
-      isRunning: true
-    ).frame(height: height)
-      .aspectRatio(contentMode: .fit)
-  }
-}
-
-struct MainView: View {
   
   var runner: RunnerModel?
   var factor: Float
@@ -126,8 +84,4 @@ struct MainView: View {
   }
 }
 
-// 辅助函数
-func clamp<T: Comparable>(_ value: T, lowerBound: T, upperBound: T) -> T {
-  min(max(value, lowerBound), upperBound)
-}
 

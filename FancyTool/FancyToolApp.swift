@@ -11,24 +11,24 @@ import SwiftData
 struct FancyToolApp: App {
   
   @StateObject private var item: HostingViewItem
-  @ObservedObject var state = AppState.shared
   
   init(){
-    let container = RunnerHandler.shared.container
+    _ = RunnerHandler()
     let actions = AppMenuActions()
     let menuItems: [MenuItem] = MenuItem.menus()
     let appMenu = AppMenu(actions: actions, items: menuItems)
-
+    
     _item = StateObject(
       wrappedValue: HostingViewItem(
-        view: RunnerView(height: 22).frame(
+        view: RunnerMainView(height: 22).frame(
           minWidth: 40,
           maxWidth: .infinity
-        ).fixedSize().modelContainer(container),
+        ).fixedSize(),
         menu: appMenu.getMenus()
       )
     )
     
+    print("Fancy Tool App init")
   }
   
   var body: some Scene {

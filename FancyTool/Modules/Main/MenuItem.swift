@@ -7,6 +7,7 @@
 import SwiftUI
 
 struct MenuItem {
+  
   let title: String?
   let action: Selector?
   let key: String?
