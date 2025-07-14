@@ -2,7 +2,7 @@
 //  MainStatusItem.swift
 //  FancyTool
 //
-//  Created by 吴雲放 on 2025/7/11.
+//  Created by 吴雲放 on 2025/7/1.
 //
 
 import SwiftUI
@@ -16,7 +16,7 @@ class HostingViewItem: ObservableObject{
     print("Hosting View Item NSStatusItem init")
   }
   
-  convenience init(view: some View){
+  convenience init(view: some View) {
     
     self.init()
     
@@ -49,9 +49,19 @@ class HostingViewItem: ObservableObject{
     
   }
   
-  convenience init(view: some View, menu: NSMenu){
+  convenience init(view: some View, target: AnyObject, action: Selector){
     self.init(view: view)
-    item.menu = menu
+    item.button?.target = target
+    item.button?.action = action
+    print("Hosting View Item Action init")
+  }
+  
+  convenience init(view: some View, menu: NSMenu? = nil){
+    self.init(view: view)
+    
+    if(menu != nil){
+      item.menu = menu
+    }
     
     print("Hosting View Item NSMenu init")
   }

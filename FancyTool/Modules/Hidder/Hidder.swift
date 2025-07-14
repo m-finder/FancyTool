@@ -43,7 +43,6 @@ class Hidder {
       let target = AppMenuActions.shared
       button.target = target
       button.action = #selector(AppMenuActions.toggle(_:))
-      button.sendAction(on: [.leftMouseUp, .rightMouseUp])
     }
     items.append(statusItem)
   }

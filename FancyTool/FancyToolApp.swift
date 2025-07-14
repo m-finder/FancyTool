@@ -39,7 +39,12 @@ struct FancyToolApp: App {
       })
     }
     
-    print("Fancy Tool App init")
+    if(AppState.shared.showTexter){
+      print("Texter Auto mount")
+      Texter.shared.mount()
+    }
+    
+    print("Fancy Tool App inited")
   }
   
   var body: some Scene {

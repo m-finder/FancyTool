@@ -6,27 +6,56 @@
 //
 
 import SwiftUI
+import AppKit
 
 class Texter {
   
-    private var statusItem: NSStatusItem?
-    private let popover = NSPopover()
-    @AppStorage("showTexter") var showTexter = false
-    
-    func setup() {
-        guard showTexter else { return }
-        // 初始化代码...
+  static let shared = Texter()
+  public let popover = NSPopover()
+  private var hostingView: HostingViewItem!
+  private var popoverView = TexterPopoverView()
+  private var controller: NSViewController!
+  
+  func mount(){
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+      self?.hostingView = HostingViewItem(
+        view: TexterView().frame(
+          minWidth: 40,
+          maxWidth: .infinity
+        ).padding(
+          .horizontal, 5
+        ).fixedSize(),
+        target: AppMenuActions.shared,
+        action: #selector(AppMenuActions.popover(_:))
+      )
     }
-    
-    func toggle() {
-        showTexter.toggle()
-        showTexter ? setup() : remove()
+  }
+  
+  
+  func unmount(){
+    popover.close()
+    hostingView = nil
+  }
+  
+  func show(_ sender: NSStatusBarButton){
+    if(controller == nil){
+      controller = NSHostingController(
+        rootView: popoverView.frame(
+          maxWidth: .infinity,
+          maxHeight: .infinity
+        ).padding()
+      )
     }
-    
-    private func remove() {
-        if let item = statusItem {
-            NSStatusBar.system.removeStatusItem(item)
-            statusItem = nil
-        }
+    popover.contentSize = .init(width: 350, height: 320)
+    popover.contentViewController = controller
+    popover.behavior = .transient
+    popover.animates = true
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+      self.popover.show(
+        relativeTo: sender.bounds,
+        of: sender,
+        preferredEdge: .minY
+      )
     }
+  }
 }

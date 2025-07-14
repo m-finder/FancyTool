@@ -12,15 +12,14 @@
 "About" = "关于";
 "Hidder" = "菜单折叠";
 "Texter" = "炫彩文字";
+"License" = "激活码";
 
 // runner
 "Acknowledgments." = "鸣谢";
 "Drag and drop GIF here." = "拖拽GIF到此处";
-"The image is sourced from the internet." = "图片来自网络";
-"Please contact us for removal if it infringes any copyrights." = "侵权请联系删除";
 
 // texter
 "MenuBar Text" = "菜单栏文本";
 "Colorful Text" = "炫彩文字";
-"Drink more water." = "多喝水";
+"Keep happy." = "保持开心。";
 "Input something" = "输入些什么";

@@ -2,7 +2,7 @@
 //  AppState.swift
 //  FancyTool
 //
-//  Created by 吴雲放 on 2025/7/7.
+//  Created by 吴雲放 on 2025/7/1.
 //
 
 import SwiftUI
@@ -22,6 +22,8 @@ class AppState : ObservableObject{
   @AppStorage("showHidder") var showHidder: Bool = false
   
   // Texter
-  @AppStorage("texter") var texter: String = String(localized: "Drink more water.")
+  @AppStorage("showTexter") var showTexter: Bool = false
+  @AppStorage("colorIndex") var colorIndex: Int = 0
+  @AppStorage("text") var text: String = String(localized: "Keep happy.")
   
 }

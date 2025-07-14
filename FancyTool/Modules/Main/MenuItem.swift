@@ -31,6 +31,11 @@ struct MenuItem {
   static func menus() -> [MenuItem] {
     return [
       MenuItem(
+        title: String(localized: "Texter"),
+        action:  #selector(AppMenuActions.texter(_:)),
+        state: AppState.shared.showTexter
+      ),
+      MenuItem(
         title: String(localized: "Hidder"),
         action:  #selector(AppMenuActions.hidder(_:)),
         state: AppState.shared.showHidder
