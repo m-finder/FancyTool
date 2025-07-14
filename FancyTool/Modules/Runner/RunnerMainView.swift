@@ -39,9 +39,7 @@ struct RunnerMainView: View {
       ).aspectRatio(
         contentMode: .fit
       )
-    }.onChange(
-      of: state.runnerId
-    ) {
+    }.onChange(of: state.runnerId) {
       print("Runner ID changed to: \(state.runnerId)")
       currentRunner = RunnerHandler.shared.getRunnerById(state.runnerId)
     }

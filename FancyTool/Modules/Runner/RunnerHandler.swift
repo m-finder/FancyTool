@@ -82,7 +82,7 @@ class RunnerHandler {
       print("Gif Data Failed to save context: \(error)")
     }
     
-    print("Handler Inited Gif \(count)")
+    print("Runner Handler init")
   }
   
   private func exist(id: UUID) -> Bool {

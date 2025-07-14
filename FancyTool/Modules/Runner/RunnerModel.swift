@@ -52,26 +52,6 @@ extension RunnerModel {
     return CGImageSourceCreateWithData(rawData as CFData, getImageOptions() as CFDictionary)
   }
   
-  private func getRealFrameCount(_ data: Data?) -> Int {
-    guard let imageSrc = getCGImageSource(data) else {
-      return 0
-    }
-    
-    return CGImageSourceGetCount(imageSrc)
-  }
-  
-  func setGIF(data: Data) -> Bool {
-    let num = getRealFrameCount(data)
-    
-    if num < 0 {
-      return false
-    }
-    
-    self.frameNumber = Int(num)
-    self.data = data
-    return true
-  }
-  
   // 按帧获取图像
   func getImage(_ index: Int) -> CGImage {
     
@@ -81,7 +61,6 @@ extension RunnerModel {
       safeIndex = 0
     }
     
-    // 缓存未命中，创建新图像
     guard let imgSrc = getCGImageSource(data),
           let cgImage = CGImageSourceCreateImageAtIndex(imgSrc, safeIndex, getImageOptions() as CFDictionary) else {
       return Self.defaultImage

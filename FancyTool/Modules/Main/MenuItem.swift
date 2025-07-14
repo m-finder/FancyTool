@@ -11,21 +11,29 @@ struct MenuItem {
   let title: String?
   let action: Selector?
   let key: String?
+  let state: Bool
   let isSeparator: Bool
 
-  init(title: String? = nil, action: Selector? = nil, key: String? = nil, isSeparator: Bool = false) {
+  init(
+    title: String? = nil,
+    action: Selector? = nil,
+    key: String? = nil,
+    state: Bool = false,
+    isSeparator: Bool = false
+  ) {
     self.title = title
     self.action = action
     self.key = key
+    self.state = state
     self.isSeparator = isSeparator
   }
 
   static func menus() -> [MenuItem] {
     return [
       MenuItem(
-        title: String(localized: "About"),
-        action:  #selector(AppMenuActions.about(_:)),
-        key: "a"
+        title: String(localized: "Hidder"),
+        action:  #selector(AppMenuActions.hidder(_:)),
+        state: AppState.shared.showHidder
       ),
       MenuItem(
         isSeparator: true
@@ -34,6 +42,11 @@ struct MenuItem {
         title: String(localized: "Setting"),
         action:  #selector(AppMenuActions.setting(_:)),
         key: "s"
+      ),
+      MenuItem(
+        title: String(localized: "About"),
+        action:  #selector(AppMenuActions.about(_:)),
+        key: "a"
       ),
       MenuItem(
         title: String(localized: "Quit App"),

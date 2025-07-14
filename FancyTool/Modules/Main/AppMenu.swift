@@ -35,6 +35,15 @@ class AppMenu {
         return
       }
       
+      if(item.state){
+        self.addMenuItem(
+          title: item.title!,
+          action: item.action!,
+          state: item.state
+        )
+        return
+      }
+      
       if(item.key != nil){
         self.addMenuItem(
           title: item.title!,

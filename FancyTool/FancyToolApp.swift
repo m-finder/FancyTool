@@ -14,9 +14,11 @@ struct FancyToolApp: App {
   
   init(){
     _ = RunnerHandler()
-    let actions = AppMenuActions()
     let menuItems: [MenuItem] = MenuItem.menus()
-    let appMenu = AppMenu(actions: actions, items: menuItems)
+    let appMenu = AppMenu(
+      actions: AppMenuActions.shared,
+      items: menuItems
+    )
     
     _item = StateObject(
       wrappedValue: HostingViewItem(
@@ -27,6 +29,15 @@ struct FancyToolApp: App {
         menu: appMenu.getMenus()
       )
     )
+    
+    if(AppState.shared.showHidder){
+      print("Hidder Auto mount")
+      Hidder.shared.mount()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
+        Hidder.shared.toggle()
+        print("Hidder Auto hidden")
+      })
+    }
     
     print("Fancy Tool App init")
   }

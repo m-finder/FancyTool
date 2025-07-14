@@ -8,42 +8,20 @@
 import SwiftUI
 
 class Hidder {
-  
-  var state = AppState.shared
-  var hidderClickHandler: (() -> Void)?
+
+  static let shared = Hidder()
   private var showLength: CGFloat =  6
-  private let hiddenLength: CGFloat = 10000
+  private var hiddenLength: CGFloat = 10000
   private var items: [NSStatusItem] = []
   
-  @MainActor public func update() {
-    if state.showHidder {
-      mount()
-    } else {
-      unmount()
+  public func mount(){
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+      self?.setup()
+      self?.setup()
     }
   }
   
-  // 挂载 2 个图标
-  @MainActor public func mount(){
-    setup()
-    setup()
-  }
-  
-  @MainActor private func setup(){
-    let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    if let button = statusItem.button {
-      let image = NSImage(named: NSImage.Name("Circle"))
-      image?.size = NSSize(width: showLength, height: showLength)
-      image?.isTemplate = true
-      button.image = image
-      button.target = self
-      button.action = #selector(handleHidderClick)
-      button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-    }
-    items.append(statusItem)
-  }
-  
-  @MainActor public func unmount() {
+  public func unmount(){
     for item in items {
       if let button = item.button {
         button.image = nil
@@ -53,17 +31,29 @@ class Hidder {
     items.removeAll()
   }
   
-  public func hidderCollapseMenuBar() {
+  private func setup(){
+    let statusItem: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    
+    if let button = statusItem.button {
+      let image = NSImage(named: NSImage.Name("Circle"))
+    
+      image?.size = NSSize(width: showLength, height: showLength)
+      image?.isTemplate = true
+      button.image = image
+      let target = AppMenuActions.shared
+      button.target = target
+      button.action = #selector(AppMenuActions.toggle(_:))
+      button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+    }
+    items.append(statusItem)
+  }
+  
+  public func toggle() {
     let leftItem = items.min(by: { ($0.button?.window?.frame.origin.x)! < ($1.button?.window?.frame.origin.x)! })
     if leftItem?.length == hiddenLength {
       leftItem?.length = showLength
     }else{
       leftItem?.length = hiddenLength
     }
-  }
-  
-  // 调用闭包
-  @objc private func handleHidderClick() {
-    hidderClickHandler?()
   }
 }
