@@ -33,8 +33,18 @@ class RunnerHandler {
     "rock": ("40001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "gold": ("40002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "big-guy": ("40003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "health": ("40004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "bird2": ("40004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+  
+    "sleep": ("60001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "happy": ("60002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "love": ("60003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "sleep-cat": ("60004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     
+    "man": ("70001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "bear": ("70002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "tree-grass": ("70003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "sun": ("70004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+ 
     "bat": ("90001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "bird": ("90002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "dragon": ("90003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),

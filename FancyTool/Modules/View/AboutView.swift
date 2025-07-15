@@ -34,7 +34,7 @@ struct AboutView: View {
   var body: some View {
     VStack(alignment: .center, spacing: 10){
       
-      Text("Acknowledgments").font(.footnote).fontWeight(.heavy).padding(.top, 20)
+      Text(String(localized: "Acknowledgments")).font(.footnote).fontWeight(.heavy).padding(.top, 20)
       
       ForEach(credits, id: \.name) { item in
         VStack(alignment: .leading, spacing: 5) {
