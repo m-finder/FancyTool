@@ -23,6 +23,9 @@ struct RunnerView: View {
   
   var body: some View {
     
+    let timer = Timer.publish(every: TimeInterval(factor), on: .main, in: .common).autoconnect()
+    
+    
     VStack {
       
       if let runner = runner {
@@ -39,44 +42,26 @@ struct RunnerView: View {
         Image("default").resizable().aspectRatio(contentMode: .fit).scaledToFit()
       }
       
-    }.onReceive(frameUpdatePublisher.throttle(for: .seconds(0.1), scheduler: RunLoop.main, latest: true)) { _ in
-      
-      updateFrame()
-      
-    }.onAppear {
-      
-      cancellable = Timer.publish(
-        every: TimeInterval(factor),
-        on: .main,
-        in: .common
-      ).autoconnect().sink { _ in
-        frameUpdatePublisher.send()
+    }.onReceive(timer) { _ in
+      guard isRunning, let frame_number = runner?.frameNumber else {
+        return
       }
       
+      if imageIndex == 0 {
+        direction = 1
+      }
       
-    }.onDisappear {
+      if imageIndex >= frame_number - 1 {
+        direction = 1
+        imageIndex = 0
+      }
       
-      cancellable?.cancel()
-      
-    }
-    
-  }
-  
-  private func updateFrame() {
-    guard isRunning, let frame_number = runner?.frameNumber else {
-      return
-    }
-    
-    if imageIndex == 0 {
+      imageIndex += direction
+    }.onChange(of: runner) {
+      imageIndex = 0
       direction = 1
     }
     
-    if imageIndex >= frame_number - 1 {
-        direction = 1
-        imageIndex = 0
-    }
-    
-    imageIndex += direction
   }
 }
 

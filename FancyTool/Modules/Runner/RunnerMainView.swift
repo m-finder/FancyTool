@@ -19,20 +19,18 @@ struct RunnerMainView: View {
     _currentRunner = State(initialValue: RunnerHandler.shared.getRunnerById(AppState.shared.runnerId))
   }
   
-  private let runners = RunnerHandler.shared.cachedRunners
-
   var body: some View {
     
     // CPU 使用率百分比 (0-100)
-    let cpuUsage = Double(cpuUtil.cpuUsage)
-    let speedFactor = state.speedProportional ? (1.0 - cpuUsage / 100.0) : (cpuUsage / 100.0)
-    let factor = Float(speedFactor / 5 * (1.1 - state.runnerSpeed))
+    let speedFactor = Double(cpuUtil.cpuUsage) / 100.0
+    let factor = Float((1 - speedFactor) * (1.1 - state.runnerSpeed) / 5)
     let minInterval: Float = 0.012
+    let clampFactor: Float = clamp(factor, lowerBound: minInterval, upperBound: .infinity)
     
     VStack{
       RunnerView(
         runner: currentRunner,
-        factor: clamp(factor, lowerBound: minInterval, upperBound: .infinity),
+        factor: clampFactor,
         isRunning: true
       ).frame(
         height: height
@@ -43,7 +41,6 @@ struct RunnerMainView: View {
       print("Runner ID changed to: \(state.runnerId)")
       currentRunner = RunnerHandler.shared.getRunnerById(state.runnerId)
     }
-    
   }
 }
 
