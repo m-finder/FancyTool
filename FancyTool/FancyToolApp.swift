@@ -22,7 +22,7 @@ struct FancyToolApp: App {
     
     _item = StateObject(
       wrappedValue: HostingViewItem(
-        view: RunnerMainView(height: 22).frame(
+        view: RunnerMainView(height: 24).frame(
           minWidth: 40,
           maxWidth: .infinity
         ).fixedSize(),
