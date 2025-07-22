@@ -26,4 +26,8 @@ class AppState : ObservableObject{
   @AppStorage("colorIndex") var colorIndex: Int = 0
   @AppStorage("text") var text: String = String(localized: "Keep happy.")
   
+  
+  // Paster
+  @AppStorage("showPaster") var showPaster: Bool = false
+  @AppStorage("historyCount") var historyCount: Int = 20
 }

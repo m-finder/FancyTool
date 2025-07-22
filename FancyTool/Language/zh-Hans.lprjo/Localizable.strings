@@ -12,6 +12,7 @@
 "About" = "关于";
 "Hidder" = "菜单折叠";
 "Texter" = "炫彩文字";
+"Paster" = "剪贴面板";
 "License" = "激活码";
 
 // runner
@@ -23,3 +24,6 @@
 "Colorful Text" = "炫彩文字";
 "Keep happy." = "保持开心。";
 "Input something" = "输入些什么";
+
+// paster
+"No paste history available." = "暂无粘贴历史";

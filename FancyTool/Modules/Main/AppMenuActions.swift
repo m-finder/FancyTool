@@ -56,7 +56,7 @@ class AppMenuActions: NSObject {
   @IBAction func popover(_ sender: NSStatusBarButton){
     if Texter.shared.popover.isShown{
       if let window = Texter.shared.popover.contentViewController?.view.window {
-        window.makeFirstResponder(nil)
+        window.orderFrontRegardless()
       }
       Texter.shared.popover.performClose(sender)
       return
@@ -64,4 +64,28 @@ class AppMenuActions: NSObject {
     Texter.shared.show(sender)
   }
   
+  @IBAction func paster(_ sender: NSStatusBarButton){
+    AppState.shared.showPaster.toggle()
+    sender.state = AppState.shared.showPaster ? .on : .off
+    if(AppState.shared.showPaster){
+      Paster.shared.mount()
+      print("Paster mount")
+    }else{
+      Paster.shared.unmount()
+      print("Paster unmount")
+    }
+  }
+  
+  @IBAction func clipboard(_: NSPasteboard) {
+    let pasteboard = NSPasteboard.general
+    guard pasteboard.changeCount != Paster.shared.changeCount else { return }
+    Paster.shared.changeCount = pasteboard.changeCount
+
+    if let copiedText = pasteboard.string(forType: .string) {
+      let trimmedText = copiedText.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !trimmedText.isEmpty {
+        Paster.shared.append(copiedText)
+      }
+    }
+  }
 }

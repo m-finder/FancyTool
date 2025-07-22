@@ -12,6 +12,7 @@ class ColorUtil: ObservableObject{
     
     let colors: [[Color]] = [
         [.white],
+        [.black],
         [Color(hex: 0x4300B1), Color(hex: 0xA531DC)],
         [Color(hex: 0xD02020), Color(hex: 0xFF896D)],
         [Color(hex: 0x0017E4), Color(hex: 0x3793FF)],
@@ -59,7 +60,7 @@ class ColorUtil: ObservableObject{
         [Color(hex: 0xAD00FE), Color(hex: 0x00E0EE)],
         [Color(hex: 0x88069D), Color(hex: 0xD0004B)],
         [Color(hex: 0x418CB7), Color(hex: 0xFF8570)],
-        [Color(hex: 0x000000), Color(hex: 0xB9A14C)]
+        [Color(hex: 0x000000), Color(hex: 0xB9A14C)],
     ]
     
     func getColor (index: Int) -> [Color] {

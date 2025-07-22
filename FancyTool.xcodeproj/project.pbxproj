@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9470CCCC2E2E303E0096EEA1 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 9470CCCB2E2E303E0096EEA1 /* KeyboardShortcuts */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		94EE43152E13C66000D11893 /* FancyTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FancyTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9470CCCC2E2E303E0096EEA1 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = FancyTool;
 			packageProductDependencies = (
+				9470CCCB2E2E303E0096EEA1 /* KeyboardShortcuts */,
 			);
 			productName = FancyTool;
 			productReference = 94EE43152E13C66000D11893 /* FancyTool.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = 94EE430C2E13C66000D11893;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9470CCCA2E2E303E0096EEA1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 94EE43162E13C66000D11893 /* Products */;
 			projectDirPath = "";
@@ -346,6 +355,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9470CCCA2E2E303E0096EEA1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9470CCCB2E2E303E0096EEA1 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9470CCCA2E2E303E0096EEA1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 94EE430D2E13C66000D11893 /* Project object */;
 }

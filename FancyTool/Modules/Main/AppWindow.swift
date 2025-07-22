@@ -41,7 +41,7 @@ class AppWindow {
       window?.maxSize = NSSize(width: 425, height: 800)
     }
     
-    window?.makeKeyAndOrderFront(nil)
+    window?.orderFrontRegardless()
     NSApp.activate(ignoringOtherApps: true)
   }
   

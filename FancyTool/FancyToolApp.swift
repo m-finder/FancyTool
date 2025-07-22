@@ -44,6 +44,11 @@ struct FancyToolApp: App {
       Texter.shared.mount()
     }
     
+    if(AppState.shared.showPaster){
+      print("Paster Auto mount")
+      Paster.shared.mount()
+    }
+    
     print("Fancy Tool App inited")
   }
   
