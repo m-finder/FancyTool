@@ -8,6 +8,7 @@
 import SwiftUI
 import ServiceManagement
 import UniformTypeIdentifiers
+import KeyboardShortcuts
 import SwiftData
 
 struct SettingsView: View {
@@ -60,12 +61,33 @@ struct SettingsView: View {
         }
       }
     }.frame(maxWidth: .infinity, maxHeight: .infinity).padding()
-    
-    
+
     
     VStack(alignment: .center){
       
-      Divider().padding(20)
+      LabelledDivider(
+        label: String(
+          localized: "Paster"
+        )
+      )
+      
+      ZStack {
+        HStack(alignment: .center, spacing: 3) {
+          Text(String(localized: "Number of records.")).font(.body)
+          Spacer()
+          TextField(
+              String(localized: "Input something"),
+              value: $state.historyCount,
+              format: .number
+          ).textFieldStyle(.roundedBorder)
+        }.padding()
+      }.padding([.leading, .trailing], 25)
+      
+      Form {
+        KeyboardShortcuts.Recorder("Shortcut:", name: .paster)
+      }.padding()
+      
+      Divider().padding()
       
       Toggle(
         String(localized: "Launch on Startup"),
