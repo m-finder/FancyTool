@@ -10,13 +10,13 @@ import KeyboardShortcuts
 
 class Paster: ObservableObject{
   
-  
   private var timer: Timer?
   public var changeCount: Int
   public static let shared = Paster()
   
   @Published var state = AppState.shared
   @Published public private(set) var history: [String] = []
+  
   public var window: PasterHistoryWindow?
   private let pasteboard = NSPasteboard.general
   private var targetApp: NSRunningApplication?
@@ -36,13 +36,13 @@ class Paster: ObservableObject{
     )
     
     // 监听快捷键
-    KeyboardShortcuts.onKeyUp(for: .paster) { [self] in
+    KeyboardShortcuts.onKeyUp(for: .paster) { [weak self] in
       DispatchQueue.main.async {
-        self.targetApp = NSWorkspace.shared.frontmostApplication
-        if self.window == nil {
-          self.show()
+        self?.targetApp = NSWorkspace.shared.frontmostApplication
+        if self?.window == nil || self?.window?.isVisible == false{
+          self?.show()
         } else {
-          self.hide()
+          self?.hide()
         }
       }
     }
@@ -59,15 +59,26 @@ class Paster: ObservableObject{
   }
   
   public func show(){
-    self.window = PasterHistoryWindow(contentView: PasterView())
+   
+    if window != nil && window!.isReleasedWhenClosed {
+      window = nil
+    }
+    
+    if(self.window == nil){
+      self.window = PasterHistoryWindow(contentView: PasterView())
+    }
+    
+    self.window?.delegate = window
     self.window?.isReleasedWhenClosed = false
     NSApp.activate(ignoringOtherApps: true)
     self.window?.orderFrontRegardless()
   }
   
   public func hide(){
-    self.window?.close()
-    self.window = nil
+    if(self.window != nil){
+      self.window?.close()
+      self.window = nil
+    }
   }
   
   public func append(_ record: String){
@@ -82,12 +93,22 @@ class Paster: ObservableObject{
     }
   }
   
-  public func copyToClipboard(_ text: String) -> Bool {
-    let pasteboard = NSPasteboard.general
-    pasteboard.clearContents()
+  public func tap(_ item: String) {
     
+    let success = self.copyToClipboard(item)
+    
+    guard success, let targetApp = NSWorkspace.shared.frontmostApplication else { return }
+    
+    self.hide()
+    
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      self.simulatePaste(to: targetApp)
+    }
+  }
+  
+  public func copyToClipboard(_ text: String) -> Bool {
+    pasteboard.clearContents()
     let success = pasteboard.setString(text, forType: .string)
-    // 验证剪贴板内容是否设置成功
     if success, let copiedText = pasteboard.string(forType: .string), copiedText == text {
       return true
     } else {
@@ -96,9 +117,7 @@ class Paster: ObservableObject{
   }
   
   public func simulatePaste(to application: NSRunningApplication? = nil) {
-
     let targetApp = self.targetApp
-    
     guard hasAccessibilityPermission() else {
       print("缺少辅助功能权限")
       showAccessibilityPermissionAlert()
@@ -130,10 +149,8 @@ class Paster: ObservableObject{
         cmdUp?.postToPid(pid)
       }
     }
-    
   }
-  
-  
+
   // 检查是否有辅助功能权限
   private func hasAccessibilityPermission() -> Bool {
     let accessEnabled = AXIsProcessTrustedWithOptions([
