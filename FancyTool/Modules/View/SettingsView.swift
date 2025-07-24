@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ServiceManagement
-import UniformTypeIdentifiers
 import KeyboardShortcuts
 import SwiftData
 
@@ -25,36 +24,7 @@ struct SettingsView: View {
       
       TabView{
         
-        VStack(alignment: .center){
-          Toggle(
-            String(localized: "Launch on Startup"),
-            isOn: state.$startUp
-          ).onChange(of: state.startUp) { _, newValue in
-            
-            if #available(macOS 13.0, *) {
-              if newValue {
-                if SMAppService.mainApp.status == .enabled {
-                  try? SMAppService.mainApp.unregister()
-                }
-                
-                try? SMAppService.mainApp.register()
-              } else {
-                try? SMAppService.mainApp.unregister()
-              }
-            }
-            
-          }.toggleStyle(SwitchToggleStyle())
-            .font(.system(size: 12))
-            .padding()
-          
-          Button(String(localized: "Quit App")) {
-            NSApplication.shared.terminate(nil)
-          }.keyboardShortcut("q").frame(
-              width: 100,
-              height: 40
-            ).font(.body)
-            .cornerRadius(10)
-        }.tabItem {
+        MainSettingView().tabItem {
           Text("Main")
         }
         
