@@ -21,103 +21,132 @@ struct SettingsView: View {
   }
   
   var body: some View {
-    
     VStack(alignment: .center, spacing: 20){
-      FlowStack(spacing: CGSize(width: 10, height: 10)){
-        ForEach(runners) { runner in
-          
-          VStack {
-            
-            RunnerView(
-              runner: runner,
-              factor: state.runnerId == runner.id.uuidString ? 0.1 : 0.2,
-              isRunning: state.runnerId == runner.id.uuidString ? true : false
-            ).frame(
-              width: 90,
-              height: 90
-            ).cornerRadius(8)
-              .scaledToFit()
-            
-          }.background(Color.secondary.colorInvert())
-            .clipShape(RoundedRectangle(
-              cornerRadius: 5,
-              style: .continuous
-            )).overlay(
-              RoundedRectangle(
-                cornerRadius: 5,
-                style: .continuous
-              ).stroke(
-                state.runnerId == runner.id.uuidString ? Color.accentColor : Color.clear,
-                lineWidth: 2
-              )
-            ).onTapGesture {
-              if(state.runnerId == runner.id.uuidString){
-                state.runnerId = ""
-              }else{
-                state.runnerId = runner.id.uuidString
-              }
-            }.id(runner.id.uuidString)
-          
-        }
-      }
-    }.frame(maxWidth: .infinity, maxHeight: .infinity).padding()
-
-    
-    VStack(alignment: .center){
       
-      LabelledDivider(
-        label: String(
-          localized: "Paster"
-        )
-      )
-      
-      ZStack {
-        HStack(alignment: .center, spacing: 3) {
-          Text(String(localized: "Number of records.")).font(.body)
-          Spacer()
-          TextField(
-              String(localized: "Input something"),
-              value: $state.historyCount,
-              format: .number
-          ).textFieldStyle(.roundedBorder)
-        }.padding()
-      }.padding([.leading, .trailing], 25)
-      
-      Form {
-        KeyboardShortcuts.Recorder("Shortcut:", name: .paster)
-      }.padding()
-      
-      Divider().padding()
-      
-      Toggle(
-        String(localized: "Launch on Startup"),
-        isOn: state.$startUp
-      ).onChange(of: state.startUp) { _, newValue in
+      TabView{
         
-        if #available(macOS 13.0, *) {
-          if newValue {
-            if SMAppService.mainApp.status == .enabled {
-              try? SMAppService.mainApp.unregister()
+        VStack(alignment: .center){
+          Toggle(
+            String(localized: "Launch on Startup"),
+            isOn: state.$startUp
+          ).onChange(of: state.startUp) { _, newValue in
+            
+            if #available(macOS 13.0, *) {
+              if newValue {
+                if SMAppService.mainApp.status == .enabled {
+                  try? SMAppService.mainApp.unregister()
+                }
+                
+                try? SMAppService.mainApp.register()
+              } else {
+                try? SMAppService.mainApp.unregister()
+              }
             }
             
-            try? SMAppService.mainApp.register()
-          } else {
-            try? SMAppService.mainApp.unregister()
-          }
+          }.toggleStyle(SwitchToggleStyle())
+            .font(.system(size: 12))
+            .padding()
+          
+          Button(String(localized: "Quit App")) {
+            NSApplication.shared.terminate(nil)
+          }.keyboardShortcut("q").frame(
+              width: 100,
+              height: 40
+            ).font(.body)
+            .cornerRadius(10)
+        }.tabItem {
+          Text("Main")
         }
         
-      }.toggleStyle(SwitchToggleStyle())
-        .font(.system(size: 12))
+        VStack(alignment: .center, spacing: 20){
+          FlowStack(spacing: CGSize(width: 10, height: 10)){
+            ForEach(runners) { runner in
+              
+              VStack {
+                
+                RunnerView(
+                  runner: runner,
+                  factor: state.runnerId == runner.id.uuidString ? 0.1 : 0.2,
+                  isRunning: state.runnerId == runner.id.uuidString ? true : false
+                ).frame(
+                  width: 90,
+                  height: 90
+                ).cornerRadius(8)
+                  .scaledToFit()
+                
+              }.clipShape(RoundedRectangle(
+                  cornerRadius: 5,
+                  style: .continuous
+                )).overlay(
+                  RoundedRectangle(
+                    cornerRadius: 5,
+                    style: .continuous
+                  ).stroke(
+                    state.runnerId == runner.id.uuidString ? Color.accentColor : Color.clear,
+                    lineWidth: 2
+                  )
+                ).onTapGesture {
+                  state.runnerId = state.runnerId == runner.id.uuidString ? "" : runner.id.uuidString
+                }.background(Color.secondary.colorInvert())
+                .id(runner.id.uuidString)
+              
+            }
+          }
+        }.frame(
+          maxWidth: .infinity,
+          maxHeight: .infinity
+        ).padding().tabItem {
+            Text(String(localized: "Runner"))
+          }
+        
+        VStack(alignment: .center){
+          ZStack {
+            HStack(alignment: .center, spacing: 3) {
+              Toggle(
+                String(localized: "Shimmer"),
+                isOn: state.$showShimmer
+              ).onChange(of: state.showShimmer) { _, newValue in
+                state.showShimmer = newValue
+              }.toggleStyle(SwitchToggleStyle())
+                .font(.system(size: 12))
+                .padding()
+            }.padding()
+          }.padding([.leading, .trailing], 25)
       
-      Button(String(localized: "Quit App")) {
-        NSApplication.shared.terminate(nil)
-      }.keyboardShortcut("q")
-        .frame(width: 100, height: 40)
-        .font(.body)
-        .cornerRadius(10)
-      
-      FancyToolView()
-    }
+        }.tabItem {
+          Text(String(localized: "Texter"))
+        }
+        
+        
+        VStack(alignment: .center){
+          ZStack {
+            HStack(alignment: .center, spacing: 3) {
+              Text(String(localized: "Number of records.")).font(.body)
+              Spacer()
+              TextField(
+                  String(localized: "Input something"),
+                  value: $state.historyCount,
+                  format: .number
+              ).textFieldStyle(.roundedBorder)
+            }.padding()
+          }.padding([.leading, .trailing], 25)
+          
+          Form {
+            KeyboardShortcuts.Recorder("Shortcut:", name: .paster)
+          }.padding()
+       
+        }.tabItem {
+          Text(String(localized: "Paster"))
+        }
+        
+        
+      }
+    }.frame(
+      maxWidth: .infinity,
+      maxHeight: .infinity
+    ).padding()
+
+    CopyrightView()
   }
 }
 

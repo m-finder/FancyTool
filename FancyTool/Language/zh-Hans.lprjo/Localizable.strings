@@ -10,6 +10,7 @@
 "Quit App" = "退出应用";
 "Setting" = "设置";
 "About" = "关于";
+"Runner" = "动态图标";
 "Hidder" = "菜单折叠";
 "Texter" = "炫彩文字";
 "Paster" = "剪贴面板";
@@ -24,6 +25,7 @@
 "Colorful Text" = "炫彩文字";
 "Keep happy." = "保持开心。";
 "Input something" = "输入些什么";
+"Shimmer" = "流光";
 
 // paster
 "No paste history available." = "暂无粘贴历史";

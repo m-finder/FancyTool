@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-struct FancyToolView: View {
+struct CopyrightView: View {
   var body: some View {
     Text("© FancyTool by M-finder 2025").font(.footnote).fontWeight(.light).padding(.top).padding(.bottom)
   }
 }
 
 #Preview {
-  FancyToolView()
+  CopyrightView()
 }
