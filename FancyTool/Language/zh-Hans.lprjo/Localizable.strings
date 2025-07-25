@@ -30,5 +30,5 @@
 // paster
 "No paste history available." = "暂无粘贴历史";
 "Tab key switch." = "Tab 键切换";
-"Number of records." = "记录条数";
+"Number of records:" = "记录条数:";
 "Shortcut:" = "快捷键:";

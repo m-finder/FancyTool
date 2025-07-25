@@ -14,31 +14,22 @@ class AppWindow {
     
     if window == nil {
       
-      let rootView = ScrollView {
-        contentView.frame(
-          maxWidth: .infinity
-        )
-      }.frame(
-        width: 440,
-        height: 500
+      let rootView = contentView.frame(
+        maxWidth: .infinity
       )
       
       // 配置窗口属性
       window = NSWindow(
-        contentRect: NSRect(x: 0, y: 0, width: 425, height: 800),
+        contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
         styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
         backing: .buffered,
         defer: false
       )
-      
       window?.center()
       window?.title = title
       window?.isReleasedWhenClosed = false
       window?.contentView = NSHostingView(rootView: rootView)
-      
       window?.styleMask.remove(.resizable)
-      window?.minSize = NSSize(width: 425, height: 800)
-      window?.maxSize = NSSize(width: 425, height: 800)
     }
     
     window?.orderFrontRegardless()

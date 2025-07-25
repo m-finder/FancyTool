@@ -13,9 +13,7 @@ struct MainSettingView: View {
   @ObservedObject var state = AppState.shared
   
   var body: some View {
-    
-    VStack(alignment: .center){
-      
+    VStack(alignment: .center, spacing: 0){
       Toggle(
         String(localized: "Launch on Startup"),
         isOn: state.$startUp
@@ -41,11 +39,8 @@ struct MainSettingView: View {
         height: 40
       ).font(.body)
         .cornerRadius(10)
-      
-    }
-    
+    }.frame(maxHeight: .infinity, alignment: .top)
   }
-  
 }
 
 #Preview {
