@@ -56,7 +56,7 @@ struct RunnerSettingView: View {
             
           }
         }
-      }.frame(maxHeight: 500)
+      }.frame(maxHeight: 400)
     }
     .frame(maxHeight: .infinity, alignment: .top)
   }

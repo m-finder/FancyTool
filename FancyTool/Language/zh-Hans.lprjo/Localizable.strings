@@ -32,3 +32,9 @@
 "Tab key switch." = "Tab 键切换";
 "Number of records:" = "记录条数:";
 "Shortcut:" = "快捷键:";
+"Text" = "文本";
+"%d days ago" = "%d天前";
+"%d hours ago" = "%d小时前";
+"%d minutes ago" = "%d分钟前";
+"%d seconds ago" = "%d秒前";
+"Just now" = "刚刚";

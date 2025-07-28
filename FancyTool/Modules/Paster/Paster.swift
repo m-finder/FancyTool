@@ -5,6 +5,7 @@
 //  Created by 吴雲放 on 2025/7/19.
 //
 import AppKit
+import SwiftUI
 import Foundation
 import KeyboardShortcuts
 
@@ -15,7 +16,7 @@ class Paster: ObservableObject{
   public static let shared = Paster()
   
   @Published var state = AppState.shared
-  @Published public private(set) var history: [String] = []
+  @Published public private(set) var history: [PasterModel] = []
   
   public var window: PasterHistoryWindow?
   private let pasteboard = NSPasteboard.general
@@ -81,7 +82,7 @@ class Paster: ObservableObject{
     }
   }
   
-  public func append(_ record: String){
+  public func append(_ record: PasterModel){
     if history.contains(record) {
       history.removeAll(where: { $0 == record})
     }
@@ -93,8 +94,7 @@ class Paster: ObservableObject{
     }
   }
   
-  public func tap(_ item: String) {
-    
+  public func tap(_ item: PasterModel) {
     let success = self.copyToClipboard(item)
     
     guard success, let targetApp = NSWorkspace.shared.frontmostApplication else { return }
@@ -106,10 +106,10 @@ class Paster: ObservableObject{
     }
   }
   
-  public func copyToClipboard(_ text: String) -> Bool {
+  public func copyToClipboard(_ item: PasterModel) -> Bool {
     pasteboard.clearContents()
-    let success = pasteboard.setString(text, forType: .string)
-    if success, let copiedText = pasteboard.string(forType: .string), copiedText == text {
+    let success = pasteboard.setString(item.content, forType: .string)
+    if success, let copiedText = pasteboard.string(forType: .string), copiedText == item.content {
       return true
     } else {
       return false
@@ -143,7 +143,7 @@ class Paster: ObservableObject{
       // 设置事件目标进程
       if let pid = targetApp?.processIdentifier {
         cmdDown?.postToPid(pid)
-        usleep(5000)
+        usleep(1000)
         vKeyDown?.postToPid(pid)
         vKeyUp?.postToPid(pid)
         cmdUp?.postToPid(pid)

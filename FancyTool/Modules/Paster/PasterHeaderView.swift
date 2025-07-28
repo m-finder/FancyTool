@@ -1,0 +1,48 @@
+//
+//  PasterFooterView.swift
+//  FancyTool
+//
+//  Created by 吴雲放 on 2025/7/26.
+//
+
+import SwiftUI
+
+struct PasterHeaderView: View {
+
+  var item: PasterModel
+  
+  init(item: PasterModel){
+    self.item = item
+  }
+
+  
+  private func getAppIcon(from path: String?) -> NSImage {
+    guard let path = path else {
+      return NSImage(systemSymbolName: "app", accessibilityDescription: nil)!
+    }
+    return NSWorkspace.shared.icon(forFile: path)
+  }
+  
+  var body: some View {
+    
+    HStack{
+      
+      VStack{
+        Text(String(localized: "Text")).font(.title).fontWeight(.light).foregroundColor(.white.opacity(0.5))
+        Text(DateUtil.shared.relativeTime(from: item.craetedAt)).font(.footnote).fontWeight(.light).foregroundColor(.white.opacity(0.5))
+      }
+      
+      Spacer()
+      
+      if item.icon != "Unknown" {
+        Image(nsImage: getAppIcon(from: item.icon)).resizable().frame(width: 32, height: 32)
+      } else {
+        Image("default").frame(width: 32, height: 32).foregroundColor(.secondary)
+      }
+      
+    }
+    .padding(10)
+    .frame(maxWidth: .infinity, maxHeight: 42)
+    .background(Color.gray.opacity(0.5))
+  }
+}

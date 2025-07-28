@@ -80,11 +80,15 @@ class AppMenuActions: NSObject {
     let pasteboard = NSPasteboard.general
     guard pasteboard.changeCount != Paster.shared.changeCount else { return }
     Paster.shared.changeCount = pasteboard.changeCount
+    
+    let sourceApp = NSWorkspace.shared.frontmostApplication
+    let appIcon = sourceApp?.bundleURL?.path ?? "Unknown"
 
     if let copiedText = pasteboard.string(forType: .string) {
       let trimmedText = copiedText.trimmingCharacters(in: .whitespacesAndNewlines)
+      
       if !trimmedText.isEmpty {
-        Paster.shared.append(copiedText)
+        Paster.shared.append(PasterModel(content: copiedText, icon: appIcon))
       }
     }
   }
