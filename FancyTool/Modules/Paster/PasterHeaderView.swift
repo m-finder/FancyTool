@@ -15,7 +15,6 @@ struct PasterHeaderView: View {
     self.item = item
   }
 
-  
   private func getAppIcon(from path: String?) -> NSImage {
     guard let path = path else {
       return NSImage(systemSymbolName: "app", accessibilityDescription: nil)!
@@ -28,9 +27,11 @@ struct PasterHeaderView: View {
     HStack{
       
       VStack{
-        Text(String(localized: "Text")).font(.title).fontWeight(.light).foregroundColor(.white.opacity(0.5))
-        Text(DateUtil.shared.relativeTime(from: item.craetedAt)).font(.footnote).fontWeight(.light).foregroundColor(.white.opacity(0.5))
+        Text(String(localized: "Text")).font(.title)
+        Text(DateUtil.shared.relativeTime(from: item.craetedAt)).font(.footnote)
       }
+      .foregroundStyle(.white)
+        .fontWeight(.light)
       
       Spacer()
       
@@ -41,8 +42,8 @@ struct PasterHeaderView: View {
       }
       
     }
-    .padding(10)
-    .frame(maxWidth: .infinity, maxHeight: 42)
-    .background(Color.gray.opacity(0.5))
+    .padding(.leading, 15)
+    .padding(.trailing, 15)
+    .frame(maxWidth: .infinity, minHeight: 42, maxHeight: 42)
   }
 }

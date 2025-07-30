@@ -33,7 +33,6 @@ struct DashedDivider: View {
         Circle() .fill(Color.gray).frame(width: indentSize * 2, height: indentSize * 2).offset(x: indentSize, y: 0)
       }
     }
-//    .frame(height: indentSize * 2)
     .offset(y: -indentSize)
   }
 }

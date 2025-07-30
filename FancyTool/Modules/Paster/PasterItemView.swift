@@ -11,13 +11,20 @@ struct PasterItemView: View {
   
   let item: PasterModel
   let shortcutNumber: Int
+  var indexMap: [Int: Int] = [0: 1, 1: 0]
+  @ObservedObject var state = AppState.shared
   @State private var isHovering: UUID?
   
   var body: some View {
     
-    VStack {
+    VStack(spacing: 0){
       
       PasterHeaderView(item: item)
+        .background(LinearGradient(
+          colors: ColorUtil.shared.getColor(index: indexMap[state.colorIndex] ?? state.colorIndex),
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
+        ))
       
       VStack(alignment: .leading, spacing: 0){
         Text(item.content).fontWeight(.light)
@@ -31,9 +38,19 @@ struct PasterItemView: View {
       PasterFooterView(item: item, number: shortcutNumber)
       
     }
-    .topBorder(height: 4, color: ColorUtil().getPasterColor(index: shortcutNumber))
+    .cornerRadius(15)
     .overlay(
-      RoundedRectangle(cornerRadius: 8).stroke(
+      RoundedRectangle(cornerRadius: 15).stroke(
+        LinearGradient(
+          colors: ColorUtil.shared.getColor(index: indexMap[state.colorIndex] ?? state.colorIndex),
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
+        ),
+        lineWidth: 2
+      )
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 15).stroke(
         isHovering == item.id ? Color.blue : Color.clear,
         lineWidth: 2
       )
@@ -44,8 +61,7 @@ struct PasterItemView: View {
     .onTapGesture {
       Paster.shared.tap(item)
     }
-    .background(.white.opacity(0.2))
-    .cornerRadius(15)
+    .background(.white.opacity(0.5))
     .id(item.id)
   }
 }

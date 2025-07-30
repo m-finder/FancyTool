@@ -16,7 +16,7 @@ struct PasterView: View {
   // 常量
   private enum constant {
     static let limit: Int = 5
-    static let padding: CGFloat = 25
+    static let padding: CGFloat = 45
     static let spacing: CGFloat = 15
     static let height: CGFloat = 250
   }

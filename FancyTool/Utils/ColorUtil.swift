@@ -10,6 +10,8 @@ import Foundation
 
 class ColorUtil: ObservableObject{
   
+  static let shared = ColorUtil()
+  
   private let colors: [[Color]] = [
     [.white],
     [.black],
@@ -63,15 +65,6 @@ class ColorUtil: ObservableObject{
     [Color(hex: 0x000000), Color(hex: 0xB9A14C)],
   ]
   
-  private let pasterColors = [
-    Color(hex: 0xEE7950),
-    Color(hex: 0x72A1D9),
-    Color(hex: 0x92C482),
-    Color(hex: 0x58339C),
-    Color(hex: 0x94CFBE),
-    Color(hex: 0xB9A14C),
-  ]
-  
   public func getColor (index: Int) -> [Color] {
     if index > colors.count {
       return [.white]
@@ -82,15 +75,6 @@ class ColorUtil: ObservableObject{
   public func getColors () -> [[Color]] {
     return colors
   }
-  
-  public func getPasterColor (index: Int) -> Color {
-    if index > pasterColors.count {
-      return .gray
-    }
-    return pasterColors[index - 1]
-  }
-  
-  
 }
 
 // hex color
