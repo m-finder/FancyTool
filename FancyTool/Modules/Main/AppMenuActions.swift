@@ -91,5 +91,13 @@ class AppMenuActions: NSObject {
         Paster.shared.append(PasterModel(content: copiedText, icon: appIcon))
       }
     }
+    else if let images = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
+            let image = images.first {
+      if let imageData = image.tiffRepresentation,
+         let bitmapImage = NSBitmapImageRep(data: imageData),
+         let data = bitmapImage.representation(using: .png, properties: [:]) {
+        Paster.shared.append(PasterModel(image: data, icon: appIcon))
+      }
+    }
   }
 }

@@ -60,7 +60,7 @@ class Paster: ObservableObject{
   }
   
   public func show(){
-   
+    
     if window != nil && window!.isReleasedWhenClosed {
       window = nil
     }
@@ -108,12 +108,26 @@ class Paster: ObservableObject{
   
   public func copyToClipboard(_ item: PasterModel) -> Bool {
     pasteboard.clearContents()
-    let success = pasteboard.setString(item.content, forType: .string)
-    if success, let copiedText = pasteboard.string(forType: .string), copiedText == item.content {
-      return true
-    } else {
+    if let textContent = item.content, !textContent.isEmpty {
+      let success = pasteboard.setString(textContent, forType: .string)
+      if success, let copiedText = pasteboard.string(forType: .string), copiedText == item.content {
+        return true
+      } else {
+        return false
+      }
+    }
+    
+    else if let imageData = item.image, let image = NSImage(data: imageData) {
+      let success = pasteboard.writeObjects([image])
+      // 验证复制结果
+      if success, let pastedImages = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
+         !pastedImages.isEmpty {
+        return true
+      }
       return false
     }
+    
+    return false
   }
   
   public func simulatePaste(to application: NSRunningApplication? = nil) {
@@ -150,7 +164,7 @@ class Paster: ObservableObject{
       }
     }
   }
-
+  
   // 检查是否有辅助功能权限
   private func hasAccessibilityPermission() -> Bool {
     let accessEnabled = AXIsProcessTrustedWithOptions([

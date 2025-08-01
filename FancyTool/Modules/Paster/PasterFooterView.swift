@@ -30,12 +30,24 @@ struct PasterFooterView: View {
         .cornerRadius(4)
         .buttonStyle(.plain)
         .font(.system(size: 11))
-        .background(Color.gray.opacity(0.2))
       
       Spacer()
       
       // 字符统计
-      Text("\(item.content.count) chars").font(.caption).foregroundColor(.secondary)
+      if let textContent = item.content, !textContent.isEmpty {
+        Text("\(textContent.count) \(String(localized: "chars"))")
+          .font(.caption)
+          .foregroundColor(.secondary)
+      }
+      
+      if let imageData = item.image, !imageData.isEmpty {
+        if let nsImage = NSImage(data: imageData) {
+          Text("\(Int(nsImage.size.width)) * \(Int(nsImage.size.height))")
+            .font(.caption)
+            .foregroundColor(.secondary)
+        }
+      }
+      
     }
     .padding(.leading, 10)
     .padding(.trailing, 10)

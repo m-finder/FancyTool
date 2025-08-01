@@ -33,6 +33,8 @@
 "Number of records:" = "记录条数:";
 "Shortcut:" = "快捷键:";
 "Text" = "文本";
+"Image" = "图片";
+"chars" = "字符";
 "%d days ago" = "%d天前";
 "%d hours ago" = "%d小时前";
 "%d minutes ago" = "%d分钟前";

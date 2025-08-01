@@ -27,10 +27,26 @@ struct PasterItemView: View {
         ))
       
       VStack(alignment: .leading, spacing: 0){
-        Text(item.content).fontWeight(.light)
+        if let textContent = item.content, !textContent.isEmpty {
+          Text(textContent)
+            .lineSpacing(5)
+            .fontWeight(.light)
+        }
+        
+        if let imageData = item.image, !imageData.isEmpty {
+          if let nsImage = NSImage(data: imageData) {
+            HStack {
+              Spacer()
+              Image(nsImage: nsImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+              Spacer()
+            }
+            .padding(.vertical, 4)
+          }
+        }
       }
-      .padding(.leading, 10)
-      .padding(.trailing, 10)
+      .padding(10)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       
       DashedDivider().padding(.horizontal, 0)
@@ -38,6 +54,8 @@ struct PasterItemView: View {
       PasterFooterView(item: item, number: shortcutNumber)
       
     }
+    .background(.white.opacity(0.5))
+    .clipShape(RoundedRectangle(cornerRadius: 15))
     .cornerRadius(15)
     .overlay(
       RoundedRectangle(cornerRadius: 15).stroke(
@@ -61,7 +79,6 @@ struct PasterItemView: View {
     .onTapGesture {
       Paster.shared.tap(item)
     }
-    .background(.white.opacity(0.5))
     .id(item.id)
   }
 }

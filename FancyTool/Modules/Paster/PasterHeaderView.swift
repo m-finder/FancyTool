@@ -26,8 +26,8 @@ struct PasterHeaderView: View {
     
     HStack{
       
-      VStack{
-        Text(String(localized: "Text")).font(.title)
+      HStack{
+        Text(String(localized: item.content != nil ? "Text" : "Image")).font(.title)
         Text(DateUtil.shared.relativeTime(from: item.craetedAt)).font(.footnote)
       }
       .foregroundStyle(.white)
