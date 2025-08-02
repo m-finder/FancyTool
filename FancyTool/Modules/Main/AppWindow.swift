@@ -20,7 +20,7 @@ class AppWindow {
       
       // 配置窗口属性
       window = NSWindow(
-        contentRect: NSRect(x: 0, y: 0, width: 440, height: 250),
+        contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
         styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
         backing: .buffered,
         defer: false

@@ -20,6 +20,10 @@ class RunnerHandler {
     "3": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "4": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "5": ("10005b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "6": ("10006b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "7": ("10007b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "8": ("10008b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "9": ("10009b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
   ]
   
   init() {
@@ -27,13 +31,6 @@ class RunnerHandler {
     let container = try! ModelContainer(for: RunnerModel.self)
     modelContext = ModelContext(container)
     
-    // 清空
-    cachedRunners = try! modelContext.fetch(FetchDescriptor<RunnerModel>())
-    for runner in cachedRunners {
-        modelContext.delete(runner)
-    }
-    cachedRunners = []
-   
     guard let urls = Bundle.main.urls(forResourcesWithExtension: "gif", subdirectory: nil) else {
       print("No GIF resources found in the bundle.")
       return

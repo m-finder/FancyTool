@@ -24,7 +24,8 @@ struct PasterFooterView: View {
   
   var body: some View {
     HStack {
-      // 绑定快捷键 (仅显示1-9)
+
+      // 绑定快捷键
       Text("⌘+\(number)")
         .padding(4)
         .cornerRadius(4)
@@ -40,6 +41,7 @@ struct PasterFooterView: View {
           .foregroundColor(.secondary)
       }
       
+      // 图片尺寸
       if let imageData = item.image, !imageData.isEmpty {
         if let nsImage = NSImage(data: imageData) {
           Text("\(Int(nsImage.size.width)) * \(Int(nsImage.size.height))")

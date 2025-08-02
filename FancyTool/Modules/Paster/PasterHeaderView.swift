@@ -31,7 +31,7 @@ struct PasterHeaderView: View {
         Text(DateUtil.shared.relativeTime(from: item.craetedAt)).font(.footnote)
       }
       .foregroundStyle(.white)
-        .fontWeight(.light)
+      .fontWeight(.light)
       
       Spacer()
       

@@ -54,7 +54,7 @@ struct PasterItemView: View {
       PasterFooterView(item: item, number: shortcutNumber)
       
     }
-    .background(.white.opacity(0.5))
+    .background(Color(.controlBackgroundColor).opacity(0.2))
     .clipShape(RoundedRectangle(cornerRadius: 15))
     .cornerRadius(15)
     .overlay(

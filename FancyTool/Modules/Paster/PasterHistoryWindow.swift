@@ -36,7 +36,6 @@ class PasterHistoryWindow: NSWindow, NSWindowDelegate{
     super.init(contentRect: windowFrame, styleMask: [.borderless], backing: .buffered, defer: false)
     
     // 设置窗口样式
-//    backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.9)
     isOpaque = false
     hasShadow = false
     level = .popUpMenu

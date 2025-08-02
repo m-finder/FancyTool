@@ -108,6 +108,8 @@ class Paster: ObservableObject{
   
   public func copyToClipboard(_ item: PasterModel) -> Bool {
     pasteboard.clearContents()
+    
+    // 文本复制
     if let textContent = item.content, !textContent.isEmpty {
       let success = pasteboard.setString(textContent, forType: .string)
       if success, let copiedText = pasteboard.string(forType: .string), copiedText == item.content {
@@ -117,9 +119,9 @@ class Paster: ObservableObject{
       }
     }
     
+    // 图片复制
     else if let imageData = item.image, let image = NSImage(data: imageData) {
       let success = pasteboard.writeObjects([image])
-      // 验证复制结果
       if success, let pastedImages = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
          !pastedImages.isEmpty {
         return true
