@@ -33,7 +33,7 @@ class PasterHistoryWindow: NSWindow, NSWindowDelegate{
   
     let windowFrame = NSRect(x: windowX, y: windowY, width: screenFrame.width, height: windowHeight)
     
-    super.init(contentRect: windowFrame, styleMask: [.borderless], backing: .buffered, defer: false)
+    super.init(contentRect: windowFrame, styleMask: [.borderless, .utilityWindow], backing: .buffered, defer: false)
     
     // 设置窗口样式
     isOpaque = false

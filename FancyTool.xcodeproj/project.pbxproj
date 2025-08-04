@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9470CCCC2E2E303E0096EEA1 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 9470CCCB2E2E303E0096EEA1 /* KeyboardShortcuts */; };
+		94443E712E40A5B3009D101F /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 94443E702E40A5B3009D101F /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,17 +40,25 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9470CCCC2E2E303E0096EEA1 /* KeyboardShortcuts in Frameworks */,
+				94443E712E40A5B3009D101F /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		94443E6F2E40A5B3009D101F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		94EE430C2E13C66000D11893 = {
 			isa = PBXGroup;
 			children = (
 				94EE43172E13C66000D11893 /* FancyTool */,
+				94443E6F2E40A5B3009D101F /* Frameworks */,
 				94EE43162E13C66000D11893 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -83,7 +91,7 @@
 			);
 			name = FancyTool;
 			packageProductDependencies = (
-				9470CCCB2E2E303E0096EEA1 /* KeyboardShortcuts */,
+				94443E702E40A5B3009D101F /* KeyboardShortcuts */,
 			);
 			productName = FancyTool;
 			productReference = 94EE43152E13C66000D11893 /* FancyTool.app */;
@@ -285,7 +293,6 @@
 				INFOPLIST_KEY_CFBundleDisplayName = FancyTool;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "M-finder";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -318,7 +325,6 @@
 				INFOPLIST_KEY_CFBundleDisplayName = FancyTool;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "M-finder";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -368,7 +374,7 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		9470CCCB2E2E303E0096EEA1 /* KeyboardShortcuts */ = {
+		94443E702E40A5B3009D101F /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9470CCCA2E2E303E0096EEA1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
