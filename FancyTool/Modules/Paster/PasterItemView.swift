@@ -11,7 +11,6 @@ struct PasterItemView: View {
   
   let item: PasterModel
   let shortcutNumber: Int
-  var indexMap: [Int: Int] = [0: 1, 1: 0]
   @ObservedObject var state = AppState.shared
   @State private var isHovering: UUID?
   
@@ -21,7 +20,7 @@ struct PasterItemView: View {
       
       PasterHeaderView(item: item)
         .background(LinearGradient(
-          colors: ColorUtil.shared.getColor(index: indexMap[state.colorIndex] ?? state.colorIndex),
+          colors: ColorUtil.shared.getColor(index: state.colorIndex),
           startPoint: .topLeading,
           endPoint: .bottomTrailing
         ))
@@ -60,7 +59,7 @@ struct PasterItemView: View {
     .overlay(
       RoundedRectangle(cornerRadius: 15).stroke(
         LinearGradient(
-          colors: ColorUtil.shared.getColor(index: indexMap[state.colorIndex] ?? state.colorIndex),
+          colors: ColorUtil.shared.getColor(index: state.colorIndex),
           startPoint: .topLeading,
           endPoint: .bottomTrailing
         ),
