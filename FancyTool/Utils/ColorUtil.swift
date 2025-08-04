@@ -15,6 +15,8 @@ class ColorUtil: ObservableObject{
   private let colors: [[Color]] = [
     [Color(hex: 0xF5E597), Color(hex: 0x66A09B)],
     [Color(hex: 0xB4A9EA), Color(hex: 0xE9C8F1)],
+    [Color(hex: 0x4300B1), Color(hex: 0xA531DC)],
+    [Color(hex: 0xD02020), Color(hex: 0xFF896D)],
     [Color(hex: 0x0017E4), Color(hex: 0x3793FF)],
     [Color(hex: 0xFF7A00), Color(hex: 0xFFD439)],
     [Color(hex: 0x4B73FF), Color(hex: 0x7CF7FF)],
