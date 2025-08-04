@@ -47,18 +47,10 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		94443E6F2E40A5B3009D101F /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		94EE430C2E13C66000D11893 = {
 			isa = PBXGroup;
 			children = (
 				94EE43172E13C66000D11893 /* FancyTool */,
-				94443E6F2E40A5B3009D101F /* Frameworks */,
 				94EE43162E13C66000D11893 /* Products */,
 			);
 			sourceTree = "<group>";
