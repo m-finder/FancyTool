@@ -17,9 +17,8 @@ struct TexterPopoverView: View {
       
       Image("default")
         .resizable()
-        .aspectRatio(
-          contentMode: .fit
-        ).frame(
+        .aspectRatio(contentMode: .fit)
+        .frame(
           width: 60,
           height: 60
         ).padding(.top, 15)

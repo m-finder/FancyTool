@@ -10,9 +10,9 @@ import SwiftUI
 class Hidder {
 
   static let shared = Hidder()
-  private var showLength: CGFloat =  6
   private var hiddenLength: CGFloat = 10000
   private var items: [NSStatusItem] = []
+  @Published var state = AppState.shared
   
   public func mount(){
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -37,11 +37,10 @@ class Hidder {
     if let button = statusItem.button {
       let image = NSImage(named: NSImage.Name("Circle"))
     
-      image?.size = NSSize(width: showLength, height: showLength)
+      image?.size = NSSize(width: state.hidderSize, height: state.hidderSize)
       image?.isTemplate = true
       button.image = image
-      let target = AppMenuActions.shared
-      button.target = target
+      button.target = AppMenuActions.shared
       button.action = #selector(AppMenuActions.toggle(_:))
     }
     items.append(statusItem)
@@ -50,9 +49,26 @@ class Hidder {
   public func toggle() {
     let leftItem = items.min(by: { ($0.button?.window?.frame.origin.x)! < ($1.button?.window?.frame.origin.x)! })
     if leftItem?.length == hiddenLength {
-      leftItem?.length = showLength
+      leftItem?.length = CGFloat(state.hidderSize)
     }else{
       leftItem?.length = hiddenLength
+    }
+  }
+  
+  public func refresh() {
+    let newSize = CGFloat(state.hidderSize)
+    for item in items {
+      guard let button = item.button else { continue }
+     
+      let image = NSImage(named: NSImage.Name("Circle"))
+      image?.size = NSSize(width: newSize, height: newSize)
+      image?.isTemplate = true
+      button.image = image
+      
+      // 更新长度
+      if item.length != hiddenLength {
+        item.length = newSize
+      }
     }
   }
 }

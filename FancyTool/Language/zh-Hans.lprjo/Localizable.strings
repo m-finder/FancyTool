@@ -27,6 +27,9 @@
 "Input something" = "输入些什么";
 "Shimmer" = "流光";
 
+// hidder
+"Hidder size:" = "圆点尺寸:";
+
 // paster
 "No paste history available." = "暂无粘贴历史";
 "Tab key switch." = "Tab 键切换";

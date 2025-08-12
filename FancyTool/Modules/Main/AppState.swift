@@ -20,6 +20,8 @@ class AppState : ObservableObject{
   
   // Hidder
   @AppStorage("showHidder") var showHidder: Bool = false
+  @AppStorage("hidderSize") var hidderSize = 6
+  
   
   // Texter
   @AppStorage("showTexter") var showTexter: Bool = false
