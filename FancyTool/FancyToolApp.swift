@@ -10,7 +10,7 @@ import SwiftData
 @main
 struct FancyToolApp: App {
   
-  @StateObject private var item: HostingViewItem
+ private var item: HostingViewItem
   
   init(){
     _ = RunnerHandler()
@@ -20,14 +20,12 @@ struct FancyToolApp: App {
       items: menuItems
     )
     
-    _item = StateObject(
-      wrappedValue: HostingViewItem(
-        view: RunnerMainView(height: 24).frame(
-          minWidth: 40,
-          maxWidth: .infinity
-        ).fixedSize(),
-        menu: appMenu.getMenus()
-      )
+    item = HostingViewItem(
+      view: RunnerMainView(height: 24).frame(
+        minWidth: 40,
+        maxWidth: .infinity
+      ).fixedSize(),
+      menu: appMenu.getMenus()
     )
     
     if(AppState.shared.showHidder){
