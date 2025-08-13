@@ -48,9 +48,17 @@ struct RunnerView: View {
         return
       }
       
-      direction = 1
-      if imageIndex >= frame_number {
-        imageIndex = 0
+      if imageIndex == 0 {
+          direction = 1
+      }
+      
+      if imageIndex >= frame_number - 1 {
+          if autoReverse {
+              direction = -1
+          } else {
+              direction = 1
+              imageIndex = 0
+          }
       }
       
       imageIndex += direction
