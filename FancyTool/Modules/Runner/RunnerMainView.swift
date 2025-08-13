@@ -24,7 +24,7 @@ struct RunnerMainView: View {
     // CPU 使用率百分比 (0-100)
     let speedFactor = Double(cpuUtil.cpuUsage) / 100.0
     let factor = Float((1 - speedFactor) * (1.1 - state.runnerSpeed) / 5)
-    let minInterval: Float = 0.012
+    let minInterval: Float = 0.5
     let clampFactor: Float = clamp(factor, lowerBound: minInterval, upperBound: .infinity)
     
     VStack{
@@ -32,11 +32,10 @@ struct RunnerMainView: View {
         runner: currentRunner,
         factor: clampFactor,
         isRunning: true
-      ).frame(
-        height: height
-      ).aspectRatio(
-        contentMode: .fit
       )
+      .frame(height: height)
+      .aspectRatio(contentMode: .fit)
+      
     }.onChange(of: state.runnerId) {
       print("Runner ID changed to: \(state.runnerId)")
       currentRunner = RunnerHandler.shared.getRunnerById(state.runnerId)

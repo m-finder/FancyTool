@@ -10,17 +10,17 @@ import SwiftData
 @main
 struct FancyToolApp: App {
   
- private var item: HostingViewItem
+  private var item: HostingViewItem
   
   init(){
-    _ = RunnerHandler()
+    
     let menuItems: [MenuItem] = MenuItem.menus()
     let appMenu = AppMenu(
       actions: AppMenuActions.shared,
       items: menuItems
     )
     
-    item = HostingViewItem(
+    self.item = HostingViewItem(
       view: RunnerMainView(height: 24).frame(
         minWidth: 40,
         maxWidth: .infinity
@@ -48,6 +48,7 @@ struct FancyToolApp: App {
     }
     
     print("Fancy Tool App inited")
+    
   }
   
   var body: some Scene {

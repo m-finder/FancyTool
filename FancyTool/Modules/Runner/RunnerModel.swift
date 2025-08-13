@@ -31,7 +31,7 @@ class RunnerModel {
 // 扩展图片的相关功能
 extension RunnerModel {
 
-  private static var defaultImage = #imageLiteral(resourceName: "AppLogo").cgImage(forProposedRect: nil, context: nil, hints: nil)!
+  private static var defaultImage = #imageLiteral(resourceName: "default").cgImage(forProposedRect: nil, context: nil, hints: nil)!
   
   // 获取图像选项
   private func getImageOptions() -> [CFString: Any] {

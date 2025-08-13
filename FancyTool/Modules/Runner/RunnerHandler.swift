@@ -23,10 +23,22 @@ class RunnerHandler {
     "6": ("10006b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "7": ("10007b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "8": ("10008b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-//    "9": ("10009b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "9": ("10009b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "10": ("10010b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "11": ("10011b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "12": ("10012b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "13": ("10013b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "14": ("10014b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "15": ("10015b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "16": ("10016b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "17": ("10017b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "18": ("10018b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "19": ("10019b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "20": ("10020b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
+    "21": ("10021b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
   ]
   
-  init() {
+  private init() {
         
     let container = try! ModelContainer(for: RunnerModel.self)
     modelContext = ModelContext(container)

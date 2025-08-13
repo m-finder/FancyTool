@@ -26,7 +26,7 @@ struct RunnerSettingView: View {
               
               RunnerView(
                 runner: runner,
-                factor: state.runnerId == runner.id.uuidString ? 0.1 : 0.2,
+                factor: state.runnerId == runner.id.uuidString ? 0.5 : 1,
                 isRunning: state.runnerId == runner.id.uuidString ? true : false
               ).frame(
                 width: 90,
