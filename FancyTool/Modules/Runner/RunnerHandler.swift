@@ -51,11 +51,11 @@ class RunnerHandler {
     var count = 0
     
     // 清空
-    cachedRunners = try! modelContext.fetch(FetchDescriptor<RunnerModel>())
-    for runner in cachedRunners {
-        modelContext.delete(runner)
-    }
-    cachedRunners = []
+//    cachedRunners = try! modelContext.fetch(FetchDescriptor<RunnerModel>())
+//    for runner in cachedRunners {
+//        modelContext.delete(runner)
+//    }
+//    cachedRunners = []
 
     for url in urls {
       let name = url.deletingPathExtension().lastPathComponent
