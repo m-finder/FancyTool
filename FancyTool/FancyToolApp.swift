@@ -21,7 +21,7 @@ struct FancyToolApp: App {
     )
     
     self.item = HostingViewItem(
-      view: RunnerMainView(height: 24).frame(
+      view: RunnerMainView(height: 22).frame(
         minWidth: 40,
         maxWidth: .infinity
       ).fixedSize(),

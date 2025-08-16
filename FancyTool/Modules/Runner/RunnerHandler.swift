@@ -27,15 +27,6 @@ class RunnerHandler {
     "10": ("10010b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "11": ("10011b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "12": ("10012b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "13": ("10013b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "14": ("10014b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "15": ("10015b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "16": ("10016b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "17": ("10017b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "18": ("10018b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "19": ("10019b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "20": ("10020b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "21": ("10021b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
   ]
   
   private init() {
@@ -51,11 +42,11 @@ class RunnerHandler {
     var count = 0
     
     // 清空
-//    cachedRunners = try! modelContext.fetch(FetchDescriptor<RunnerModel>())
-//    for runner in cachedRunners {
-//        modelContext.delete(runner)
-//    }
-//    cachedRunners = []
+    cachedRunners = try! modelContext.fetch(FetchDescriptor<RunnerModel>())
+    for runner in cachedRunners {
+        modelContext.delete(runner)
+    }
+    cachedRunners = []
 
     for url in urls {
       let name = url.deletingPathExtension().lastPathComponent

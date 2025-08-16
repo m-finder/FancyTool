@@ -26,6 +26,7 @@ class AppState : ObservableObject{
   // Texter
   @AppStorage("showTexter") var showTexter: Bool = false
   @AppStorage("showShimmer") var showShimmer: Bool = true
+  @AppStorage("showWave") var showWave: Bool = true
   @AppStorage("colorIndex") var colorIndex: Int = 0
   @AppStorage("text") var text: String = String(localized: "Keep happy.")
   

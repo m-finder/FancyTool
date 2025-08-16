@@ -18,11 +18,24 @@ struct TexterSettingView: View {
       Toggle(
         String(localized: "Shimmer"),
         isOn: state.$showShimmer
-      ).onChange(of: state.showShimmer) { _, newValue in
+      )
+      .onChange(of: state.showShimmer) { _, newValue in
         state.showShimmer = newValue
-      }.toggleStyle(SwitchToggleStyle())
-        .font(.system(size: 12))
-        .padding()
+      }
+      .toggleStyle(SwitchToggleStyle())
+      .font(.system(size: 12))
+      .padding()
+      
+      Toggle(
+        String(localized: "Wave"),
+        isOn: state.$showWave
+      )
+      .onChange(of: state.showWave) { _, newValue in
+        state.showWave = newValue
+      }
+      .toggleStyle(SwitchToggleStyle())
+      .font(.system(size: 12))
+      .padding()
       
     }.frame(maxHeight: .infinity, alignment: .top)
   }
