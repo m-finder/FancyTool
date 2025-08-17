@@ -106,7 +106,7 @@ struct TexterView: View {
     
     let totalDuration: Double = {
       let lastIndex = waveScales.indices.last ?? 0
-      return Double(lastIndex) * 0.05 + 0.15 + 1
+      return Double(lastIndex) * 0.05 + 0.15 + 2
     }()
     
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
