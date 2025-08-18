@@ -12,7 +12,7 @@ struct RunnerView: View {
   
   var runner: RunnerModel?
   var factor: Float
-  var autoReverse = true
+  var autoReverse = false
   var isRunning: Bool = false
   
   @State private var direction = 1

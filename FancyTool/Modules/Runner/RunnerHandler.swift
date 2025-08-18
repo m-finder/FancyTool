@@ -8,11 +8,11 @@
 import AppKit
 import SwiftData
 
-class RunnerHandler {
+class RunnerHandler :ObservableObject{
   
   static let shared = RunnerHandler()
   private var modelContext: ModelContext
-  private(set) var cachedRunners: [RunnerModel] = []
+  @Published private(set) var cachedRunners: [RunnerModel] = []
   
   private var defaultRunners: [String: (String, String)] = [
     "1": ("10001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
@@ -22,15 +22,10 @@ class RunnerHandler {
     "5": ("10005b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "6": ("10006b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
     "7": ("10007b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "8": ("10008b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "9": ("10009b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "10": ("10010b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "11": ("10011b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "12": ("10012b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
   ]
   
   private init() {
-        
+   
     let container = try! ModelContainer(for: RunnerModel.self)
     modelContext = ModelContext(container)
     
@@ -42,11 +37,11 @@ class RunnerHandler {
     var count = 0
     
     // 清空
-    cachedRunners = try! modelContext.fetch(FetchDescriptor<RunnerModel>())
-    for runner in cachedRunners {
-        modelContext.delete(runner)
-    }
-    cachedRunners = []
+//    cachedRunners = try! modelContext.fetch(FetchDescriptor<RunnerModel>())
+//    for runner in cachedRunners {
+//        modelContext.delete(runner)
+//    }
+//    cachedRunners = []
 
     for url in urls {
       let name = url.deletingPathExtension().lastPathComponent
@@ -94,4 +89,53 @@ class RunnerHandler {
     return cachedRunners.first { $0.id.uuidString == id }
   }
   
+  public func addRunner(gifData: Data) {
+    let frameCount = getFrameCount(gifData)
+    let newRunner = RunnerModel(
+      id: UUID(),
+      isDefault: false,
+      frameNumber: frameCount,
+      data: gifData
+    )
+    
+    modelContext.insert(newRunner)
+    
+    do {
+      try modelContext.save()
+      // 重新获取所有 runner
+      let allRunners = try modelContext.fetch(FetchDescriptor<RunnerModel>())
+      cachedRunners = allRunners.sorted { a, b in
+        // 同上的排序逻辑
+        if a.isDefault && b.isDefault {
+          return a.id.uuidString < b.id.uuidString
+        } else if a.isDefault {
+          return true
+        } else if b.isDefault {
+          return false
+        } else {
+          return a.createdAt < b.createdAt
+        }
+      }
+      
+    } catch {
+      print("Failed to add custom runner: \(error)")
+    }
+  }
+  
+  public func removeRunner(id: UUID) {
+    do {
+      let predicate = #Predicate<RunnerModel> { runner in
+        runner.id == id
+      }
+      let descriptor = FetchDescriptor<RunnerModel>(predicate: predicate)
+
+      if let runnerToDelete = try modelContext.fetch(descriptor).first {
+        modelContext.delete(runnerToDelete)
+        cachedRunners.removeAll(where: { $0.id == id })
+        try modelContext.save()
+      }
+    } catch {
+      print("Failed to remove custom runner: \(error)")
+    }
+  }
 }

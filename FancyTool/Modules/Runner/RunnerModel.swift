@@ -17,13 +17,15 @@ class RunnerModel {
   var isDefault: Bool
   var frameNumber: Int
   var data: Data
+  var createdAt: Date
   
   // 初始化
-  init(id: UUID, isDefault: Bool, frameNumber: Int, data: Data) {
+  init(id: UUID, isDefault: Bool, frameNumber: Int, data: Data, createdAt: Date = Date()) {
     self.id = id
     self.isDefault = isDefault
     self.frameNumber = frameNumber
     self.data = data
+    self.createdAt = createdAt
   }
   
 }

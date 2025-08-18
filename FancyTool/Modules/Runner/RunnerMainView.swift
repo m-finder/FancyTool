@@ -25,9 +25,9 @@ struct RunnerMainView: View {
     let speedFactor = Double(cpuUtil.cpuUsage) / 100.0
     let factor = Float((1 - speedFactor) * (1.1 - state.runnerSpeed) / 5)
 
-    // 5FPS ~ 1FPS
-    let minInterval: Float = 0.2
-    let maxInterval: Float = 1.0
+    // 3FPS ~ 15FPS
+    let minInterval: Float = 1.0 / 3.0
+    let maxInterval: Float = 1.0 / 15.0
     let clampFactor: Float = clamp(factor, lowerBound: minInterval, upperBound: maxInterval)
     
     VStack{
