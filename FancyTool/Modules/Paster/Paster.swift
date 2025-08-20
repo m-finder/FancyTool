@@ -178,9 +178,9 @@ class Paster: ObservableObject{
   // 显示权限提示
   private func showAccessibilityPermissionAlert() {
       let alert = NSAlert()
-      alert.messageText = NSLocalizedString("accessibility_permission_title", comment: "Title for accessibility permission alert")
-      alert.informativeText = NSLocalizedString("accessibility_permission_message", comment: "Detailed instructions for enabling accessibility permission")
-      alert.addButton(withTitle: NSLocalizedString("confirm_button", comment: "Confirmation button text"))
+      alert.messageText = NSLocalizedString("Need Accessibility Permissions", comment: "Alert title for accessibility permission request")
+      alert.informativeText = NSLocalizedString("Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations.", comment: "Detailed explanation for accessibility permission request")
+      alert.addButton(withTitle: NSLocalizedString("OK", comment: "Confirm button text"))
       alert.runModal()
   }
 }

@@ -40,9 +40,9 @@
 "Image" = "图片";
 "chars" = "字符";
 
-"accessibility_permission_title" = "需要辅助功能权限";
-"accessibility_permission_message" = "请在系统设置 > 安全性与隐私 > 隐私 > 辅助功能中，启用本应用的权限，以允许粘贴操作。";
-"confirm_button" = "确定";
+"Need Accessibility Permissions" = "需要辅助功能权限";
+"Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations." = "请在系统设置 > 安全性与隐私 > 隐私 > 辅助功能中，启用本应用的权限，以允许粘贴操作。";
+"OK" = "确定";
 
 "%d days ago" = "%d天前";
 "%d hours ago" = "%d小时前";
