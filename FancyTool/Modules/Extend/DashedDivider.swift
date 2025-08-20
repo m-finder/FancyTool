@@ -16,7 +16,9 @@ struct DashedDivider: View {
   var indentSize: CGFloat = 6
   
   var body: some View {
+    
     ZStack {
+      
       GeometryReader { geometry in
         Path { path in
           path.move(to: CGPoint(x: indentSize, y: 0))
@@ -32,7 +34,9 @@ struct DashedDivider: View {
         Spacer()
         Circle() .fill(Color.gray).frame(width: indentSize * 2, height: indentSize * 2).offset(x: indentSize, y: 0)
       }
+      
     }
     .offset(y: -indentSize)
+    
   }
 }

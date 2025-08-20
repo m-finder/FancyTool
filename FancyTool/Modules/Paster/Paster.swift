@@ -177,10 +177,10 @@ class Paster: ObservableObject{
   
   // 显示权限提示
   private func showAccessibilityPermissionAlert() {
-    let alert = NSAlert()
-    alert.messageText = "需要辅助功能权限"
-    alert.informativeText = "请在系统设置 > 安全性与隐私 > 隐私 > 辅助功能中，启用本应用的权限，以允许粘贴操作。"
-    alert.addButton(withTitle: "确定")
-    alert.runModal()
+      let alert = NSAlert()
+      alert.messageText = NSLocalizedString("accessibility_permission_title", comment: "Title for accessibility permission alert")
+      alert.informativeText = NSLocalizedString("accessibility_permission_message", comment: "Detailed instructions for enabling accessibility permission")
+      alert.addButton(withTitle: NSLocalizedString("confirm_button", comment: "Confirmation button text"))
+      alert.runModal()
   }
 }

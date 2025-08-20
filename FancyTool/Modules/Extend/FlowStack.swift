@@ -18,7 +18,9 @@ struct FlowStack<Content: View>: View {
   }
   
   public var body: some View {
+    
     ZStack(alignment: .topLeading) {
+      
       var available: CGFloat = 0
       var x: CGFloat = 0
       var y: CGFloat = 0
@@ -45,5 +47,6 @@ struct FlowStack<Content: View>: View {
           -y
         }
     }
+    
   }
 }

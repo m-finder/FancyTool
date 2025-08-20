@@ -42,7 +42,7 @@ class PasterModel: Equatable {
       return lhsImage == rhsImage
     }
     
-    // 类型不同（一个是文本一个是图片）则不相等
+    // 类型不同不相等
     else {
       return false
     }

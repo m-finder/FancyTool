@@ -26,24 +26,24 @@ struct PasterItemView: View {
         ))
       
       VStack(alignment: .leading, spacing: 0){
+        
         if let textContent = item.content, !textContent.isEmpty {
-          Text(textContent)
-            .lineSpacing(5)
-            .fontWeight(.light)
+          Text(textContent).lineSpacing(5).fontWeight(.light)
         }
         
         if let imageData = item.image, !imageData.isEmpty {
           if let nsImage = NSImage(data: imageData) {
+            
             HStack {
               Spacer()
-              Image(nsImage: nsImage)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
+              Image(nsImage: nsImage).resizable().aspectRatio(contentMode: .fit)
               Spacer()
             }
             .padding(.vertical, 4)
+            
           }
         }
+        
       }
       .padding(10)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
