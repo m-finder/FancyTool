@@ -13,7 +13,8 @@ struct TexterView: View {
   @State private var gradientOffset: CGFloat = -1.0
   // 流光
   private let shimmerGradient = Gradient(colors: [.clear, .white.opacity(0.8), .clear])
-  private let animation = Animation.linear(duration: 2).repeatForever(autoreverses: false)
+  @State private var shimmerAnimationTrigger = false
+  private let shimmerAnimation = Animation.linear(duration: 2)
   
   // 波浪
   @State private var waveScales: [CGFloat] = []
@@ -40,7 +41,6 @@ struct TexterView: View {
       }
     }
     .foregroundStyle(textGradient)
-    .overlay(shimmerOverlay)
     .onAppear{
       setupShimmerAnimation()
       setupWaveAnimation()
@@ -63,36 +63,22 @@ struct TexterView: View {
       endPoint: .bottomTrailing
     )
   }
-  
-  // 流光遮罩
-  private var shimmerOverlay: some View {
-    Group {
-      if state.showShimmer {
-        GeometryReader { geometry in
-          let gradientWidth = geometry.size.width * 0.2
-          Rectangle()
-            .fill(LinearGradient(
-              gradient: shimmerGradient,
-              startPoint: .leading,
-              endPoint: .trailing
-            ))
-            .rotationEffect(.degrees(15))
-            .frame(width: gradientWidth)
-            .offset(x: gradientOffset * (geometry.size.width + gradientWidth))
-            .blendMode(.lighten)
-        }
-        .mask(Text(state.text))
-      }
-    }
-  }
-  
+
   // 流光动画
   private func setupShimmerAnimation() {
     guard state.showShimmer else { return }
+
+    gradientOffset = -1.0
     
-    DispatchQueue.main.async {
-      withAnimation(animation) {
-        gradientOffset = 1.0
+    // 启动动画
+    withAnimation(.linear(duration: 2.0)) {
+      gradientOffset = 1.0
+    }
+    
+    // 动画完成后重新启动（如果仍然需要）
+    DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+      if self.state.showShimmer {
+        self.setupShimmerAnimation()
       }
     }
   }
@@ -138,7 +124,6 @@ struct TexterView: View {
       // 重新执行动画序列
       self.setupWaveAnimation()
     }
-    
   }
 
 }
