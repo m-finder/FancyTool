@@ -19,12 +19,10 @@ class Texter {
   func mount(){
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
       self?.hostingView = HostingViewItem(
-        view: TexterView().frame(
-          minWidth: 40,
-          maxWidth: .infinity
-        ).padding(
-          .horizontal, 5
-        ).fixedSize(),
+        view: TexterView()
+          .frame(minWidth: 40, maxWidth: .infinity)
+          .padding(.horizontal, 5)
+          .fixedSize(),
         target: AppMenuActions.shared,
         action: #selector(AppMenuActions.popover(_:))
       )
@@ -50,6 +48,7 @@ class Texter {
     popover.contentViewController = controller
     popover.behavior = .transient
     popover.animates = true
+    
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
       self.popover.show(
         relativeTo: sender.bounds,

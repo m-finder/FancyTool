@@ -25,6 +25,7 @@ class PasterHistoryWindow: NSWindow, NSWindowDelegate{
     let currentScreen = NSScreen.screens.first { screen in
       NSMouseInRect(NSEvent.mouseLocation, screen.frame, false)
     } ?? NSScreen.main ?? NSScreen()
+    
     let screenFrame = currentScreen.frame
     
     let windowHeight: CGFloat = 300

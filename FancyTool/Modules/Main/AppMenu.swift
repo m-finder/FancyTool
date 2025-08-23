@@ -15,13 +15,11 @@ class AppMenu {
   
   init(){
     self.menu = NSMenu()
-    print("App Menu NSMenu init")
   }
   
   convenience init(actions: AppMenuActions){
     self.init()
     self.actions = actions
-    print("App Menu Selector init")
   }
   
   convenience init(actions: AppMenuActions, items: [MenuItem]){
@@ -62,8 +60,6 @@ class AppMenu {
       }
       
     }
-    
-    print("App Menu Selector && NSMenuItem init")
   }
   
   func addMenuItem(title: String, action: Selector, key: String){
@@ -95,8 +91,6 @@ class AppMenu {
     item.target = actions
     item.state = state ? .on : .off
     self.menu.addItem(item)
-    
-    print("App Menu NSMenuItem init")
   }
   
   func getMenus() -> NSMenu {

@@ -38,6 +38,16 @@ class AppMenuActions: NSObject {
     }
   }
   
+  @IBAction func rounder(_ sender: NSStatusBarButton){
+    AppState.shared.showRounder.toggle()
+    sender.state = AppState.shared.showRounder ? .on : .off
+    if(AppState.shared.showRounder){
+      Rounder.shared.mount()
+    }else{
+      Rounder.shared.unmount()
+    }
+  }
+  
   @IBAction func toggle(_ sender: NSStatusBarButton){
     Hidder.shared.toggle()
   }

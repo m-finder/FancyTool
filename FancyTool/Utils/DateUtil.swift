@@ -21,7 +21,7 @@ class DateUtil {
     return formatter
   }()
   
-  /// 计算相对时间字符串
+  // 计算相对时间字符串
   func relativeTime(from date: Date) -> String {
     let now = Date()
     let calendar = Calendar.current

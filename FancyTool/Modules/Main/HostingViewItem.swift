@@ -14,7 +14,6 @@ class HostingViewItem: ObservableObject{
   init(){
     DispatchQueue.main.async { [weak self] in
       self?.item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-      print("Hosting View Item NSStatusItem init")
     }
   }
   
@@ -49,9 +48,6 @@ class HostingViewItem: ObservableObject{
       button.target = self
       
     }
-    
-    print("Hosting View Item NSHostingView init")
-    
   }
   
   convenience init(view: some View, target: AnyObject, action: Selector){
@@ -60,7 +56,6 @@ class HostingViewItem: ObservableObject{
       self?.item?.button?.target = target
       self?.item?.button?.action = action
     }
-    print("Hosting View Item Action init")
   }
   
   convenience init(view: some View, menu: NSMenu? = nil){
@@ -69,8 +64,6 @@ class HostingViewItem: ObservableObject{
     DispatchQueue.main.async { [weak self] in
       self?.item?.menu = menu
     }
-    
-    print("Hosting View Item NSMenu init")
   }
   
 }

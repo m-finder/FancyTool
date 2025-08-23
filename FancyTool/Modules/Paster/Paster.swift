@@ -24,7 +24,6 @@ class Paster: ObservableObject{
   
   init(){
     changeCount = pasteboard.changeCount
-    print("Paster init")
   }
   
   public func mount(){
@@ -47,8 +46,6 @@ class Paster: ObservableObject{
         }
       }
     }
-    
-    print("Start Paster listen")
   }
   
   public func unmount(){
@@ -56,7 +53,6 @@ class Paster: ObservableObject{
     timer = nil
     
     KeyboardShortcuts.disable(.paster)
-    print("Stop Paster listen")
   }
   
   public func show(){
@@ -135,13 +131,11 @@ class Paster: ObservableObject{
   public func simulatePaste(to application: NSRunningApplication? = nil) {
     let targetApp = self.targetApp
     guard hasAccessibilityPermission() else {
-      print("缺少辅助功能权限")
       showAccessibilityPermissionAlert()
       return
     }
     
     guard let source = CGEventSource(stateID: .hidSystemState) else {
-      print("无法创建事件源")
       return
     }
     

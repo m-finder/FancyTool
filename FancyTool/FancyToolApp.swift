@@ -29,26 +29,23 @@ struct FancyToolApp: App {
     )
     
     if(AppState.shared.showHidder){
-      print("Hidder Auto mount")
       Hidder.shared.mount()
       DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
         Hidder.shared.toggle()
-        print("Hidder Auto hidden")
       })
     }
     
     if(AppState.shared.showTexter){
-      print("Texter Auto mount")
       Texter.shared.mount()
     }
     
     if(AppState.shared.showPaster){
-      print("Paster Auto mount")
       Paster.shared.mount()
     }
     
-    print("Fancy Tool App inited")
-    
+    if(AppState.shared.showRounder){
+      Rounder.shared.mount()
+    }
   }
   
   var body: some Scene {

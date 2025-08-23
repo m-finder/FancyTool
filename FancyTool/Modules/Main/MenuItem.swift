@@ -46,6 +46,11 @@ struct MenuItem {
         state: AppState.shared.showHidder
       ),
       MenuItem(
+        title: String(localized: "Rounder"),
+        action:  #selector(AppMenuActions.rounder(_:)),
+        state: AppState.shared.showRounder
+      ),
+      MenuItem(
         isSeparator: true
       ),
       MenuItem(
@@ -63,7 +68,6 @@ struct MenuItem {
         action:  #selector(AppMenuActions.quit(_:)),
         key: "q"
       ),
-     
     ]
   }
 }

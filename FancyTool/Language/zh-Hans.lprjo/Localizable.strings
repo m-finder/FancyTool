@@ -14,6 +14,7 @@
 "Hidder" = "菜单折叠";
 "Texter" = "炫彩文字";
 "Paster" = "剪贴面板";
+"Rounder" = "屏幕圆角";
 "License" = "激活码";
 
 // runner
@@ -22,7 +23,7 @@
 
 // texter
 "MenuBar Text" = "菜单栏文本";
-"Colorful Text" = "炫彩文字";
+"Colorful" = "缤纷色彩";
 "Keep happy." = "保持开心。";
 "Input something" = "输入些什么";
 "Shimmer" = "流光";
@@ -49,3 +50,6 @@
 "%d minutes ago" = "%d分钟前";
 "%d seconds ago" = "%d秒前";
 "Just now" = "刚刚";
+
+// Rounder
+"Radius size:" = "圆角尺寸:";

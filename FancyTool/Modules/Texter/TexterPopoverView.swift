@@ -74,7 +74,7 @@ struct TexterPopoverView: View {
       // 多彩文字
       VStack{
         
-        LabelledDivider(label: String(localized: "Colorful Text"))
+        LabelledDivider(label: String(localized: "Colorful"))
         
         LazyVGrid(
           columns: Array(
@@ -97,15 +97,12 @@ struct TexterPopoverView: View {
                   startPoint: .topLeading,
                   endPoint: .bottomTrailing
                 ))
-            }.buttonStyle(.plain)
-              .frame(
-                width: 20,
-                height: 20
-              )
+            }
+            .buttonStyle(.plain)
+            .frame(width: 20, height: 20)
           }
-        }.frame(
-          maxWidth: .infinity
-        )
+        }
+        .frame(maxWidth: .infinity)
         
       }
       .padding()

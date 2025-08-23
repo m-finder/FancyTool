@@ -34,4 +34,8 @@ class AppState : ObservableObject{
   // Paster
   @AppStorage("showPaster") var showPaster: Bool = false
   @AppStorage("historyCount") var historyCount: Int = 20
+  
+  // Rounder
+  @AppStorage("showRounder") var showRounder: Bool = false
+  @AppStorage("radius") var radius = 10.0
 }

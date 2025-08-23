@@ -30,18 +30,10 @@ class RunnerHandler :ObservableObject{
     modelContext = ModelContext(container)
     
     guard let urls = Bundle.main.urls(forResourcesWithExtension: "gif", subdirectory: nil) else {
-      print("No GIF resources found in the bundle.")
       return
     }
     
     var count = 0
-    
-    // 清空
-//    cachedRunners = try! modelContext.fetch(FetchDescriptor<RunnerModel>())
-//    for runner in cachedRunners {
-//        modelContext.delete(runner)
-//    }
-//    cachedRunners = []
 
     for url in urls {
       let name = url.deletingPathExtension().lastPathComponent
@@ -71,8 +63,6 @@ class RunnerHandler :ObservableObject{
     } catch {
       print("Gif Data Failed to save context: \(error)")
     }
-    
-    print("Runner Handler init")
   }
   
   private func exist(id: UUID) -> Bool {
