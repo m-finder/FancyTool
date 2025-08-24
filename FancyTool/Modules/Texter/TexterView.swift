@@ -12,7 +12,12 @@ struct TexterView: View {
   @ObservedObject var state = AppState.shared
   
   var body: some View {
-    Text(state.text).foregroundStyle(textGradient)
+    Text(state.text)
+      .foregroundStyle(textGradient)
+      .shimmering(
+        active: state.showShimmer,
+//        gradient: Gradient(colors: [.clear, .orange, .white, .green, .clear]),
+      )
   }
   
   // 文字颜色渐变
