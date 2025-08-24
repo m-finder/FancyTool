@@ -14,12 +14,11 @@ struct TexterSettingView: View {
   var body: some View {
     
     VStack(alignment: .center, spacing: 0) {
-      
-      // 第一个 Toggle
+   
       HStack {
         Text(String(localized: "Shimmer"))
           .font(.system(size: 12))
-          .frame(width: 50, alignment: .trailing) // 固定宽度并右对齐
+          .frame(width: 50, alignment: .trailing)
         
         Toggle("", isOn: state.$showShimmer)
           .onChange(of: state.showShimmer) { _, newValue in
@@ -32,11 +31,10 @@ struct TexterSettingView: View {
       }
       .padding()
       
-      // 第二个 Toggle
       HStack {
         Text(String(localized: "Rainbow Shimmer"))
           .font(.system(size: 12))
-          .frame(width: 50, alignment: .trailing) // 固定宽度并右对齐
+          .frame(width: 50, alignment: .trailing)
         
         Toggle("", isOn: state.$rainbowShimmer)
           .onChange(of: state.rainbowShimmer) { _, newValue in
