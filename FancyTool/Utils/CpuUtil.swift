@@ -14,7 +14,7 @@ class CpuUtil: ObservableObject {
     private var timer: AnyCancellable?
     private let updateQueue = DispatchQueue(label: "com.fancytool.cpu-monitor", qos: .utility)
     
-    init(updateInterval: TimeInterval = 2.0) {
+    init(updateInterval: TimeInterval = 2.5) {
         startMonitoring(interval: updateInterval)
     }
     
@@ -43,11 +43,9 @@ class CpuUtil: ObservableObject {
         
         let totalTicks = systemDiff + userDiff + idleDiff + niceDiff
         guard totalTicks > 0 else { return }
-        
-        let usage = min(99.9, (systemDiff + userDiff) / totalTicks * 100)
-        
+    
         DispatchQueue.main.async { [weak self] in
-            self?.cpuUsage = usage
+            self?.cpuUsage = min(99.9, (systemDiff + userDiff) / totalTicks * 100)
         }
     }
     

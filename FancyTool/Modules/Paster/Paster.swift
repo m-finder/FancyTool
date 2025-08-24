@@ -28,7 +28,7 @@ class Paster: ObservableObject{
   
   public func mount(){
     timer = Timer.scheduledTimer(
-      timeInterval: 0.5,
+      timeInterval: 1,
       target: AppMenuActions.shared,
       selector: #selector(AppMenuActions.clipboard(_:)),
       userInfo: nil,

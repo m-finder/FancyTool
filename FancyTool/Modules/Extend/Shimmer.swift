@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 public struct Shimmer: ViewModifier {
 
   
@@ -38,6 +37,8 @@ public struct Shimmer: ViewModifier {
     .clear
   ])
   
+  public static let rainbowGradient = Gradient(colors: [.clear, .orange, .blue, .green, .clear])
+  
   var startPoint: UnitPoint {
     if layoutDirection == .rightToLeft {
       isInitialState ? UnitPoint(x: max, y: min) : UnitPoint(x: 0, y: 1)
@@ -60,22 +61,27 @@ public struct Shimmer: ViewModifier {
       .overlay(gradient.mask(content))
       .animation(animation, value: isInitialState)
       .onAppear {
-        DispatchQueue.main.asyncAfter(deadline: .now()) {
+        withAnimation(animation) {
           isInitialState = false
         }
       }
   }
+  
 }
 
 public extension View {
   @ViewBuilder func shimmering(
     active: Bool = true,
+    rainbow: Bool = true,
     animation: Animation = Shimmer.defaultAnimation,
-    gradient: Gradient = Shimmer.defaultGradient,
     bandSize: CGFloat = 0.3
   ) -> some View {
     if active {
-      modifier(Shimmer(animation: animation, gradient: gradient, bandSize: bandSize))
+      if rainbow {
+        modifier(Shimmer(animation: animation, gradient: Shimmer.rainbowGradient, bandSize: bandSize))
+      }else{
+        modifier(Shimmer(animation: animation, gradient: Shimmer.defaultGradient, bandSize: bandSize))
+      }
     } else {
       self
     }

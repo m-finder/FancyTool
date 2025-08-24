@@ -13,31 +13,41 @@ struct TexterSettingView: View {
   
   var body: some View {
     
-    VStack(alignment: .center, spacing: 0){
+    VStack(alignment: .center, spacing: 0) {
       
-      Toggle(
-        String(localized: "Shimmer"),
-        isOn: state.$showShimmer
-      )
-      .onChange(of: state.showShimmer) { _, newValue in
-        state.showShimmer = newValue
+      // 第一个 Toggle
+      HStack {
+        Text(String(localized: "Shimmer"))
+          .font(.system(size: 12))
+          .frame(width: 50, alignment: .trailing) // 固定宽度并右对齐
+        
+        Toggle("", isOn: state.$showShimmer)
+          .onChange(of: state.showShimmer) { _, newValue in
+            state.showShimmer = newValue
+            if !newValue {
+              state.rainbowShimmer = newValue
+            }
+          }
+          .toggleStyle(SwitchToggleStyle())
       }
-      .toggleStyle(SwitchToggleStyle())
-      .font(.system(size: 12))
       .padding()
       
-      Toggle(
-        String(localized: "Wave"),
-        isOn: state.$showWave
-      )
-      .onChange(of: state.showWave) { _, newValue in
-        state.showWave = newValue
+      // 第二个 Toggle
+      HStack {
+        Text(String(localized: "Rainbow Shimmer"))
+          .font(.system(size: 12))
+          .frame(width: 50, alignment: .trailing) // 固定宽度并右对齐
+        
+        Toggle("", isOn: state.$rainbowShimmer)
+          .onChange(of: state.rainbowShimmer) { _, newValue in
+            state.rainbowShimmer = newValue
+          }
+          .toggleStyle(SwitchToggleStyle())
       }
-      .toggleStyle(SwitchToggleStyle())
-      .font(.system(size: 12))
       .padding()
       
-    }.frame(maxHeight: .infinity, alignment: .top)
+    }
+    .frame(maxHeight: .infinity, alignment: .top)
   }
 }
 

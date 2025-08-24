@@ -12,6 +12,7 @@ struct RunnerMainView: View {
   @State var height: CGFloat
   @StateObject var cpuUtil = CpuUtil()
   @ObservedObject var state = AppState.shared
+  @State private var lastFactor: Float?
   @State private var currentRunner: RunnerModel? = nil
   
   init(height: CGFloat) {
@@ -25,9 +26,9 @@ struct RunnerMainView: View {
     let speedFactor = Double(cpuUtil.cpuUsage) / 100.0
     let factor = Float((1 - speedFactor) * (1.1 - state.runnerSpeed) / 5)
 
-    // 3FPS ~ 15FPS
+    // 3FPS ~ 10FPS
     let minInterval: Float = 1.0 / 3.0
-    let maxInterval: Float = 1.0 / 15.0
+    let maxInterval: Float = 1.0 / 10.0
     let clampFactor: Float = clamp(factor, lowerBound: minInterval, upperBound: maxInterval)
     
     VStack{
@@ -39,8 +40,20 @@ struct RunnerMainView: View {
       .frame(height: height)
       .aspectRatio(contentMode: .fit)
       
-    }.onChange(of: state.runnerId) {
+    }
+    .onChange(of: state.runnerId) {
       currentRunner = RunnerHandler.shared.getRunnerById(state.runnerId)
+    }
+    .onChange(of: cpuUtil.cpuUsage) { _, newUsage in
+      // 计算新的factor
+      let speedFactor = Double(newUsage) / 100.0
+      let newFactor = Float((1 - speedFactor) * (1.1 - state.runnerSpeed) / 5)
+      let clampedFactor = clamp(newFactor, lowerBound: minInterval, upperBound: maxInterval)
+      
+      // 只有当变化超过0.05时才更新（避免微小波动）
+      if lastFactor == nil || abs(clampedFactor - lastFactor!) > 0.05 {
+        lastFactor = clampedFactor
+      }
     }
   }
 }

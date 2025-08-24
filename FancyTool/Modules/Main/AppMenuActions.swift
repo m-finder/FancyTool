@@ -10,22 +10,33 @@ class AppMenuActions: NSObject {
   
   static let shared = AppMenuActions()
   
+  private var settingsWindow: AppWindow?
+  private var aboutWindow: AppWindow?
+  
   @IBAction func quit(_ sender: Any){
     NSApplication.shared.terminate(nil)
   }
   
   @IBAction func setting(_ sender: Any){
-    _ = AppWindow(
-      title: String(localized: "Setting"),
-      contentView: SettingsView()
-    )
+    if settingsWindow == nil{
+      settingsWindow = AppWindow(
+        title: String(localized: "Setting"),
+        contentView: SettingsView()
+      )
+    }
+    
+    settingsWindow?.show()
   }
   
   @IBAction func about(_ sender: Any){
-    _ = AppWindow(
-      title: String(localized: "About"),
-      contentView: AboutView()
-    )
+    if aboutWindow == nil {
+      aboutWindow = AppWindow(
+        title: String(localized: "About"),
+        contentView: AboutView()
+      )
+    }
+    
+    aboutWindow?.show()
   }
   
   @IBAction func hidder(_ sender: NSStatusBarButton){

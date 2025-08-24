@@ -31,7 +31,9 @@ class AppWindow {
       window?.contentView = NSHostingView(rootView: rootView)
       window?.styleMask.remove(.resizable)
     }
-    
+  }
+  
+  public func show(){
     window?.orderFrontRegardless()
     NSApp.activate(ignoringOtherApps: true)
   }
