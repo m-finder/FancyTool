@@ -27,8 +27,10 @@ class Paster: ObservableObject{
   }
   
   public func mount(){
+    unmount()
+    
     timer = Timer.scheduledTimer(
-      timeInterval: 1,
+      timeInterval: 0.8,
       target: AppMenuActions.shared,
       selector: #selector(AppMenuActions.clipboard(_:)),
       userInfo: nil,
@@ -56,23 +58,20 @@ class Paster: ObservableObject{
   }
   
   public func show(){
-    
-    if window != nil && window!.isReleasedWhenClosed {
-      window = nil
+    DispatchQueue.main.async {
+      if self.window == nil {
+        self.window = PasterHistoryWindow(contentView: PasterView())
+        self.window?.isReleasedWhenClosed = false
+      }
+      
+      NSApp.activate(ignoringOtherApps: true)
+      self.window?.makeKeyAndOrderFront(nil)
+      self.window?.orderFrontRegardless()
     }
-    
-    if(self.window == nil){
-      self.window = PasterHistoryWindow(contentView: PasterView())
-    }
-    
-    self.window?.delegate = window
-    self.window?.isReleasedWhenClosed = false
-    NSApp.activate(ignoringOtherApps: true)
-    self.window?.orderFrontRegardless()
   }
   
   public func hide(){
-    if(self.window != nil){
+    DispatchQueue.main.async {
       self.window?.close()
       self.window = nil
     }
