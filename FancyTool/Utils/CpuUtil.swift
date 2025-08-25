@@ -8,13 +8,14 @@ import Combine
 import Foundation
 
 class CpuUtil: ObservableObject {
+
     @Published private(set) var cpuUsage: Double = 0.0
     
     private var previousLoad = host_cpu_load_info()
     private var timer: AnyCancellable?
     private let updateQueue = DispatchQueue(label: "com.fancytool.cpu-monitor", qos: .utility)
     
-    init(updateInterval: TimeInterval = 2.5) {
+    init(updateInterval: TimeInterval = 5) {
         startMonitoring(interval: updateInterval)
     }
     
