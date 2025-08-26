@@ -36,15 +36,14 @@ struct MenuItem {
         state: AppState.shared.showTexter
       ),
       MenuItem(
-        title: String(localized: "Paster"),
-        action:  #selector(AppMenuActions.paster(_:)),
-        state: AppState.shared.showPaster
-      ),
-      
-      MenuItem(
         title: String(localized: "Hidder"),
         action:  #selector(AppMenuActions.hidder(_:)),
         state: AppState.shared.showHidder
+      ),
+      MenuItem(
+        title: String(localized: "Paster"),
+        action:  #selector(AppMenuActions.paster(_:)),
+        state: AppState.shared.showPaster
       ),
       MenuItem(
         title: String(localized: "Rounder"),
