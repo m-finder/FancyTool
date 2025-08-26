@@ -12,11 +12,7 @@ class HostingView {
   init(view: some View, button: NSStatusBarButton) {
     
     let hostingView = NSHostingView(
-      rootView: RunnerMainView(height: 22)
-        .frame(minWidth: 40, maxWidth: .infinity)
-        .fixedSize().aspectRatio(
-          contentMode: .fit
-        )
+      rootView: view.fixedSize().aspectRatio(contentMode: .fit)
     )
     
     button.addSubview(hostingView)
@@ -30,5 +26,11 @@ class HostingView {
       hostingView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
       hostingView.trailingAnchor.constraint(equalTo: button.trailingAnchor)
     ])
+  }
+  
+  convenience init(view: some View, button: NSStatusBarButton, target: AnyObject, action: Selector){
+    self.init(view: view, button: button)
+    button.target = target
+    button.action = action
   }
 }

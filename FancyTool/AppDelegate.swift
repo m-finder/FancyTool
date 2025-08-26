@@ -10,24 +10,39 @@ import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
   
-  private var item: NSStatusItem
+  private var runner: NSStatusItem
   
   override init(){
-    self.item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    self.runner = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
   }
   
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
   
     // Runner
-    Runner.shared.mound(item: self.item)
-
+    Runner.shared.mound(item: self.runner)
+    
+    // Texter
+    if(AppState.shared.showTexter){
+      Texter.shared.mount()
+    }
+    
     // Hidder
     if(AppState.shared.showHidder){
       Hidder.shared.mount()
       DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
         Hidder.shared.toggle()
       })
+    }
+
+    // Paster
+    if(AppState.shared.showPaster){
+      Paster.shared.mount()
+    }
+    
+    // Rounder
+    if(AppState.shared.showRounder){
+      Rounder.shared.mount()
     }
   }
   

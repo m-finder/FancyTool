@@ -30,7 +30,7 @@ class Paster: ObservableObject{
     unmount()
     
     timer = Timer.scheduledTimer(
-      timeInterval: 0.8,
+      timeInterval: 1,
       target: AppMenuActions.shared,
       selector: #selector(AppMenuActions.clipboard(_:)),
       userInfo: nil,
@@ -58,23 +58,19 @@ class Paster: ObservableObject{
   }
   
   public func show(){
-    DispatchQueue.main.async {
-      if self.window == nil {
-        self.window = PasterHistoryWindow(contentView: PasterView())
-        self.window?.isReleasedWhenClosed = false
-      }
-      
-      NSApp.activate(ignoringOtherApps: true)
-      self.window?.makeKeyAndOrderFront(nil)
-      self.window?.orderFrontRegardless()
+    if self.window == nil {
+      self.window = PasterHistoryWindow(contentView: PasterView())
+      self.window?.isReleasedWhenClosed = false
     }
+    
+    NSApp.activate(ignoringOtherApps: true)
+    self.window?.makeKeyAndOrderFront(nil)
+    self.window?.orderFrontRegardless()
   }
   
   public func hide(){
-    DispatchQueue.main.async {
-      self.window?.close()
-      self.window = nil
-    }
+    self.window?.close()
+    self.window = nil
   }
   
   public func append(_ record: PasterModel){

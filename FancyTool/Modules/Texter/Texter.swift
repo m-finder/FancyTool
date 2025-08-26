@@ -12,27 +12,29 @@ class Texter {
   
   static let shared = Texter()
   public let popover = NSPopover()
-  private var hostingView: HostingViewItem!
   private var popoverView = TexterPopoverView()
   private var controller: NSViewController!
+  private var item: NSStatusItem?
   
   func mount(){
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-      self?.hostingView = HostingViewItem(
-        view: TexterView()
-          .frame(minWidth: 40, maxWidth: .infinity)
-          .padding(.horizontal, 5)
-          .fixedSize(),
-        target: AppMenuActions.shared,
-        action: #selector(AppMenuActions.popover(_:))
-      )
-    }
+    
+    self.item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    
+    guard let button = self.item?.button else { return }
+ 
+    // 设置图标视图&&绑定到按钮
+    let _ = HostingView(
+      view: TexterView().frame(minWidth: 40, maxWidth: .infinity).padding(.horizontal, 5),
+      button: button,
+      target: AppMenuActions.shared,
+      action: #selector(AppMenuActions.popover(_:))
+    )
   }
   
   
   func unmount(){
     popover.close()
-    hostingView = nil
+    item = nil
   }
   
   func show(_ sender: NSStatusBarButton){
@@ -48,13 +50,11 @@ class Texter {
     popover.contentViewController = controller
     popover.behavior = .transient
     popover.animates = true
-    
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-      self.popover.show(
-        relativeTo: sender.bounds,
-        of: sender,
-        preferredEdge: .minY
-      )
-    }
+
+    self.popover.show(
+      relativeTo: sender.bounds,
+      of: sender,
+      preferredEdge: .minY
+    )
   }
 }
