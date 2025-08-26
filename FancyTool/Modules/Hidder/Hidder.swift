@@ -16,10 +16,9 @@ class Hidder {
   
   public func mount(){
     unmount()
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-      self?.setup()
-      self?.setup()
-    }
+    
+    setup()
+    setup()
   }
   
   public func unmount(){
@@ -58,6 +57,7 @@ class Hidder {
   
   public func refresh() {
     let newSize = CGFloat(state.hidderSize)
+    
     for item in items {
       guard let button = item.button else { continue }
      

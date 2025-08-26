@@ -44,6 +44,7 @@ class Rounder {
   }
   
   public func mount() {
+    
     self.unmount()
     
     let screens: [NSScreen] = NSScreen.screens

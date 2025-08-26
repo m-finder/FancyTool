@@ -28,7 +28,7 @@ public struct Shimmer: ViewModifier {
     self.max = 1 + bandSize
   }
   
-  public static let defaultAnimation = Animation.linear(duration: 1.5).delay(2).repeatForever(autoreverses: false)
+  public static let defaultAnimation = Animation.linear(duration: 2.5).delay(2).repeatForever(autoreverses: false)
   
   
   public static let defaultGradient = Gradient(colors: [
@@ -37,7 +37,13 @@ public struct Shimmer: ViewModifier {
     .clear
   ])
   
-  public static let rainbowGradient = Gradient(colors: [.clear, .orange, .blue, .green, .clear])
+  public static let rainbowGradient = Gradient(colors: [
+    .clear,
+    .orange.opacity(0.8),
+    .blue.opacity(0.8),
+    .green.opacity(0.8),
+    .clear
+  ])
   
   var startPoint: UnitPoint {
     if layoutDirection == .rightToLeft {
@@ -61,9 +67,11 @@ public struct Shimmer: ViewModifier {
       .overlay(gradient.mask(content))
       .animation(animation, value: isInitialState)
       .onAppear {
-        withAnimation(animation) {
-          isInitialState = false
-        }
+        guard isInitialState else { return }
+        isInitialState = false
+      }
+      .onDisappear {
+        isInitialState = true
       }
   }
   

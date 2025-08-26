@@ -75,13 +75,17 @@ class AppMenuActions: NSObject {
   }
   
   @IBAction func popover(_ sender: NSStatusBarButton){
+
     if Texter.shared.popover.isShown{
+
       if let window = Texter.shared.popover.contentViewController?.view.window {
         window.orderFrontRegardless()
       }
+
       Texter.shared.popover.performClose(sender)
       return
     }
+
     Texter.shared.show(sender)
   }
   

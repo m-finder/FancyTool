@@ -9,7 +9,6 @@ import SwiftUI
 
 struct TexterPopoverView: View {
   
-  private var colorUtil: ColorUtil = ColorUtil()
   @ObservedObject var state = AppState.shared
   
   var body: some View {
@@ -18,32 +17,17 @@ struct TexterPopoverView: View {
       Image("default")
         .resizable()
         .aspectRatio(contentMode: .fit)
-        .frame(
-          width: 60,
-          height: 60
-        ).padding(.top, 15)
+        .frame(width: 60,height: 60)
+        .padding(.top, 15)
       
       // 标题
-      if state.colorIndex == 0{
-        Text("Texter").font(.system(
-          size: 24,
-          weight: .semibold,
-          design: .rounded
-        ))
-      }else{
-        Text("Texter").font(.system(
-          size: 24,
-          weight: .semibold,
-          design: .rounded
-        ))
+      Text("Texter")
+        .font(.system(size: 24,weight: .semibold,design: .rounded))
         .foregroundStyle(LinearGradient(
-          colors: colorUtil.getColor(
-            index: state.colorIndex
-          ),
+          colors: ColorUtil.shared.getColor(index: state.colorIndex),
           startPoint: .topLeading,
           endPoint: .bottomTrailing
         ))
-      }
       
       
       // 菜单栏文本
@@ -51,22 +35,17 @@ struct TexterPopoverView: View {
         
         Divider()
         
-        LabelledDivider(
-          label: String(
-            localized: "MenuBar Text"
-          )
-        )
+        LabelledDivider(label: String(localized: "MenuBar Text"))
         
         ZStack {
           
-          TextField(
-            String(localized: "Input something"),
-            text: state.$text
-          ).onChange(of: state.text) {
-            if state.text.count > 15 {
-              state.text = String(state.text.prefix(15))
+          TextField(String(localized: "Input something"),text: state.$text)
+            .onChange(of: state.text) {
+              if state.text.count > 15 {
+                state.text = String(state.text.prefix(15))
+              }
             }
-          }.textFieldStyle(.roundedBorder)
+            .textFieldStyle(.roundedBorder)
           
         }
       }
@@ -87,13 +66,13 @@ struct TexterPopoverView: View {
           spacing: 10
         ) {
           
-          ForEach(0..<colorUtil.getColors().count, id: \.self) { index in
+          ForEach(0..<ColorUtil.shared.getColors().count, id: \.self) { index in
             Button {
               state.colorIndex = index
             } label: {
               Image(systemName: state.colorIndex == index ? "checkmark.square.fill" : "square.fill")
                 .foregroundStyle(LinearGradient(
-                  colors: colorUtil.getColor(index: index),
+                  colors: ColorUtil.shared.getColor(index: index),
                   startPoint: .topLeading,
                   endPoint: .bottomTrailing
                 ))

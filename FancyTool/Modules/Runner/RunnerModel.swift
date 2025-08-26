@@ -32,7 +32,8 @@ class RunnerModel {
 
 // 扩展图片的相关功能
 extension RunnerModel {
-
+  
+  static var imgCache = [RunnerModel:[Int:CGImage]]()
   private static var defaultImage = #imageLiteral(resourceName: "default").cgImage(forProposedRect: nil, context: nil, hints: nil)!
   
   // 获取图像选项
@@ -56,18 +57,26 @@ extension RunnerModel {
   
   // 按帧获取图像
   func getImage(_ index: Int) -> CGImage {
-    
     // 确保索引有效
     var safeIndex = index
-    if safeIndex >= frameNumber || safeIndex < 0 {
-      safeIndex = 0
+    
+    if RunnerModel.imgCache[self] == nil {
+      RunnerModel.imgCache[self] = [Int:CGImage]()
     }
     
-    guard let imgSrc = getCGImageSource(data),
-          let cgImage = CGImageSourceCreateImageAtIndex(imgSrc, safeIndex, getImageOptions() as CFDictionary) else {
-      return Self.defaultImage
+    let cacheList = RunnerModel.imgCache[self]!
+    if cacheList[index] == nil {
+      if index >= self.frameNumber || index < 0 {
+        safeIndex = 0
+      }
+  
+      guard let img = getCGImageSource(data),
+            let cgImage = CGImageSourceCreateImageAtIndex(img, safeIndex, getImageOptions() as CFDictionary) else {
+        return Self.defaultImage
+      }
+      RunnerModel.imgCache[self]![index] = cgImage
     }
-
-    return cgImage
+    
+    return RunnerModel.imgCache[self]![index]!
   }
 }

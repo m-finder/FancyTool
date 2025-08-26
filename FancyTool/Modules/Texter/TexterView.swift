@@ -11,17 +11,24 @@ struct TexterView: View {
   
   @ObservedObject var state = AppState.shared
   @State private var gradientColors: [Color] = []
+  @State private var isVisible: Bool = false
   
   var body: some View {
+    
     Text(state.text)
       .foregroundStyle(textGradient)
-      .shimmering(active: state.showShimmer, rainbow: state.rainbowShimmer)
+      .shimmering(active: state.showShimmer && isVisible, rainbow: state.rainbowShimmer)
       .onAppear {
+        isVisible = true
         gradientColors = ColorUtil().getColor(index: state.colorIndex)
+      }
+      .onDisappear {
+        isVisible = false
       }
       .onChange(of: state.colorIndex) {
-        gradientColors = ColorUtil().getColor(index: state.colorIndex)
+        gradientColors = ColorUtil.shared.getColor(index: state.colorIndex)
       }
+    
   }
   
   // 文字颜色渐变

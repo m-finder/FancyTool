@@ -17,19 +17,41 @@ struct RunnerView: View {
   
   @State private var direction = 1
   @State private var imageIndex = 0
+  @State private var timer: AnyCancellable?
   
-  @State private var frameUpdatePublisher = PassthroughSubject<Void, Never>()
-  @State private var cancellable: AnyCancellable?
+  // 开始计时器
+  private func startTimer() {
+    
+    guard isRunning else { return }
+    
+    let interval = TimeInterval(factor)
+    
+    // 创建定时器并设置宽容度（减少唤醒频率）
+    timer = Timer.publish(every: interval, tolerance: interval * 0.1, on: .main, in: .common)
+      .autoconnect()
+      .sink { _ in
+        guard let frameNumber = runner?.frameNumber else { return }
+       
+        if imageIndex == 0 {
+          direction = 1
+        }
+        if imageIndex >= frameNumber - 1 {
+          if autoReverse {
+            direction = -1
+          } else {
+            direction = 1
+            imageIndex = 0
+          }
+        }
+        imageIndex += direction
+      }
+  }
   
   var body: some View {
-    
-    let timer = Timer.publish(every: TimeInterval(factor), on: .main, in: .common).autoconnect()
-    
-    
+
     VStack {
       
       if let runner = runner {
-        
         Image(
           runner.getImage(imageIndex),
           scale: 1,
@@ -37,35 +59,27 @@ struct RunnerView: View {
         )
         .interpolation(.high)
         .resizable()
-          .aspectRatio(contentMode: .fit)
+        .aspectRatio(contentMode: .fit)
+        .onAppear {
+          startTimer()
+        }
+        .onDisappear {
+          timer?.cancel()
+        }
+        .onChange(of: factor) {
+          timer?.cancel()
+          startTimer()
+        }
+        .onChange(of: runner) {
+          imageIndex = 0
+          timer?.cancel()
+          startTimer()
+        }
         
       } else {
         Image("default").resizable().aspectRatio(contentMode: .fit).scaledToFit()
       }
-      
-    }.onReceive(timer) { _ in
-      guard isRunning, let frame_number = runner?.frameNumber else {
-        return
-      }
-      
-      if imageIndex == 0 {
-          direction = 1
-      }
-      
-      if imageIndex >= frame_number - 1 {
-          if autoReverse {
-              direction = -1
-          } else {
-              direction = 1
-              imageIndex = 0
-          }
-      }
-      
-      imageIndex += direction
-    }.onChange(of: runner) {
-      imageIndex = 0
     }
-    
   }
 }
 
