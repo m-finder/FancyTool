@@ -65,13 +65,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   @objc private func appDidResignActive() {
     // 后台时关闭动画
     print("app 进入后台模式")
-//    AppState.shared.showShimmer = false
   }
   
   @objc private func appDidBecomeActive() {
     // 前台时恢复动画（如果之前是开启的）
     print("app 进入前台模式")
-//    AppState.shared.showShimmer = true
   }
   
 }
