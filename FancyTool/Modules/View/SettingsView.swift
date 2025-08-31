@@ -10,6 +10,7 @@ import SwiftUI
 struct SettingsView: View {
   var body: some View {
     VStack(alignment: .center, spacing: 0) {
+      
       TabView {
         MainSettingView().tabItem { Text("Main") }
         RunnerSettingView().tabItem { Text("Runner") }
@@ -19,6 +20,7 @@ struct SettingsView: View {
       .frame(maxHeight: .infinity)
       
       CopyrightView().padding(.bottom, 15)
+      
     }
     .padding([.top, .leading, .trailing])
   }

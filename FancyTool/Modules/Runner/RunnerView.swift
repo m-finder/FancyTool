@@ -4,53 +4,32 @@
 //
 //  Created by 吴雲放 on 2025/7/1.
 //
+
 import SwiftUI
-import SwiftData
-import Combine
 
 struct RunnerView: View {
   
   var runner: RunnerModel?
-  var factor: Float
-  var autoReverse = false
+  var interval: Float
   var isRunning: Bool = false
   
   @State private var direction = 1
   @State private var imageIndex = 0
-  @State private var timer: AnyCancellable?
+  @State private var lastFactor: Float = 0
+  @State private var animationTaskId: String?
   
-  // 开始计时器
-  private func startTimer() {
+  private func updateImageIndex() {
+    guard let runner = runner else { return }
+    let frameNumber = runner.frameNumber
     
-    guard isRunning else { return }
-    
-    let interval = TimeInterval(factor)
-    
-    // 创建定时器并设置宽容度（减少唤醒频率）
-    timer = Timer.publish(every: interval, tolerance: interval * 0.1, on: .main, in: .common)
-      .autoconnect()
-      .sink { _ in
-        guard let frameNumber = runner?.frameNumber else { return }
-       
-        if imageIndex == 0 {
-          direction = 1
-        }
-        if imageIndex >= frameNumber - 1 {
-          if autoReverse {
-            direction = -1
-          } else {
-            direction = 1
-            imageIndex = 0
-          }
-        }
-        imageIndex += direction
-      }
+    if imageIndex >= frameNumber - 1 {
+      imageIndex = 0
+    }
+    imageIndex += direction
   }
   
   var body: some View {
-
     VStack {
-      
       if let runner = runner {
         Image(
           runner.getImage(imageIndex),
@@ -61,21 +40,38 @@ struct RunnerView: View {
         .resizable()
         .aspectRatio(contentMode: .fit)
         .onAppear {
-          startTimer()
+          if isRunning {
+            let taskId = "runner_\(UUID().uuidString)"
+            animationTaskId = taskId
+            TaskManager.shared.addTask(id: taskId, interval: TimeInterval(interval), queue: .main) {
+              self.updateImageIndex()
+            }
+          }
         }
         .onDisappear {
-          timer?.cancel()
+          if let taskId = animationTaskId {
+            TaskManager.shared.removeTask(id: taskId)
+          }
         }
-        .onChange(of: factor) {
-          timer?.cancel()
-          startTimer()
+        .onChange(of: interval) {
+          if let taskId = animationTaskId {
+            TaskManager.shared.updateTaskInterval(id: taskId, newInterval: TimeInterval(interval))
+          }
         }
         .onChange(of: runner) {
           imageIndex = 0
-          timer?.cancel()
-          startTimer()
         }
-        
+        .onChange(of: isRunning) {
+          if let taskId = animationTaskId {
+            if isRunning {
+              TaskManager.shared.addTask(id: taskId, interval: TimeInterval(interval), queue: .main) {
+                self.updateImageIndex()
+              }
+            } else {
+              TaskManager.shared.removeTask(id: taskId)
+            }
+          }
+        }
       } else {
         Image("default").resizable().aspectRatio(contentMode: .fit).scaledToFit()
       }
