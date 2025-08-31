@@ -39,7 +39,7 @@ struct TexterPopoverView: View {
         
         ZStack {
           
-          TextField(String(localized: "Input something"),text: state.$text)
+          TextField(String(localized: "Input something"), text: state.$text)
             .onChange(of: state.text) {
               if state.text.count > 15 {
                 state.text = String(state.text.prefix(15))
@@ -57,10 +57,7 @@ struct TexterPopoverView: View {
         
         LazyVGrid(
           columns: Array(
-            repeating: GridItem(
-              .flexible(minimum: 20),
-              spacing: 10
-            ),
+            repeating: GridItem(.flexible(minimum: 20), spacing: 10),
             count: 10
           ),
           spacing: 10

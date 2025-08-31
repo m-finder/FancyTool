@@ -24,7 +24,8 @@ struct MainSettingView: View {
             ),
             in: 6...12,
             step: 1
-          ).frame(width: 150)
+          )
+          .frame(width: 150)
           
           Text("\(state.hidderSize)").frame(width: 30)
         }
@@ -47,7 +48,8 @@ struct MainSettingView: View {
             ),
             in: 10...25,
             step: 1
-          ).frame(width: 150)
+          )
+          .frame(width: 150)
           
           Text(String(format: "%.1f", state.radius)).frame(width: 30)
         }
@@ -69,23 +71,23 @@ struct MainSettingView: View {
           if SMAppService.mainApp.status == .enabled {
             try? SMAppService.mainApp.unregister()
           }
-          
           try? SMAppService.mainApp.register()
         } else {
           try? SMAppService.mainApp.unregister()
         }
-        
-      }.toggleStyle(SwitchToggleStyle())
-        .font(.system(size: 12))
-        .padding()
+      }
+      .toggleStyle(SwitchToggleStyle())
+      .font(.system(size: 12))
+      .padding()
       
       Button(String(localized: "Quit App")) {
         NSApplication.shared.terminate(nil)
-      }.keyboardShortcut("q").frame(
-        width: 100,
-        height: 40
-      ).font(.body)
-        .cornerRadius(10)
-    }.frame(maxHeight: .infinity, alignment: .top)
+      }
+      .keyboardShortcut("q")
+      .frame(width: 100, height: 40)
+      .font(.body)
+      .cornerRadius(10)
+    }
+    .frame(maxHeight: .infinity, alignment: .top)
   }
 }
