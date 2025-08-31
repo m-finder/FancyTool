@@ -28,14 +28,10 @@ class Paster: ObservableObject{
   
   public func mount(){
     unmount()
-    
-    timer = Timer.scheduledTimer(
-      timeInterval: 1,
-      target: AppMenuActions.shared,
-      selector: #selector(AppMenuActions.clipboard(_:)),
-      userInfo: nil,
-      repeats: true
-    )
+
+    TaskManager.shared.addTask(id: "paster", interval: 1.0, queue: .main) {
+      AppMenuActions.shared.clipboard(NSPasteboard.general)
+    }
     
     // 监听快捷键
     KeyboardShortcuts.onKeyUp(for: .paster) { [weak self] in
@@ -51,9 +47,7 @@ class Paster: ObservableObject{
   }
   
   public func unmount(){
-    timer?.invalidate()
-    timer = nil
-    
+    TaskManager.shared.removeTask(id: "paster")
     KeyboardShortcuts.disable(.paster)
   }
   

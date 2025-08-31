@@ -8,7 +8,6 @@ import SwiftUI
 
 struct RunnerRemoveView: View {
   
-  
   var id: UUID?
   @ObservedObject var state = AppState.shared
   @State private var hoveredRunnerId: UUID? = nil
@@ -18,7 +17,6 @@ struct RunnerRemoveView: View {
     if let id = id {
       Button(
         action: {
-          
           DispatchQueue.main.async {
             runnerHandler.removeRunner(id: id)
             if state.runnerId == id.uuidString {
