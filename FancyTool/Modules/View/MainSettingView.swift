@@ -62,7 +62,7 @@ struct MainSettingView: View {
         }
       }
       .padding()
-      
+
       Toggle(
         String(localized: "Launch on Startup"),
         isOn: state.$startUp
