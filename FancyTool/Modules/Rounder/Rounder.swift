@@ -10,86 +10,84 @@ import SwiftUI
 class Rounder {
   
   public static let shared = Rounder()
-  private var windows: [NSWindow] = []
-
+  
+  var windows: [NSWindow] = []
+  private var observer: NSObjectProtocol?
+  
   private init() {
-    // 监听屏幕变化
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(handleScreenChange),
-      name: NSApplication.didChangeScreenParametersNotification,
-      object: nil
-    )
+    observation()
   }
   
   deinit {
-    NotificationCenter.default.removeObserver(self)
-  }
-
-  
-  // MARK: - 延迟执行以确保系统完成屏幕配置更新
-  @IBAction private func handleScreenChange(_ notification: Notification) {
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-      self?.mount()
+    if let ob = observer {
+      NotificationCenter.default.removeObserver(ob)
     }
   }
   
-  // MARK: - Public Methods
+  private func observation() {
+    observer = NotificationCenter.default.addObserver(
+      forName: NSApplication.didChangeScreenParametersNotification,
+      object: NSApplication.shared,
+      queue: .main
+    ) { [weak self] _ in
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        self?.mount()
+      }
+    }
+  }
+  
   public func mount() {
-    unmount()
     
-    for screen in NSScreen.screens {
-      createWindow(for: screen)
+    self.unmount()
+    
+    let screens: [NSScreen] = NSScreen.screens
+    
+    for screen in screens {
+      
+      let screenFrame = screen.frame
+      
+      let window: NSWindow = NSWindow(
+        contentRect: screen.frame,
+        styleMask: .borderless,
+        backing: .buffered,
+        defer: false,
+        screen: screen
+      )
+      window.isReleasedWhenClosed = false
+      window.isOpaque = false
+      window.backgroundColor = NSColor.clear
+      window.alphaValue = 1
+      window.hasShadow = false
+      window.ignoresMouseEvents = true
+      window.collectionBehavior = [.stationary, .ignoresCycle, .canJoinAllSpaces, .fullScreenAuxiliary]
+      
+      let contentView = RounderView(
+        frame: NSRect(origin: .zero, size: screenFrame.size),
+        radius: AppState.shared.radius
+      )
+      window.contentView = contentView
+      window.setFrameOrigin(screenFrame.origin)
+      window.orderFrontRegardless()
+      window.level = .screenSaver
+      window.orderFront(self)
+      windows.append(window)
     }
   }
   
   public func unmount() {
-    windows.forEach { $0.close() }
+    for window in windows {
+      window.close()
+    }
     windows.removeAll()
   }
   
   public func refresh() {
     for window in windows {
-      guard let contentView = window.contentView as? RounderView else { continue }
-      contentView.radius = AppState.shared.radius
-      contentView.setNeedsDisplay(contentView.bounds)
+      if let contentView = window.contentView as? RounderView {
+        contentView.radius = AppState.shared.radius
+        contentView.setNeedsDisplay(contentView.bounds)
+      }
     }
-  }
-  
-  // MARK: - Helper Methods
-  private func createWindow(for screen: NSScreen) {
-    let window = NSWindow(
-      contentRect: screen.frame,
-      styleMask: .borderless,
-      backing: .buffered,
-      defer: false,
-      screen: screen
-    )
-    
-    configure(window: window)
-    setupContentView(for: window, screen: screen)
-    
-    window.orderFrontRegardless()
-    windows.append(window)
-  }
-  
-  private func configure(window: NSWindow) {
-    window.isReleasedWhenClosed = false
-    window.isOpaque = false
-    window.backgroundColor = .clear
-    window.alphaValue = 1
-    window.hasShadow = false
-    window.ignoresMouseEvents = true
-    window.collectionBehavior = [.stationary, .ignoresCycle, .canJoinAllSpaces, .fullScreenAuxiliary]
-    window.level = .screenSaver
-  }
-  
-  private func setupContentView(for window: NSWindow, screen: NSScreen) {
-    let contentView = RounderView(
-      frame: NSRect(origin: .zero, size: screen.frame.size),
-      radius: AppState.shared.radius
-    )
-    window.contentView = contentView
   }
 }
 
