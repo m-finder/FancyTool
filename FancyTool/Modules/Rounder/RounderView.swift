@@ -9,7 +9,7 @@ import SwiftUI
 
 class RounderView: NSView {
   
-  var radius: CGFloat
+  private var radius: CGFloat
   
   init(frame frameRect: NSRect, radius: CGFloat) {
     self.radius = radius
@@ -53,7 +53,7 @@ class RounderView: NSView {
     path.line(to: arcFromPoint)
     path.close()
     
-    // 填充路径（无描边）
+    // 填充路径
     path.lineWidth = 0
     path.fill()
   }
