@@ -33,7 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Hidder
     if(AppState.shared.showHidder){
       Hidder.shared.mount()
-      DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
         Hidder.shared.toggle()
       })
     }
