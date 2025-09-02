@@ -9,7 +9,7 @@ import SwiftUI
 
 class RounderView: NSView {
   
-  private var radius: CGFloat
+  public var radius: CGFloat
   
   init(frame frameRect: NSRect, radius: CGFloat) {
     self.radius = radius
@@ -29,10 +29,8 @@ class RounderView: NSView {
     NSColor.black.set()
     
     // 绘制四个角落
-    drawCorner(at: .topLeft)
-    drawCorner(at: .topRight)
-    drawCorner(at: .bottomLeft)
-    drawCorner(at: .bottomRight)
+    let corners: [CornerPosition] = [.topLeft, .topRight, .bottomLeft, .bottomRight]
+    corners.forEach { drawCorner(at: $0) }
   }
   
   // 定义角落位置的枚举
@@ -42,6 +40,7 @@ class RounderView: NSView {
   
   // 通用方法：绘制单个角落
   private func drawCorner(at position: CornerPosition) {
+    print("drawCorner")
     let path = NSBezierPath()
     
     // 根据角落位置计算三个关键点的坐标
