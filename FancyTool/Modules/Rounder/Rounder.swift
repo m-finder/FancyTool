@@ -99,7 +99,6 @@ class Rounder {
     )
     
     // 窗口属性优化
-    window.isReleasedWhenClosed = false
     window.isOpaque = false
     window.backgroundColor = .clear
     window.ignoresMouseEvents = true

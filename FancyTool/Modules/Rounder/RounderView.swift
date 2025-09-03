@@ -12,8 +12,7 @@ class RounderView: NSView {
   public var radius: CGFloat {
     didSet {
       guard radius != oldValue else { return }
-      updateCornerPath()
-      layer?.setNeedsDisplay()
+      refresh()
     }
   }
   
@@ -28,40 +27,24 @@ class RounderView: NSView {
     self.radius = radius
     self.cornerPosition = cornerPosition
     super.init(frame: frameRect)
-    commonInit()
+    refresh()
   }
   
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
   
-  private func commonInit() {
-    // 图层配置（关键优化）
-    wantsLayer = true
-    layer?.masksToBounds = false
-    layer?.contentsScale = NSScreen.main?.backingScaleFactor ?? 1.0
-    layer?.backgroundColor = NSColor.clear.cgColor
-    // 禁用隐式动画
-    layer?.actions = [
-      "position": NSNull(),
-      "bounds": NSNull(),
-      "opacity": NSNull()
-    ]
-    
-    updateCornerPath()
-  }
-  
   override var bounds: NSRect {
     didSet {
       if bounds.size != oldValue.size {
-        updateCornerPath()
+        refresh()
       }
     }
   }
   
-  private func updateCornerPath() {
+  private func refresh() {
     let path = NSBezierPath()
-    let (start, arcFrom, arcTo) = calculatePoints()
+    let (start, arcFrom, arcTo) = calculate()
     
     path.move(to: start)
     path.appendArc(from: arcFrom, to: arcTo, radius: radius)
@@ -71,8 +54,8 @@ class RounderView: NSView {
     cornerPath = path
   }
   
-  // 修正坐标计算（适配小窗口尺寸）
-  private func calculatePoints() -> (start: NSPoint, arcFrom: NSPoint, arcTo: NSPoint) {
+  // 修正坐标计算
+  private func calculate() -> (start: NSPoint, arcFrom: NSPoint, arcTo: NSPoint) {
     switch cornerPosition {
     case .topLeft:
       return (
