@@ -84,7 +84,6 @@ class Rounder {
     for window in windows {
       if let contentView = window.contentView as? RounderView {
         contentView.radius = AppState.shared.radius
-        contentView.setNeedsDisplay(contentView.bounds)
       }
     }
   }
