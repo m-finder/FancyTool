@@ -67,8 +67,7 @@ class Rounder {
       )
       window.contentView = contentView
       window.setFrameOrigin(screenFrame.origin)
-      window.orderFrontRegardless()
-      window.level = .screenSaver
+      window.level = .statusBar
       window.orderFront(self)
       windows.append(window)
     }
