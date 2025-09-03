@@ -9,83 +9,105 @@ import SwiftUI
 
 class RounderView: NSView {
   
-  public var radius: CGFloat
+  public var radius: CGFloat {
+    didSet {
+      guard radius != oldValue else { return }
+      updateCornerPath()
+      layer?.setNeedsDisplay()
+    }
+  }
   
-  init(frame frameRect: NSRect, radius: CGFloat) {
+  private let cornerPosition: Rounder.CornerPosition
+  private var cornerPath: NSBezierPath?
+  
+  init(
+    frame frameRect: NSRect,
+    radius: CGFloat,
+    cornerPosition: Rounder.CornerPosition
+  ) {
     self.radius = radius
+    self.cornerPosition = cornerPosition
     super.init(frame: frameRect)
+    commonInit()
   }
   
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
   
-  override func draw(_ dirtyRect: NSRect) {
-    // 绘制透明背景
-    NSColor.clear.set()
-    dirtyRect.fill()
+  private func commonInit() {
+    // 图层配置（关键优化）
+    wantsLayer = true
+    layer?.masksToBounds = false
+    layer?.contentsScale = NSScreen.main?.backingScaleFactor ?? 1.0
+    layer?.backgroundColor = NSColor.clear.cgColor
+    // 禁用隐式动画
+    layer?.actions = [
+      "position": NSNull(),
+      "bounds": NSNull(),
+      "opacity": NSNull()
+    ]
     
-    // 设置绘制颜色为黑色
-    NSColor.black.set()
-    
-    // 绘制四个角落
-    let corners: [CornerPosition] = [.topLeft, .topRight, .bottomLeft, .bottomRight]
-    corners.forEach { drawCorner(at: $0) }
+    updateCornerPath()
   }
   
-  // 定义角落位置的枚举
-  private enum CornerPosition {
-    case topLeft, topRight, bottomLeft, bottomRight
+  override var bounds: NSRect {
+    didSet {
+      if bounds.size != oldValue.size {
+        updateCornerPath()
+      }
+    }
   }
   
-  // 通用方法：绘制单个角落
-  private func drawCorner(at position: CornerPosition) {
-    print("drawCorner")
+  private func updateCornerPath() {
     let path = NSBezierPath()
+    let (start, arcFrom, arcTo) = calculatePoints()
     
-    // 根据角落位置计算三个关键点的坐标
-    let (startPoint, arcFromPoint, arcToPoint) = calculatePoints(for: position)
-    
-    // 绘制路径
-    path.move(to: startPoint)
-    path.appendArc(from: arcFromPoint, to: arcToPoint, radius: radius)
-    path.line(to: arcFromPoint)
+    path.move(to: start)
+    path.appendArc(from: arcFrom, to: arcTo, radius: radius)
+    path.line(to: arcFrom)
     path.close()
     
-    // 填充路径
-    path.lineWidth = 0
-    path.fill()
+    cornerPath = path
   }
   
-  // 计算指定角落的三个关键点坐标
-  private func calculatePoints(for position: CornerPosition) -> (start: NSPoint, arcFrom: NSPoint, arcTo: NSPoint) {
-    switch position {
+  // 修正坐标计算（适配小窗口尺寸）
+  private func calculatePoints() -> (start: NSPoint, arcFrom: NSPoint, arcTo: NSPoint) {
+    switch cornerPosition {
     case .topLeft:
       return (
-        NSPoint(x: bounds.minX, y: bounds.maxY - radius),
-        NSPoint(x: bounds.minX, y: bounds.maxY),
-        NSPoint(x: bounds.minX + radius, y: bounds.maxY)
+        NSPoint(x: 0, y: bounds.height - radius),
+        NSPoint(x: 0, y: bounds.height),
+        NSPoint(x: radius, y: bounds.height)
       )
     case .topRight:
       return (
-        NSPoint(x: bounds.maxX, y: bounds.maxY - radius),
-        NSPoint(x: bounds.maxX, y: bounds.maxY),
-        NSPoint(x: bounds.maxX - radius, y: bounds.maxY)
+        NSPoint(x: bounds.width, y: bounds.height - radius),
+        NSPoint(x: bounds.width, y: bounds.height),
+        NSPoint(x: bounds.width - radius, y: bounds.height)
       )
     case .bottomLeft:
       return (
-        NSPoint(x: bounds.minX, y: bounds.minY + radius),
-        NSPoint(x: bounds.minX, y: bounds.minY),
-        NSPoint(x: bounds.minX + radius, y: bounds.minY)
+        NSPoint(x: 0, y: radius),
+        NSPoint(x: 0, y: 0),
+        NSPoint(x: radius, y: 0)
       )
     case .bottomRight:
       return (
-        NSPoint(x: bounds.maxX, y: bounds.minY + radius),
-        NSPoint(x: bounds.maxX, y: bounds.minY),
-        NSPoint(x: bounds.maxX - radius, y: bounds.minY)
+        NSPoint(x: bounds.width, y: radius),
+        NSPoint(x: bounds.width, y: 0),
+        NSPoint(x: bounds.width - radius, y: 0)
       )
     }
   }
+  
+  override func draw(_ dirtyRect: NSRect) {
+    super.draw(dirtyRect)
+    NSColor.black.setFill()
+    cornerPath?.fill()
+  }
 }
+
+
 
 

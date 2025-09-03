@@ -11,6 +11,7 @@ class Runner {
   
   public static let shared = Runner()
   
+  // MARK: - 挂载
   public func mound(item: NSStatusItem){
     if let button = item.button {
       if let image = NSImage(named: "m-finder") {
