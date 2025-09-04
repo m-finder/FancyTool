@@ -22,7 +22,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     
     // 初始化按钮和图标
-    Runner.shared.mound(to: self.runner)
+    Runner.shared.mount(to: self.runner)
     
     // 添加CPU使用率显示
     let queue = DispatchQueue(label: "cpu.timer", qos: .utility)
@@ -30,6 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     timer?.schedule(deadline: .now(), repeating: 5)
     timer?.setEventHandler { [weak self] in
       CpuUtil.shared.refresh()
+      
       let newUsage = CpuUtil.shared.usage
       if abs(newUsage - (self?.lastUsage ?? Double(0.0))) >= 0.1 {
         if let self = self{
@@ -37,7 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           
           // 按CPU使用率更新图片
           DispatchQueue.main.async {
-            self.runner.button?.title = String(format: "%4.1f%%", newUsage)
+//            self.runner.button?.title = String(format: "%4.1f%%", newUsage)
             Runner.shared.refresh(for: self.runner, usage: newUsage)
           }
         }
