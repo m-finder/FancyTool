@@ -38,24 +38,14 @@ final class Rounder {
   }
   
   // MARK: - Public
-  
-  func mount() {
-    dispatchPrecondition(condition: .onQueue(.main))
+  public func mount() {
     unmount() // 先卸载，避免重复
     for screen in NSScreen.screens {
       createWindows(for: screen)
     }
   }
   
-  func remount() {
-    DispatchQueue.main.async { [weak self] in
-      self?.mount()
-    }
-  }
-  
-  func unmount() {
-
-    // 复制数组后关闭，避免修改时遍历
+  public func unmount() {
     let toClose = windows
     windows.removeAll()
     
@@ -68,7 +58,13 @@ final class Rounder {
     }
   }
   
-  func refresh() {
+  private func remount() {
+    DispatchQueue.main.async { [weak self] in
+      self?.mount()
+    }
+  }
+
+  public func refresh() {
     DispatchQueue.main.async { [weak self] in
       guard let self = self else { return }
       let newRadius = AppState.shared.radius
