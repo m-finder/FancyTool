@@ -39,7 +39,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           // 按CPU使用率更新图片
           DispatchQueue.main.async {
 //            self.runner.button?.title = String(format: "%4.1f%%", newUsage)
-            Runner.shared.refresh(for: self.runner, usage: newUsage)
+            Runner.shared.refresh(usage: newUsage)
           }
         }
       }

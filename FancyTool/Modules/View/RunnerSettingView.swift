@@ -65,6 +65,7 @@ struct RunnerSettingView: View {
             .contentShape(RoundedRectangle(cornerRadius: 5))
             .onTapGesture {
               state.runnerId = state.runnerId == runner.id.uuidString ? "" : runner.id.uuidString
+              Runner.shared.refresh()
             }
             .id(runner.id.uuidString)
           }

@@ -9,6 +9,7 @@ import AppKit
 import Combine
 
 final class Rounder {
+  
   static let shared = Rounder()
   
   // MARK: - 类型定义

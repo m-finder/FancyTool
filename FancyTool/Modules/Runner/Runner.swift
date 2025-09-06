@@ -9,6 +9,7 @@ import AppKit
 import Combine
 
 final class Runner {
+  
   static let shared = Runner()
   
   // MARK: - 配置常量
@@ -21,6 +22,7 @@ final class Runner {
   }
   
   // MARK: - 属性
+  private weak var item: NSStatusItem?
   private weak var button: NSStatusBarButton?
   private var layer: CALayer?
   private var frameCache: [CGFloat: [CGImage]] = [:]
@@ -41,6 +43,8 @@ final class Runner {
   
   // MARK: - 挂载
   public func mount(to item: NSStatusItem) {
+    self.item = item
+    
     guard let button = item.button else { return }
     
     if self.button == nil {
@@ -53,17 +57,31 @@ final class Runner {
     item.menu = AppMenu.shared.getMenus()
   }
   
-  func refresh(for item: NSStatusItem, usage: Double) {
-    fps = calculateFPS(from: usage)
-    updateDisplay(for: item)
+  public func refresh() {
+    frameCache.removeAll()
+    
+    // 重新加载新帧
+    reloadFrames()
+    
+    // 刷新显示
+    if let item = self.item{
+      updateDisplay(for: item)
+    }
+  }
+  
+  // MARK: - 刷新速度
+  public func refresh(usage: Double) {
+    if let item = self.item{
+      fps = calculateFPS(from: usage)
+      updateDisplay(for: item)
+    }
   }
   
   // MARK: - 私有方法
   private func updateDisplay(for item: NSStatusItem) {
     guard let button = button else { return }
-    
     if let runner = currentRunner {
-      reloadFramesIfNeeded()
+      reloadFrames()
       updateItemSize(item, with: runner)
       applyAnimation(fps: fps)
     } else {
@@ -142,7 +160,7 @@ final class Runner {
     }
   }
   
-  private func reloadFramesIfNeeded() {
+  private func reloadFrames() {
     let scale = currentScreenScale
     _ = frames(for: scale)
   }
@@ -155,6 +173,9 @@ final class Runner {
     let frames = frames(for: scale)
     guard !frames.isEmpty else { return }
     
+  
+    button?.image = nil
+    layer.isHidden = false
     layer.contents = frames.first
     
     let animation = createAnimation(with: frames, fps: fps)
@@ -179,8 +200,8 @@ final class Runner {
   }
   
   private func clearAnimation() {
-    layer?.removeFromSuperlayer()
-    layer = nil
+    layer?.removeAnimation(forKey: "runner")
+    layer?.isHidden = true
   }
   
   private func setDefaultIcon(for button: NSStatusBarButton) {
