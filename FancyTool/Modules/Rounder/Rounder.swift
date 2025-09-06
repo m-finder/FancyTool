@@ -5,85 +5,102 @@
 //  Created by 吴雲放 on 2025/8/23.
 //
 
-import SwiftUI
+import AppKit
 
-class Rounder {
+final class Rounder {
   
-  public static let shared = Rounder()
+  static let shared = Rounder()
+  
   private var windows: [NSWindow] = []
-  private var observer: NSObjectProtocol?
+  private var screenObserver: NSObjectProtocol?
   
   enum CornerPosition {
     case topLeft, topRight, bottomLeft, bottomRight
   }
   
   private init() {
-    observer = NotificationCenter.default.addObserver(
+    // 监听屏幕变化事件
+    screenObserver = NotificationCenter.default.addObserver(
       forName: NSApplication.didChangeScreenParametersNotification,
-      object: NSApplication.shared,
+      object: nil,
       queue: .main
-    ) {_ in }
+    ) { [weak self] _ in
+      // 屏参变化时重挂载
+      self?.remount()
+    }
   }
   
   deinit {
-    if let ob = observer {
-      NotificationCenter.default.removeObserver(ob)
+    if let token = screenObserver {
+      NotificationCenter.default.removeObserver(token)
+      screenObserver = nil
     }
-    unmount()
   }
   
-  // MARK: - 挂载
-  public func mount() {
-    unmount()
-    
-    let screens = NSScreen.screens
-    for screen in screens {
-      windows(for: screen)
+  // MARK: - Public
+  
+  func mount() {
+    dispatchPrecondition(condition: .onQueue(.main))
+    unmount() // 先卸载，避免重复
+    for screen in NSScreen.screens {
+      createWindows(for: screen)
     }
   }
+  
+  func remount() {
+    DispatchQueue.main.async { [weak self] in
+      self?.mount()
+    }
+  }
+  
+  func unmount() {
 
-  // MARK: - 取消挂载
-  public func unmount() {
-    windows.forEach { $0.close() }
+    // 复制数组后关闭，避免修改时遍历
+    let toClose = windows
     windows.removeAll()
-  }
-  
-  // MARK: - 刷新尺寸
-  public func refresh() {
-    let newRadius = AppState.shared.radius
-    for window in windows {
-      guard let contentView = window.contentView as? RounderView else { continue }
-      contentView.radius = newRadius
+    
+    for window in toClose {
+      window.orderOut(nil)
+      window.contentView = nil
+      window.delegate = nil
+      window.isReleasedWhenClosed = false
+      window.close()
     }
   }
   
-  // MARK: - 为单个屏幕添加4个角落窗口
-  private func windows(for screen: NSScreen) {
+  func refresh() {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else { return }
+      let newRadius = AppState.shared.radius
+      for window in self.windows {
+        if let view = window.contentView as? RounderView {
+          view.radius = newRadius
+        }
+      }
+    }
+  }
+  
+  // MARK: - Private
+  private func createWindows(for screen: NSScreen) {
     let radius = AppState.shared.radius
     let cornerSize = radius * 2
-    let screenFrame = screen.frame
+    let frame = screen.frame
     
-    // 四个角落的位置配置
-    let corners: [(position: CornerPosition, origin: NSPoint)] = [
-      (.topLeft, NSPoint(x: screenFrame.minX, y: screenFrame.maxY - cornerSize)),
-      (.topRight, NSPoint(x: screenFrame.maxX - cornerSize, y: screenFrame.maxY - cornerSize)),
-      (.bottomLeft, NSPoint(x: screenFrame.minX, y: screenFrame.minY)),
-      (.bottomRight, NSPoint(x: screenFrame.maxX - cornerSize, y: screenFrame.minY))
+    let corners: [(CornerPosition, NSPoint)] = [
+      (.topLeft,     NSPoint(x: frame.minX,            y: frame.maxY - cornerSize)),
+      (.topRight,    NSPoint(x: frame.maxX - cornerSize, y: frame.maxY - cornerSize)),
+      (.bottomLeft,  NSPoint(x: frame.minX,            y: frame.minY)),
+      (.bottomRight, NSPoint(x: frame.maxX - cornerSize, y: frame.minY))
     ]
     
     for (position, origin) in corners {
-      let window = corner(
-        frame: NSRect(origin: origin, size: NSSize(width: cornerSize, height: cornerSize)),
-        screen: screen,
-        position: position,
-        radius: radius
-      )
-      windows.append(window)
+      let rect = NSRect(origin: origin, size: NSSize(width: cornerSize, height: cornerSize))
+      let win = makeCornerWindow(frame: rect, screen: screen, position: position, radius: radius)
+      windows.append(win)
     }
   }
-
-  // MARK: - 创建单个角落窗口
-  private func corner(
+  
+  private func makeCornerWindow(
     frame: NSRect,
     screen: NSScreen,
     position: CornerPosition,
@@ -97,8 +114,6 @@ class Rounder {
       defer: false,
       screen: screen
     )
-    
-    // 窗口属性优化
     window.isOpaque = false
     window.backgroundColor = .clear
     window.ignoresMouseEvents = true
@@ -107,16 +122,13 @@ class Rounder {
     window.collectionBehavior = [.stationary, .ignoresCycle]
     window.setFrameOrigin(frame.origin)
     
-    // 设置内容视图
-    let contentView = RounderView(
+    let view = RounderView(
       frame: NSRect(origin: .zero, size: frame.size),
       radius: radius,
       cornerPosition: position
     )
-    window.contentView = contentView
+    window.contentView = view
     window.orderFront(nil)
     return window
   }
 }
-
-
