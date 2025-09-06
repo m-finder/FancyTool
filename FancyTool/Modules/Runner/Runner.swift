@@ -6,129 +6,189 @@
 //
 
 import AppKit
+import Combine
 
 final class Runner {
   
-  static let shared = Runner()
+  public static let shared = Runner()
   
-  private var layer: CALayer?
-  private var frames: [CGImage] = []
+  private let size: CGFloat = 22
   private var fps: Double = 60
-  private var size: Double = 22.0
   
-  public var runner: RunnerModel? {
+  // MARK: - 图层 & 帧缓存
+  private weak var button: NSStatusBarButton?
+  private var animationLayer: CALayer?
+  private var framesByScale: [CGFloat: [CGImage]] = [:]
+  
+  // 屏幕变化监听
+  private var screenChangeCancellable: AnyCancellable?
+  
+  // MARK: - 外部只读
+  private var runner: RunnerModel? {
     RunnerHandler.shared.getRunnerById(AppState.shared.runnerId)
   }
   
-  private var statusBar: NSScreen? {
-    NSScreen.main
-  }
-  
-  private var isMainScreen: Bool { NSScreen.main == statusBar }
-  
-  // MARK: - 挂载（改造版）
-  public func mount(to item: NSStatusItem) {
-    guard let button = item.button else { return }
+  // MARK: - 挂载
+  func mount(to item: NSStatusItem) {
+    guard let btn = item.button else { return }
     
-    print("isMainScreen: \(isMainScreen)")
+    if button == nil {
+      button = btn
+      setupAnimationLayer()
+      observeScreenChanges()
+    }
     
+    // 根据 runner 有无决定样式
     if runner != nil {
-      
-      let layer = CALayer()
-      layer.frame = button.bounds
-      button.layer = layer
-      self.layer = layer
-  
-      reloadFrames()
+      reloadFramesIfNeeded()
       applyAnimation(fps: fps)
-      
-    }else {
-      if let image = NSImage(named: "m-finder"){
-        image.size = NSSize(width: 28, height: 28)
-        button.image = image
-        button.target = self
-      }
+    } else {
+      // 无 runner → 静态图标
+      animationLayer?.removeFromSuperlayer()
+      animationLayer = nil
+      btn.image = NSImage(named: "m-finder")?.with(size: 28)
     }
     
     item.menu = AppMenu.shared.getMenus()
   }
   
-  // MARK: - 刷新播放速度
-  public func refresh(for item: NSStatusItem, usage: Double) {
+  // MARK: - 刷新速度
+  func refresh(for item: NSStatusItem, usage: Double) {
+    // 计算新 fps
+    fps = 5 + 55 * (usage / 100)
+    
     // 重新计算宽度
-    let newWidth = frames.first.map(getWidth(for:)) ?? 22
+    let scale = currentScreenScale
+    let frames = frames(for: scale)
+    let newWidth = frames.first.map(widthFor(image:)) ?? size
     item.length = newWidth
-    item.button?.frame = NSRect(x: 0, y: 0, width: newWidth, height: 22)
-
-    let fps = 5 + 55 * (usage / 100)
-    print("fps \(fps)")
+    btn?.frame.size.width = newWidth
+    
+    // 同步子图层大小
+    animationLayer?.frame = btn?.bounds ?? .zero
+    
+    // 重启动画
     applyAnimation(fps: fps)
   }
   
-  // MARK: - 取 Retina 帧
-  private func getWidth(for image: CGImage) -> CGFloat {
-    let pixelH = image.height
-    let pixelW = image.width
-    let ratio  = CGFloat(pixelW) / CGFloat(pixelH)
-    return size * ratio
+  // MARK: - 私有：子图层
+  private func setupAnimationLayer() {
+    guard let btn = button, btn.layer == nil else { return }
+    btn.wantsLayer = true
+    
+    let layer = CALayer()
+    layer.frame = btn.bounds
+    layer.contentsGravity = .resizeAspect
+    layer.masksToBounds = false
+    layer.isOpaque = false
+    layer.contentsScale = currentScreenScale
+    
+    btn.layer?.addSublayer(layer)
+    animationLayer = layer
   }
   
-  // MARK: - 取 Retina 帧
-  private func reloadFrames() {
+  // MARK: - 私有：帧缓存 / 渲染
+  private func frames(for scale: CGFloat) -> [CGImage] {
+    if let cached = framesByScale[scale] { return cached }
+    let new = renderFrames(scale: scale)
+    framesByScale[scale] = new
+    return new
+  }
+  
+  private func renderFrames(scale: CGFloat) -> [CGImage] {
+    guard let runner = runner else { return [] }
     
-    guard let runner = runner else { frames.removeAll(); return }
-    
-    let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-    for idx in 0..<runner.frameNumber {
+    let pixelH = Int(size * scale)
+    let frames = (0..<runner.frameNumber).compactMap { idx -> CGImage? in
       let src = runner.getImage(idx)
-      let pixel = Int(size * scale)
+      let ratio = CGFloat(src.width) / CGFloat(src.height)
+      let pixelW = Int(round(CGFloat(pixelH) * ratio))
       
-      // 建 bitmap
-      let ctx = CGContext(
+      guard let ctx = CGContext(
         data: nil,
-        width: pixel,
-        height: pixel,
+        width: pixelW,
+        height: pixelH,
         bitsPerComponent: 8,
-        bytesPerRow: pixel * 4,
+        bytesPerRow: pixelW * 4,
         space: CGColorSpaceCreateDeviceRGB(),
-        bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
-      )!
-      ctx.scaleBy(x: scale, y: scale)
-      // 画的时候按原始比例画，高度 22 pt，宽度自动
-      let drawW = getWidth(for: src)
-      let originX = 0.0, originY = 0.0
+        bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue)
+      else { return nil }
       
-      ctx.draw(src, in: CGRect(x: originX, y: originY, width: drawW, height: size))
-      if let im = ctx.makeImage() {
-        frames.append(im)
-      }
+      ctx.scaleBy(x: scale, y: scale)
+      let drawW = CGFloat(pixelH) * ratio / scale   // pt 单位
+      ctx.draw(src, in: CGRect(x: 0, y: 0, width: drawW, height: size))
+      return ctx.makeImage()
     }
+    return frames
   }
   
- 
+  private func reloadFramesIfNeeded() {
+    let scale = currentScreenScale
+    _ = frames(for: scale)
+  }
+  
+  // MARK: - 私有：动画
   private func applyAnimation(fps: Double) {
-    guard let layer = self.layer, !frames.isEmpty else { return }
+    guard let layer = animationLayer else { return }
+    let scale = layer.contentsScale
+    let frames = frames(for: scale)
+    guard !frames.isEmpty else { return }
     
-    // 动画持续时间
+    // 兜底：先放一帧，避免空白
+    layer.contents = frames.first
+    
     let duration = Double(frames.count) / fps
-    // 动画
-    let animation = getAnimation(duration: duration)
-    // 重载动画
-    layer.removeAnimation(forKey: "runner")
-    layer.add(animation, forKey: "runner")
-  }
-  
-  // 生成动画
-  private func getAnimation(duration: Double) -> CAKeyframeAnimation{
     let anim = CAKeyframeAnimation(keyPath: "contents")
     anim.values = frames
-    anim.keyTimes = (0..<frames.count).map {
-      NSNumber(value: Double($0) / Double(frames.count))
-    }
-    anim.duration  = duration
+    anim.keyTimes = (0..<frames.count).map { NSNumber(value: Double($0) / Double(frames.count)) }
+    anim.duration = duration
     anim.repeatCount = .infinity
     anim.calculationMode = .discrete
     anim.isRemovedOnCompletion = false
-    return anim
+    
+    layer.removeAnimation(forKey: "runner")
+    layer.add(anim, forKey: "runner")
+  }
+  
+  // MARK: - 私有：屏幕变化
+  private var currentScreenScale: CGFloat {
+    button?.window?.screen?.backingScaleFactor
+    ?? NSScreen.main?.backingScaleFactor
+    ?? 2
+  }
+  
+  private func observeScreenChanges() {
+    // 系统屏参变化
+    screenChangeCancellable = NotificationCenter.default
+      .publisher(for: NSApplication.didChangeScreenParametersNotification)
+      .sink { [weak self] _ in
+        self?.handleScreenChanged()
+      }
+  }
+  
+  private func handleScreenChanged() {
+    let newScale = currentScreenScale
+    animationLayer?.contentsScale = newScale
+    reloadFramesIfNeeded()
+    applyAnimation(fps: fps)
+  }
+  
+  // MARK: - 工具
+  private var btn: NSStatusBarButton? { button }
+  
+  private func widthFor(image: CGImage) -> CGFloat {
+    let ratio = CGFloat(image.width) / CGFloat(image.height)
+    return size * ratio
+  }
+}
+
+// MARK: - NSImage 缩放辅助
+private extension NSImage {
+  private func with(size: CGFloat) -> NSImage {
+    let new = NSImage(size: .init(width: size, height: size))
+    new.lockFocus()
+    draw(in: NSRect(x: 0, y: 0, width: size, height: size))
+    new.unlockFocus()
+    return new
   }
 }
