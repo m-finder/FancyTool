@@ -12,6 +12,7 @@ class RounderView: NSView {
   public var radius: CGFloat {
     didSet {
       guard radius != oldValue else { return }
+      needsDisplay = true
       refresh()
     }
   }

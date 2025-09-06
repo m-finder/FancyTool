@@ -7,10 +7,12 @@
 
 import SwiftUI
 import ServiceManagement
+import Combine
 
 struct MainSettingView: View {
   
   @ObservedObject var state = AppState.shared
+  @State private var radiusDebouncer: AnyCancellable?
   
   var body: some View {
     VStack(alignment: .center, spacing: 0){
@@ -53,12 +55,11 @@ struct MainSettingView: View {
           
           Text(String(format: "%.1f", state.radius)).frame(width: 30)
         }
-        .onChange(of: state.radius) {  oldValue, newValue in
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            if state.radius == newValue {
-              Rounder.shared.refresh()
-            }
-          }
+        .onChange(of: state.radius) { oldValue, newValue in
+          radiusDebouncer?.cancel()
+          radiusDebouncer = Just(newValue)
+            .delay(for: .milliseconds(50), scheduler: RunLoop.main)
+            .sink { Rounder.shared.refresh(CGFloat($0)) }
         }
       }
       .padding()

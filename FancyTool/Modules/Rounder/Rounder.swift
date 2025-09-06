@@ -44,9 +44,10 @@ final class Rounder {
     windows.removeAll()
   }
   
-  public func refresh() {
-    let radius = AppState.shared.radius
-    updateAllWindows(with: radius)
+  public func refresh(_ radius: CGFloat) {
+    windows.forEach { win in
+      (win.contentView as? RounderView)?.radius = radius
+    }
   }
   
   // MARK: - 私有方法
