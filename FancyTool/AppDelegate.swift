@@ -12,8 +12,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private var runner: NSStatusItem
   private var timer: DispatchSourceTimer?
   
-  private var lastUsage: Double = 0.0
-
   override init(){
     self.runner = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
   }
@@ -21,32 +19,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
     
-    // 初始化按钮和图标
+    // 初始化图标和菜单
     Runner.shared.mount(to: self.runner)
-    
-    // 添加CPU使用率显示
-    let queue = DispatchQueue(label: "cpu.timer", qos: .utility)
-    timer = DispatchSource.makeTimerSource(queue: queue)
-    timer?.schedule(deadline: .now(), repeating: 5)
-    timer?.setEventHandler { [weak self] in
-      CpuUtil.shared.refresh()
-      
-      let newUsage = CpuUtil.shared.usage
-      if abs(newUsage - (self?.lastUsage ?? Double(0.0))) >= 0.1 {
-        if let self = self{
-          self.lastUsage = newUsage
-          
-          // 按CPU使用率更新图片
-          DispatchQueue.main.async {
-//            self.runner.button?.title = String(format: "%4.1f%%", newUsage)
-            Runner.shared.refresh(usage: newUsage)
-          }
-        }
-      }
-    }
-    timer?.resume()
-    
-    
+  
     // Hidder
     if(AppState.shared.showHidder){
       Hidder.shared.mount()
@@ -54,24 +29,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Hidder.shared.toggle()
       })
     }
-
-    //    // Texter
-    //    if(AppState.shared.showTexter){
-    //      Texter.shared.mount()
-    //    }
     
-
-    //
-    //    // Paster
-    //    if(AppState.shared.showPaster){
-    //      Paster.shared.mount()
-    //    }
-    //
+    // Texter
+    if(AppState.shared.showTexter){
+      Texter.shared.mount()
+    }
+    
+    
+    // Paster
+    if(AppState.shared.showPaster){
+      Paster.shared.mount()
+    }
+    
     
     // Rounder
     if(AppState.shared.showRounder){
       Rounder.shared.mount()
     }
-
+    
+    // 添加CPU使用率显示
+    let queue = DispatchQueue(label: "cpu.timer", qos: .utility)
+    timer = DispatchSource.makeTimerSource(queue: queue)
+    timer?.schedule(deadline: .now(), repeating: 5)
+    timer?.setEventHandler {
+      // todo 更多监控
+      CpuUtil.shared.refresh()
+      // 按CPU使用率更新图片
+      DispatchQueue.main.async {
+        Runner.shared.refresh(usage: CpuUtil.shared.usage)
+      }
+    }
+    timer?.resume()
+    
   }
 }

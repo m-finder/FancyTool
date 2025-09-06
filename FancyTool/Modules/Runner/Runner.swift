@@ -25,7 +25,7 @@ final class Runner {
   private weak var item: NSStatusItem?
   private weak var button: NSStatusBarButton?
   private var layer: CALayer?
-  private var frameCache: [CGFloat: [CGImage]] = [:]
+  private var cache: [CGFloat: [CGImage]] = [:]
   private var fps: Double = Config.maxFPS
   
   private var cancellables = Set<AnyCancellable>()
@@ -43,51 +43,55 @@ final class Runner {
   
   // MARK: - 挂载
   public func mount(to item: NSStatusItem) {
-    self.item = item
     
     guard let button = item.button else { return }
     
     if self.button == nil {
+      self.item = item
       self.button = button
       setupAnimationLayer()
       observeScreenChanges()
     }
     
-    updateDisplay(for: item)
+    refresh(for: item)
+    
     item.menu = AppMenu.shared.getMenus()
   }
   
+  // MARK: - 刷新选中的runner
   public func refresh() {
-    frameCache.removeAll()
-    
-    // 重新加载新帧
-    reloadFrames()
-    
-    // 刷新显示
-    if let item = self.item{
-      updateDisplay(for: item)
+    guard let item = self.item else { return }
+  
+    if currentRunner == nil {
+      self.layer?.contents = nil
     }
+    
+    cache.removeAll()
+    refresh(for: item)
   }
   
-  // MARK: - 刷新速度
+  // MARK: - 刷新播放速度
   public func refresh(usage: Double) {
-    if let item = self.item{
-      fps = calculateFPS(from: usage)
-      updateDisplay(for: item)
-    }
+    guard let item = self.item else { return }
+    
+    fps = refresh(from: usage)
+    refresh(for: item)
   }
   
-  // MARK: - 私有方法
-  private func updateDisplay(for item: NSStatusItem) {
-    guard let button = button else { return }
+  // MARK: - 刷新挂载的图片
+  private func refresh(for item: NSStatusItem) {
+    
+    guard let button = self.button else { return }
+    
     if let runner = currentRunner {
       reloadFrames()
       updateItemSize(item, with: runner)
       applyAnimation(fps: fps)
-    } else {
-      clearAnimation()
-      setDefaultIcon(for: button)
+      return
     }
+    
+    clearAnimation()
+    refresh(item: item, button: button)
   }
   
   private func setupAnimationLayer() {
@@ -107,28 +111,36 @@ final class Runner {
   
   private func updateItemSize(_ item: NSStatusItem, with runner: RunnerModel) {
     let frames = frames(for: currentScreenScale)
-    let width = frames.first.map(calculateWidth) ?? Config.baseSize
+    let width = frames.first.map(refresh) ?? Config.baseSize
     
     item.length = width
     button?.frame.size.width = width
     layer?.frame = button?.bounds ?? .zero
   }
   
-  private func calculateWidth(for image: CGImage) -> CGFloat {
+  // MARK: - 刷新图片尺寸
+  private func refresh(for image: CGImage) -> CGFloat {
     let ratio = CGFloat(image.width) / CGFloat(image.height)
     return Config.baseSize * ratio
   }
   
-  private func calculateFPS(from usage: Double) -> Double {
+  // MARK: - 刷新 fps
+  private func refresh(from usage: Double) -> Double {
     return Config.minFPS + (Config.maxFPS - Config.minFPS) * (usage / 100)
+  }
+  
+  // MARK: - 刷新为默认图标和尺寸
+  private func refresh(item: NSStatusItem, button: NSStatusBarButton) {
+    item.length = Config.defaultIconSize
+    button.image = NSImage(named: Config.defaultIconName)?.resized(to: Config.defaultIconSize)
   }
   
   // MARK: - 帧处理
   private func frames(for scale: CGFloat) -> [CGImage] {
-    if let cached = frameCache[scale] { return cached }
+    if let cached = cache[scale] { return cached }
     
     let newFrames = renderFrames(scale: scale)
-    frameCache[scale] = newFrames
+    cache[scale] = newFrames
     return newFrames
   }
   
@@ -173,17 +185,21 @@ final class Runner {
     let frames = frames(for: scale)
     guard !frames.isEmpty else { return }
     
-  
     button?.image = nil
     layer.isHidden = false
+    
+    // 关键：立刻把 frame 跟按钮当前 bounds 对齐
+    layer.frame = button?.bounds ?? .zero   // ← 加这一行
+    
     layer.contents = frames.first
     
-    let animation = createAnimation(with: frames, fps: fps)
+    let animation = setAnimation(with: frames, fps: fps)
     layer.removeAnimation(forKey: "runner")
     layer.add(animation, forKey: "runner")
   }
   
-  private func createAnimation(with frames: [CGImage], fps: Double) -> CAKeyframeAnimation {
+  // MARK: - 设置动画
+  private func setAnimation(with frames: [CGImage], fps: Double) -> CAKeyframeAnimation {
     let duration = Double(frames.count) / fps
     let animation = CAKeyframeAnimation(keyPath: "contents")
     
@@ -199,13 +215,10 @@ final class Runner {
     return animation
   }
   
+  // MARK: - 清除动画
   private func clearAnimation() {
     layer?.removeAnimation(forKey: "runner")
     layer?.isHidden = true
-  }
-  
-  private func setDefaultIcon(for button: NSStatusBarButton) {
-    button.image = NSImage(named: Config.defaultIconName)?.resized(to: Config.defaultIconSize)
   }
   
   // MARK: - 屏幕变化监听
@@ -230,7 +243,7 @@ final class Runner {
   private func handleScreenChanged() {
     let newScale = currentScreenScale
     
-    frameCache.removeValue(forKey: newScale)
+    cache.removeValue(forKey: newScale)
     _ = frames(for: newScale)
     
     layer?.contentsScale = newScale
