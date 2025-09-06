@@ -20,9 +20,7 @@ final class Runner {
   private var animationLayer: CALayer?
   private var framesByScale: [CGFloat: [CGImage]] = [:]
   
-  // 屏幕变化监听
-  private var screenChangeCancellable: AnyCancellable?
-  
+
   // MARK: - 外部只读
   private var runner: RunnerModel? {
     RunnerHandler.shared.getRunnerById(AppState.shared.runnerId)
@@ -35,7 +33,6 @@ final class Runner {
     if button == nil {
       button = btn
       setupAnimationLayer()
-      observeScreenChanges()
     }
     
     // 根据 runner 有无决定样式
@@ -156,16 +153,7 @@ final class Runner {
     ?? NSScreen.main?.backingScaleFactor
     ?? 2
   }
-  
-  private func observeScreenChanges() {
-    // 系统屏参变化
-    screenChangeCancellable = NotificationCenter.default
-      .publisher(for: NSApplication.didChangeScreenParametersNotification)
-      .sink { [weak self] _ in
-        self?.handleScreenChanged()
-      }
-  }
-  
+
   private func handleScreenChanged() {
     let newScale = currentScreenScale
     animationLayer?.contentsScale = newScale
@@ -184,7 +172,7 @@ final class Runner {
 
 // MARK: - NSImage 缩放辅助
 private extension NSImage {
-  private func with(size: CGFloat) -> NSImage {
+  func with(size: CGFloat) -> NSImage {
     let new = NSImage(size: .init(width: size, height: size))
     new.lockFocus()
     draw(in: NSRect(x: 0, y: 0, width: size, height: size))
