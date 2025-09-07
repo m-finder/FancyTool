@@ -10,7 +10,7 @@ import Combine
 
 final class Runner {
   
-  static let shared = Runner()
+  public static let shared = Runner()
   
   // MARK: - 配置常量
   private enum Config {
@@ -24,22 +24,16 @@ final class Runner {
   // MARK: - 属性
   private weak var item: NSStatusItem?
   private weak var button: NSStatusBarButton?
-  private var layer: CALayer?
-  private var cache: [CGFloat: [CGImage]] = [:]
+//  private var cache: [CGFloat: [CGImage]] = [:]
   private var fps: Double = Config.maxFPS
   
   private var cancellables = Set<AnyCancellable>()
-  
+
   // MARK: - 计算属性
-  private var currentScreenScale: CGFloat {
-    button?.window?.screen?.backingScaleFactor ??
-    NSScreen.main?.backingScaleFactor ?? 2
+  private var currentScale: CGFloat {
+    button?.window?.screen?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
   }
-  
-  // MARK: - 当前激活的Runner
-  private var currentRunner: RunnerModel? {
-    RunnerHandler.shared.getRunnerById(AppState.shared.runnerId)
-  }
+
   
   // MARK: - 挂载
   public func mount(to item: NSStatusItem) {
@@ -49,10 +43,13 @@ final class Runner {
     if self.button == nil {
       self.item = item
       self.button = button
-      setupAnimationLayer()
-      observeScreenChanges()
+      // 挂载动画layer
+      RunnerLayer.shared.mount(button: button, scale: currentScale)
+      // 添加屏幕和窗口监听
+      observe()
     }
     
+    // 刷新挂载的图片
     refresh(for: item)
     
     item.menu = AppMenu.shared.getMenus()
@@ -62,11 +59,11 @@ final class Runner {
   public func refresh() {
     guard let item = self.item else { return }
   
-    if currentRunner == nil {
-      self.layer?.contents = nil
+    if RunnerFrame.shared.runner == nil {
+      RunnerLayer.shared.layer?.contents = nil
     }
     
-    cache.removeAll()
+    RunnerFrame.shared.cache.removeAll()
     refresh(for: item)
   }
   
@@ -83,39 +80,28 @@ final class Runner {
     
     guard let button = self.button else { return }
     
-    if let runner = currentRunner {
-      reloadFrames()
+    if let runner = RunnerFrame.shared.runner {
+      // 加载图片帧
+      _ = RunnerFrame.shared.refresh(for: currentScale)
       updateItemSize(item, with: runner)
       applyAnimation(fps: fps)
       return
     }
     
-    clearAnimation()
+    // 卸载动画 layer
+    RunnerLayer.shared.unmount()
+    // 刷新为默认图标和尺寸
     refresh(item: item, button: button)
   }
   
-  private func setupAnimationLayer() {
-    guard let btn = button, btn.layer == nil else { return }
-    btn.wantsLayer = true
-    
-    let layer = CALayer()
-    layer.frame = btn.bounds
-    layer.contentsGravity = .resizeAspect
-    layer.masksToBounds = false
-    layer.isOpaque = false
-    layer.contentsScale = currentScreenScale
-    
-    btn.layer?.addSublayer(layer)
-    self.layer = layer
-  }
-  
+
   private func updateItemSize(_ item: NSStatusItem, with runner: RunnerModel) {
-    let frames = frames(for: currentScreenScale)
+    let frames = RunnerFrame.shared.refresh(for: currentScale)
     let width = frames.first.map(refresh) ?? Config.baseSize
     
     item.length = width
     button?.frame.size.width = width
-    layer?.frame = button?.bounds ?? .zero
+    RunnerLayer.shared.layer?.frame = button?.bounds ?? .zero
   }
   
   // MARK: - 刷新图片尺寸
@@ -134,62 +120,20 @@ final class Runner {
     item.length = Config.defaultIconSize
     button.image = NSImage(named: Config.defaultIconName)?.resized(to: Config.defaultIconSize)
   }
-  
-  // MARK: - 帧处理
-  private func frames(for scale: CGFloat) -> [CGImage] {
-    if let cached = cache[scale] { return cached }
-    
-    let newFrames = renderFrames(scale: scale)
-    cache[scale] = newFrames
-    return newFrames
-  }
-  
-  private func renderFrames(scale: CGFloat) -> [CGImage] {
-    guard let runner = currentRunner else { return [] }
-    
-    let pixelH = Int(Config.baseSize * scale)
-    
-    return (0..<runner.frameNumber).compactMap { index in
-      let src = runner.getImage(index)
-      let ratio = CGFloat(src.width) / CGFloat(src.height)
-      let pixelW = Int(round(CGFloat(pixelH) * ratio))
-      
-      guard let ctx = CGContext(
-        data: nil,
-        width: pixelW,
-        height: pixelH,
-        bitsPerComponent: 8,
-        bytesPerRow: pixelW * 4,
-        space: CGColorSpaceCreateDeviceRGB(),
-        bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
-      ) else { return nil }
-      
-      ctx.scaleBy(x: scale, y: scale)
-      let drawWidth = CGFloat(pixelH) * ratio / scale
-      ctx.draw(src, in: CGRect(x: 0, y: 0, width: drawWidth, height: Config.baseSize))
-      
-      return ctx.makeImage()
-    }
-  }
-  
-  private func reloadFrames() {
-    let scale = currentScreenScale
-    _ = frames(for: scale)
-  }
-  
+
   // MARK: - 动画处理
   private func applyAnimation(fps: Double) {
-    guard let layer = layer else { return }
+    guard let layer = RunnerLayer.shared.layer else { return }
     
     let scale = layer.contentsScale
-    let frames = frames(for: scale)
+    let frames = RunnerFrame.shared.refresh(for: scale)
     guard !frames.isEmpty else { return }
     
     button?.image = nil
     layer.isHidden = false
     
-    // 关键：立刻把 frame 跟按钮当前 bounds 对齐
-    layer.frame = button?.bounds ?? .zero   // ← 加这一行
+    // 把 frame 跟按钮当前 bounds 对齐，防止图片宽度不撑开
+    layer.frame = button?.bounds ?? .zero
     
     layer.contents = frames.first
     
@@ -215,14 +159,8 @@ final class Runner {
     return animation
   }
   
-  // MARK: - 清除动画
-  private func clearAnimation() {
-    layer?.removeAnimation(forKey: "runner")
-    layer?.isHidden = true
-  }
-  
   // MARK: - 屏幕变化监听
-  private func observeScreenChanges() {
+  private func observe() {
     NotificationCenter.default
       .publisher(for: NSApplication.didChangeScreenParametersNotification)
       .sink { [weak self] _ in
@@ -241,12 +179,12 @@ final class Runner {
   }
   
   private func handleScreenChanged() {
-    let newScale = currentScreenScale
+    let newScale = currentScale
     
-    cache.removeValue(forKey: newScale)
-    _ = frames(for: newScale)
+    RunnerFrame.shared.cache.removeValue(forKey: newScale)
+    _ = RunnerFrame.shared.refresh(for: newScale)
     
-    layer?.contentsScale = newScale
+    RunnerLayer.shared.layer?.contentsScale = newScale
     applyAnimation(fps: fps)
   }
 }

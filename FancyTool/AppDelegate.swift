@@ -54,9 +54,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     timer?.setEventHandler {
       // todo 更多监控
       CpuUtil.shared.refresh()
+      let usage = CpuUtil.shared.usage
       // 按CPU使用率更新图片
       DispatchQueue.main.async {
-        Runner.shared.refresh(usage: CpuUtil.shared.usage)
+        Runner.shared.refresh(usage: usage)
       }
     }
     timer?.resume()
