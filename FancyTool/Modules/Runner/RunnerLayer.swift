@@ -34,4 +34,4 @@ class RunnerLayer {
     self.layer?.removeAnimation(forKey: "runner")
     self.layer?.isHidden = true
   }
-}
+ }

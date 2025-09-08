@@ -25,6 +25,11 @@ class RunnerFrame {
     RunnerHandler.shared.getRunnerById(AppState.shared.runnerId)
   }
   
+  // MARK: - 计算属性
+//  private var currentScale: CGFloat {
+//    button?.window?.screen?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+//  }
+  
   // MARK: - 图片帧缓存
   public var cache: [CGFloat: [CGImage]] = [:]
   
@@ -36,6 +41,42 @@ class RunnerFrame {
     cache[scale] = newFrames
     return newFrames
   }
+  
+//  // MARK: - 刷新挂载的图片
+//  private func refresh(for item: NSStatusItem) {
+//    
+//    guard let button = item.button else { return }
+//    
+//    if let runner = self.runner {
+//      // 加载图片帧
+//      _ = RunnerFrame.shared.refresh(for: currentScale)
+//      updateItemSize(item, with: runner)
+//      applyAnimation(fps: fps)
+//      return
+//    }
+//    
+//    // 卸载动画 layer
+//    RunnerLayer.shared.unmount()
+//    // 刷新为默认图标和尺寸
+//    refresh(item: item, button: button)
+//  }
+  
+//  private func updateItemSize(_ item: NSStatusItem, with runner: RunnerModel) {
+//    guard let button = item.button else { return }
+//    
+//    let frames = RunnerFrame.shared.refresh(for: currentScale)
+//    let width = frames.first.map(refresh) ?? Config.baseSize
+//    
+//    item.length = width
+//    button.frame.size.width = width
+//    RunnerLayer.shared.layer?.frame = button.bounds
+//  }
+//  
+//  // MARK: - 刷新为默认图标和尺寸
+//  private func refresh(item: NSStatusItem, button: NSStatusBarButton) {
+//    item.length = Config.defaultIconSize
+//    button.image = NSImage(named: Config.defaultIconName)?.resized(to: Config.defaultIconSize)
+//  }
   
   // MARK: - 处理帧数据
   private func handle(scale: CGFloat) -> [CGImage] {
