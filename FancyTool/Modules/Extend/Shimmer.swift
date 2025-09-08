@@ -9,14 +9,14 @@ import SwiftUI
 
 public struct Shimmer: ViewModifier {
 
-  
+
   private let animation: Animation
   private let gradient: Gradient
   private let min, max: CGFloat
- 
+
   @State private var isInitialState = true
   @Environment(\.layoutDirection) private var layoutDirection
-  
+
   public init(
     animation: Animation = Self.defaultAnimation,
     gradient: Gradient = Self.defaultGradient,
@@ -27,16 +27,16 @@ public struct Shimmer: ViewModifier {
     self.min = 0 - bandSize
     self.max = 1 + bandSize
   }
-  
+
   public static let defaultAnimation = Animation.linear(duration: 2.5).delay(2).repeatForever(autoreverses: false)
-  
-  
+
+
   public static let defaultGradient = Gradient(colors: [
     .clear,
     .white.opacity(0.8),
     .clear
   ])
-  
+
   public static let rainbowGradient = Gradient(colors: [
     .clear,
     .orange.opacity(0.8),
@@ -44,7 +44,7 @@ public struct Shimmer: ViewModifier {
     .green.opacity(0.8),
     .clear
   ])
-  
+
   var startPoint: UnitPoint {
     if layoutDirection == .rightToLeft {
       isInitialState ? UnitPoint(x: max, y: min) : UnitPoint(x: 0, y: 1)
@@ -52,7 +52,7 @@ public struct Shimmer: ViewModifier {
       isInitialState ? UnitPoint(x: min, y: min) : UnitPoint(x: 1, y: 1)
     }
   }
-  
+
   var endPoint: UnitPoint {
     if layoutDirection == .rightToLeft {
       isInitialState ? UnitPoint(x: 1, y: 0) : UnitPoint(x: min, y: max)
@@ -60,7 +60,7 @@ public struct Shimmer: ViewModifier {
       isInitialState ? UnitPoint(x: 0, y: 0) : UnitPoint(x: max, y: max)
     }
   }
-  
+
   public func body(content: Content) -> some View {
     let gradient = LinearGradient(gradient: gradient, startPoint: startPoint, endPoint: endPoint)
     content
@@ -74,7 +74,7 @@ public struct Shimmer: ViewModifier {
         isInitialState = true
       }
   }
-  
+
 }
 
 public extension View {
