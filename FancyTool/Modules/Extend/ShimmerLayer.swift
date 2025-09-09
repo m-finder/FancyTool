@@ -21,7 +21,7 @@ final class ShimmerLayerBackedView: NSView {
     private let highlightLayer = CAGradientLayer()
     private let textMaskLayer = CATextLayer()
     
-    private var bandSize: CGFloat = 0.1
+    private var bandSize: CGFloat = 0.01
     private var isAnimating = false
     
     override init(frame frameRect: NSRect) {
@@ -126,9 +126,10 @@ final class ShimmerLayerBackedView: NSView {
         
         // 彩虹 5 色标 ↔ 5 段 locations
         if rainbow && highlightLayer.colors?.count == 5 {
-            highlightLayer.locations = [0.0, 0.25, 0.5, 0.75, 1.0]
+//            highlightLayer.locations = [0.0, 0.25, 0.5, 0.75, 1.0]
+          highlightLayer.locations = [0.45, 0.475, 0.5, 0.525, 0.55]
         } else {
-            highlightLayer.locations = [-bandSize, 0, bandSize] as [NSNumber]
+          highlightLayer.locations = [-bandSize * 0.05, 0, bandSize * 0.05] as [NSNumber]
         }
     }
     
@@ -150,7 +151,7 @@ final class ShimmerLayerBackedView: NSView {
         let step = 1.0 / max(CGFloat(count - 1), 1)
         let from = (0..<count).map { NSNumber(value: Float($0) * Float(step) - Float(bandSize)) }
         let to   = (0..<count).map { NSNumber(value: Float($0) * Float(step) + Float(1 - bandSize)) }
-        
+
         let anim = CABasicAnimation(keyPath: "locations")
         anim.fromValue = from
         anim.toValue = to
@@ -175,14 +176,14 @@ struct LayerShimmerText: NSViewRepresentable {
     var baseColor: NSColor = .labelColor
     var active: Bool = true
     var rainbow: Bool = true
-    var bandSize: CGFloat = 0.1
+    var bandSize: CGFloat = 0.01
     var duration: CFTimeInterval = 3.0
     var gradientColors: [NSColor]? = nil
     
     func makeNSView(context: Context) -> ShimmerLayerBackedView {
         let v = ShimmerLayerBackedView()
         v.translatesAutoresizingMaskIntoConstraints = false
-        v.setFrameSize(NSSize(width: 60, height: 18))
+        v.setFrameSize(NSSize(width: 10, height: 18))
         return v
     }
     

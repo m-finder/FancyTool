@@ -8,30 +8,6 @@
 import AppKit
 import Combine
 
-// MARK: - NSImage 扩展
-private extension NSImage {
-  func resized(to size: CGFloat) -> NSImage {
-    let newImage = NSImage(size: NSSize(width: size, height: size))
-    newImage.lockFocus()
-    draw(in: NSRect(x: 0, y: 0, width: size, height: size))
-    newImage.unlockFocus()
-    return newImage
-  }
-}
-
-// MARK: - 默认的runner图标
-class DefaultRunner {
-  
-  public static var shared = DefaultRunner()
-  private let size: CGFloat = 28
-  
-  public func mount(item: NSStatusItem) {
-    guard let button = item.button else { return }
-    item.length = size
-    button.image = NSImage(named: "m-finder")?.resized(to: size)
-  }
-}
-
 final class Runner {
   
   public static let shared = Runner()
@@ -48,79 +24,84 @@ final class Runner {
   // MARK: - 属性
   private weak var item: NSStatusItem?
   private weak var button: NSStatusBarButton?
+//  private var cache: [CGFloat: [CGImage]] = [:]
   private var fps: Double = Config.maxFPS
-  private var cancellables = Set<AnyCancellable>()
   
-  // MARK: - 当前激活的Runner
-  public var runner: RunnerModel? {
-    RunnerHandler.shared.getRunnerById(AppState.shared.runnerId)
-  }
- 
-  // MARK: - 计算属性，当前屏幕的缩放比例
+  private var cancellables = Set<AnyCancellable>()
+
+  // MARK: - 计算属性
   private var currentScale: CGFloat {
     button?.window?.screen?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
   }
 
-  init(){
-    observe()
-  }
-  
-  deinit {
-    cancellables.removeAll()
-  }
   
   // MARK: - 挂载
   public func mount(to item: NSStatusItem) {
-    self.item = item
-    self.button = item.button
-
-    // 载入挂载的图片
-    reload()
-    // 挂载菜单
-    item.menu = AppMenu.shared.getMenus()
-  }
-
-  // MARK: - 刷新挂载的图片
-  private func reload() {
-
-    guard let item = self.item, let button = self.button else { return }
-
-    // 有 runner
-    if RunnerFrame.shared.runner != nil {
+    
+    guard let button = item.button else { return }
+    
+    if self.button == nil {
+      self.item = item
+      self.button = button
       // 挂载动画layer
       RunnerLayer.shared.mount(button: button, scale: currentScale)
-      // 加载图片帧
-      _ = RunnerFrame.shared.refresh(for: currentScale)
-      
-      // 刷新图片帧
-      let frames = RunnerFrame.shared.refresh(for: currentScale)
-      let width = frames.first.map(refresh) ?? Config.baseSize
-
-      item.length = width
-      button.frame.size.width = width
-      RunnerLayer.shared.layer?.frame = button.bounds
-      
-      animation()
-      return
+      // 添加屏幕和窗口监听
+      observe()
     }
-
-    // 卸载动画 layer
-    RunnerLayer.shared.unmount()
-    // 刷新为默认图标和尺寸
-    DefaultRunner.shared.mount(item: item)
+    
+    // 刷新挂载的图片
+    refresh(for: item)
+    
+    item.menu = AppMenu.shared.getMenus()
   }
   
   // MARK: - 刷新选中的runner
   public func refresh() {
-    RunnerLayer.shared.layer?.contents = nil
+    guard let item = self.item else { return }
+  
+    if RunnerFrame.shared.runner == nil {
+      RunnerLayer.shared.layer?.contents = nil
+    }
+    
     RunnerFrame.shared.cache.removeAll()
-    reload()
+    refresh(for: item)
   }
   
   // MARK: - 刷新播放速度
   public func refresh(usage: Double) {
-    self.fps = Config.minFPS + (Config.maxFPS - Config.minFPS) * (usage / 100)
-    reload()
+    guard let item = self.item else { return }
+    
+    fps = refresh(from: usage)
+    refresh(for: item)
+  }
+  
+  // MARK: - 刷新挂载的图片
+  private func refresh(for item: NSStatusItem) {
+    
+    guard let button = self.button else { return }
+    
+    if let runner = RunnerFrame.shared.runner {
+      // 加载图片帧
+      _ = RunnerFrame.shared.refresh(for: currentScale)
+      updateItemSize(item, with: runner)
+      applyAnimation(fps: fps)
+      return
+    }
+    
+    // 卸载动画 layer
+    RunnerLayer.shared.unmount()
+    // 刷新为默认图标和尺寸
+    refresh(item: item, button: button)
+  }
+  
+
+  private func updateItemSize(_ item: NSStatusItem, with runner: RunnerModel) {
+    let frames = RunnerFrame.shared.refresh(for: currentScale)
+    let width = frames.first.map(refresh) ?? Config.baseSize
+    
+    item.length = width
+    button?.frame.size.width = width
+    RunnerLayer.shared.layer?.frame = button?.bounds ?? .zero
   }
   
   // MARK: - 刷新图片尺寸
@@ -128,9 +109,20 @@ final class Runner {
     let ratio = CGFloat(image.width) / CGFloat(image.height)
     return Config.baseSize * ratio
   }
+  
+  // MARK: - 刷新 fps
+  private func refresh(from usage: Double) -> Double {
+    return Config.minFPS + (Config.maxFPS - Config.minFPS) * (usage / 100)
+  }
+  
+  // MARK: - 刷新为默认图标和尺寸
+  private func refresh(item: NSStatusItem, button: NSStatusBarButton) {
+    item.length = Config.defaultIconSize
+    button.image = NSImage(named: Config.defaultIconName)?.resized(to: Config.defaultIconSize)
+  }
 
   // MARK: - 动画处理
-  private func animation(){
+  private func applyAnimation(fps: Double) {
     guard let layer = RunnerLayer.shared.layer else { return }
     
     let scale = layer.contentsScale
@@ -145,7 +137,14 @@ final class Runner {
     
     layer.contents = frames.first
     
-    let duration = Double(frames.count) / self.fps
+    let animation = setAnimation(with: frames, fps: fps)
+    layer.removeAnimation(forKey: "runner")
+    layer.add(animation, forKey: "runner")
+  }
+  
+  // MARK: - 设置动画
+  private func setAnimation(with frames: [CGImage], fps: Double) -> CAKeyframeAnimation {
+    let duration = Double(frames.count) / fps
     let animation = CAKeyframeAnimation(keyPath: "contents")
     
     animation.values = frames
@@ -156,8 +155,8 @@ final class Runner {
     animation.repeatCount = .infinity
     animation.calculationMode = .discrete
     animation.isRemovedOnCompletion = false
-    layer.removeAnimation(forKey: "runner")
-    layer.add(animation, forKey: "runner")
+    
+    return animation
   }
   
   // MARK: - 屏幕变化监听
@@ -186,8 +185,17 @@ final class Runner {
     _ = RunnerFrame.shared.refresh(for: newScale)
     
     RunnerLayer.shared.layer?.contentsScale = newScale
-    animation()
+    applyAnimation(fps: fps)
   }
 }
 
-
+// MARK: - NSImage 扩展
+private extension NSImage {
+  func resized(to size: CGFloat) -> NSImage {
+    let newImage = NSImage(size: NSSize(width: size, height: size))
+    newImage.lockFocus()
+    draw(in: NSRect(x: 0, y: 0, width: size, height: size))
+    newImage.unlockFocus()
+    return newImage
+  }
+}
