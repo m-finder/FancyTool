@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 extension NSStatusItem {
   var isExpanded: Bool {
     get { length == Hidder.shared.length }
@@ -14,6 +15,7 @@ extension NSStatusItem {
   }
 }
 
+@MainActor
 class Hidder {
   
   public static let shared = Hidder()

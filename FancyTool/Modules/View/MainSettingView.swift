@@ -13,6 +13,7 @@ struct MainSettingView: View {
   
   @ObservedObject var state = AppState.shared
   @State private var radiusDebouncer: AnyCancellable?
+  @State private var hidderSizeDebouncer: AnyCancellable?
   
   var body: some View {
     VStack(alignment: .center, spacing: 0){
@@ -31,38 +32,37 @@ struct MainSettingView: View {
           
           Text("\(state.hidderSize)").frame(width: 30)
         }
-        .onChange(of: state.hidderSize) {  oldValue, newValue in
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            if state.hidderSize == newValue {
-              Hidder.shared.refresh()
-            }
-          }
+        .onChange(of: state.hidderSize) { oldValue, newValue in
+          hidderSizeDebouncer?.cancel()
+          hidderSizeDebouncer = Just(newValue)
+            .delay(for: .milliseconds(50), scheduler: RunLoop.main)
+            .sink { _ in Hidder.shared.refresh() }
         }
       }
       .padding()
       
-      LabeledContent(String(localized: "Radius size:")) {
-        HStack {
-          Slider(
-            value: Binding(
-              get: { Double(state.radius) },
-              set: { state.radius = CGFloat($0) }
-            ),
-            in: 10...25,
-            step: 1
-          )
-          .frame(width: 150)
-          
-          Text(String(format: "%.1f", state.radius)).frame(width: 30)
-        }
-        .onChange(of: state.radius) { oldValue, newValue in
-          radiusDebouncer?.cancel()
-          radiusDebouncer = Just(newValue)
-            .delay(for: .milliseconds(50), scheduler: RunLoop.main)
-            .sink { Rounder.shared.refresh(CGFloat($0)) }
-        }
-      }
-      .padding()
+//      LabeledContent(String(localized: "Radius size:")) {
+//        HStack {
+//          Slider(
+//            value: Binding(
+//              get: { Double(state.radius) },
+//              set: { state.radius = CGFloat($0) }
+//            ),
+//            in: 10...25,
+//            step: 1
+//          )
+//          .frame(width: 150)
+//          
+//          Text(String(format: "%.1f", state.radius)).frame(width: 30)
+//        }
+//        .onChange(of: state.radius) { oldValue, newValue in
+//          radiusDebouncer?.cancel()
+//          radiusDebouncer = Just(newValue)
+//            .delay(for: .milliseconds(50), scheduler: RunLoop.main)
+//            .sink { Rounder.shared.refresh(CGFloat($0)) }
+//        }
+//      }
+//      .padding()
 
       Toggle(
         String(localized: "Launch on Startup"),

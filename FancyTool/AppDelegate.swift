@@ -9,19 +9,15 @@ import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
   
-  private var runner: NSStatusItem
-  private var timer: DispatchSourceTimer?
   
-  override init(){
-    self.runner = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-  }
+  private var timer: DispatchSourceTimer?
   
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
     
     // 初始化图标和菜单
-    Runner.shared.mount(to: self.runner)
-  
+    Runner.shared.mount()
+    
     // Hidder
     if(AppState.shared.showHidder){
       Hidder.shared.mount()
@@ -48,17 +44,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     // 添加CPU使用率显示
-    let queue = DispatchQueue(label: "cpu.timer", qos: .utility)
-    timer = DispatchSource.makeTimerSource(queue: queue)
-    timer?.schedule(deadline: .now(), repeating: 5)
+    // 直接放在主队列跑，验证是不是线程隔离问题
+    timer = DispatchSource.makeTimerSource(queue: .main)
+    timer?.schedule(deadline: .now(), repeating: .seconds(5))
     timer?.setEventHandler {
-      // todo 更多监控
+      // 刷新 CPU 使用率
       CpuUtil.shared.refresh()
-      let usage = CpuUtil.shared.usage
-      // 按CPU使用率更新图片
-      DispatchQueue.main.async {
-        Runner.shared.refresh(usage: usage)
-      }
+      // 刷新 runner 速度
+      Runner.shared.refresh()
     }
     timer?.resume()
     

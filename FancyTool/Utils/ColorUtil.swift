@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 
+@MainActor
 class ColorUtil: ObservableObject{
   
   static let shared = ColorUtil()

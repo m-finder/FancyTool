@@ -8,6 +8,7 @@
 import AppKit
 import Combine
 
+@MainActor
 final class Rounder {
   
   static let shared = Rounder()
@@ -26,10 +27,6 @@ final class Rounder {
     setupScreenChangeObserver()
   }
   
-  deinit {
-    cancellables.removeAll()
-  }
-  
   // MARK: - 公开方法
   public func mount() {
     unmount()
@@ -43,6 +40,7 @@ final class Rounder {
       window.close()
     }
     windows.removeAll()
+    cancellables.removeAll()
   }
   
   public func refresh(_ radius: CGFloat) {

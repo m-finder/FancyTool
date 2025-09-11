@@ -6,6 +6,7 @@
 //
 import SwiftUI
 
+@MainActor
 struct AppMenuItem {
   
   public static let shared = AppMenuItem()
@@ -32,15 +33,16 @@ struct AppMenuItem {
 
   public func menus() -> [AppMenuItem] {
     return [
-      AppMenuItem(
-        title: String(localized: "Texter"),
-        action:  #selector(AppMenuActions.texter(_:)),
-        state: AppState.shared.showTexter
-      ),
+
       AppMenuItem(
         title: String(localized: "Hidder"),
         action:  #selector(AppMenuActions.hidder(_:)),
         state: AppState.shared.showHidder
+      ),
+      AppMenuItem(
+        title: String(localized: "Texter"),
+        action:  #selector(AppMenuActions.texter(_:)),
+        state: AppState.shared.showTexter
       ),
       AppMenuItem(
         title: String(localized: "Paster"),

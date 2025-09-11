@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class AppMenu {
   
   public static var shared = AppMenu()

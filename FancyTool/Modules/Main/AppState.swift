@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 class AppState : ObservableObject{
   
   static let shared = AppState()

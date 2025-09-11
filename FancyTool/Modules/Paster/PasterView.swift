@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct PasterView: View {
   
   @ObservedObject var paster = Paster.shared

@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class CpuUtil: ObservableObject {
   
   public static var shared = CpuUtil()

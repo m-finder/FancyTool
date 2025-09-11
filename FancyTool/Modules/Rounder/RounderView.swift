@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 class RounderView: NSView {
   
   public var radius: CGFloat {
