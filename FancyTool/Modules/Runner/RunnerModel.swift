@@ -5,7 +5,6 @@
 //  Created by 吴雲放 on 2025/7/1.
 //
 
-import Foundation
 import SwiftData
 import AppKit
 
@@ -31,6 +30,7 @@ class RunnerModel {
 }
 
 // 扩展图片的相关功能
+@MainActor
 extension RunnerModel {
   
   static var imgCache = [RunnerModel:[Int:CGImage]]()

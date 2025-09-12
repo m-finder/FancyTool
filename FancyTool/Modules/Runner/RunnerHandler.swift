@@ -8,6 +8,7 @@
 import AppKit
 import SwiftData
 
+@MainActor
 class RunnerHandler :ObservableObject{
   
   static let shared = RunnerHandler()

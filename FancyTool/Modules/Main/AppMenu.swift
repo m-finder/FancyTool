@@ -8,32 +8,27 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class AppMenu {
   
+  public static var shared = AppMenu()
+  
   private var menu: NSMenu
-  private var actions: AppMenuActions!
+  private var actions =  AppMenuActions.shared
+  
   
   init(){
+    
     self.menu = NSMenu()
-  }
-  
-  convenience init(actions: AppMenuActions){
-    self.init()
-    self.actions = actions
-  }
-  
-  convenience init(actions: AppMenuActions, items: [MenuItem]){
-    
-    self.init(actions: actions)
-    
-    items.forEach { item in
+
+    AppMenuItem.shared.menus().forEach { item in
       
-      if(item.isSeparator){
+      if item.isSeparator {
         self.menu.addItem(NSMenuItem.separator())
         return
       }
       
-      if(item.state){
+      if item.state {
         self.addMenuItem(
           title: item.title!,
           action: item.action!,
@@ -42,7 +37,7 @@ class AppMenu {
         return
       }
       
-      if(item.key != nil){
+      if item.key != nil {
         self.addMenuItem(
           title: item.title!,
           action: item.action!,
@@ -51,7 +46,7 @@ class AppMenu {
         return
       }
       
-      if(item.key == nil){
+      if item.key == nil {
         self.addMenuItem(
           title: item.title!,
           action: item.action!
@@ -62,7 +57,7 @@ class AppMenu {
     }
   }
   
-  func addMenuItem(title: String, action: Selector, key: String){
+  private func addMenuItem(title: String, action: Selector, key: String){
     let item = NSMenuItem(
       title: title,
       action: action,
@@ -72,7 +67,7 @@ class AppMenu {
     self.menu.addItem(item)
   }
   
-  func addMenuItem(title: String, action: Selector){
+  private func addMenuItem(title: String, action: Selector){
     let item = NSMenuItem(
       title: title,
       action: action,
@@ -82,7 +77,7 @@ class AppMenu {
     self.menu.addItem(item)
   }
   
-  func addMenuItem(title: String, action: Selector, state: Bool){
+  private func addMenuItem(title: String, action: Selector, state: Bool){
     let item = NSMenuItem(
       title: title,
       action: action,

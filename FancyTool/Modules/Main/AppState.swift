@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+
+@MainActor
 class AppState : ObservableObject{
   
   static let shared = AppState()
   
-  // 开机自启
+  // 主程序配置
   @AppStorage("startUp") var startUp: Bool = false
   
   // Runner

@@ -5,97 +5,134 @@
 //  Created by 吴雲放 on 2025/8/23.
 //
 
-import Foundation
-import SwiftUI
 import AppKit
+import Combine
 
-class Rounder {
+@MainActor
+final class Rounder {
   
   static let shared = Rounder()
-  var windows: [NSWindow] = []
-  @Published var state = AppState.shared
-  // 存储通知观察者，用于后续移除
-  private var screenChangeObserver: NSObjectProtocol?
   
-  private init() {
-    // 初始化时注册屏幕变化通知监听
-    setupScreenChangeObservation()
+  // MARK: - 类型定义
+  enum CornerPosition {
+    case topLeft, topRight, bottomLeft, bottomRight
   }
   
-  deinit {
-    // 释放时移除通知监听
-    if let observer = screenChangeObserver {
-      NotificationCenter.default.removeObserver(observer)
+  // MARK: - 属性
+  private var windows: [NSWindow] = []
+  private var cancellables = Set<AnyCancellable>()
+  
+  // MARK: - 初始化
+  private init() {
+    setupScreenChangeObserver()
+  }
+  
+  // MARK: - 公开方法
+  public func mount() {
+    unmount()
+    NSScreen.screens.forEach { createWindows(for: $0) }
+  }
+  
+  public func unmount() {
+    windows.forEach { window in
+      window.orderOut(nil)
+      window.contentView = nil
+      window.close()
+    }
+    windows.removeAll()
+    cancellables.removeAll()
+  }
+  
+  public func refresh(_ radius: CGFloat) {
+    windows.forEach { win in
+      (win.contentView as? RounderView)?.radius = radius
     }
   }
   
-  private func setupScreenChangeObservation() {
-    // 使用更兼容的屏幕参数变化通知
-    screenChangeObserver = NotificationCenter.default.addObserver(
-      forName: NSApplication.didChangeScreenParametersNotification,
-      object: NSApplication.shared,
-      queue: .main
-    ) { [weak self] _ in
-      // 延迟执行以确保系统完成屏幕配置更新
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+  // MARK: - 私有方法
+  private func setupScreenChangeObserver() {
+    NotificationCenter.default
+      .publisher(for: NSApplication.didChangeScreenParametersNotification)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
         self?.mount()
+      }
+      .store(in: &cancellables)
+  }
+  
+  private func createWindows(for screen: NSScreen) {
+    let radius = AppState.shared.radius
+    let cornerSize = radius * 2
+    let frame = screen.frame
+    
+    let cornerPositions: [CornerPosition] = [.topLeft, .topRight, .bottomLeft, .bottomRight]
+    
+    cornerPositions.forEach { position in
+      let origin = calculateOrigin(for: position, in: frame, cornerSize: cornerSize)
+      let rect = NSRect(origin: origin, size: NSSize(width: cornerSize, height: cornerSize))
+      
+      if let window = createWindow(frame: rect, screen: screen, position: position, radius: radius) {
+        windows.append(window)
       }
     }
   }
   
-  public func mount() {
-    
-    self.unmount()
-    
-    let screens: [NSScreen] = NSScreen.screens
-    
-    for screen in screens {
-      
-      let screenFrame = screen.frame
-      
-      let window: NSWindow = NSWindow(
-        contentRect: screen.frame,
-        styleMask: .borderless,
-        backing: .buffered,
-        defer: false,
-        screen: screen
-      )
-      window.isReleasedWhenClosed = false
-      window.isOpaque = false
-      window.backgroundColor = NSColor.clear
-      window.alphaValue = 1
-      window.hasShadow = false
-      window.ignoresMouseEvents = true
-      window.collectionBehavior = [.stationary, .ignoresCycle, .canJoinAllSpaces, .fullScreenAuxiliary]
-      
-      let contentView = RounderView(
-        frame: NSRect(origin: .zero, size: screenFrame.size),
-        radius: state.radius
-      )
-      window.contentView = contentView
-      
-      window.setFrameOrigin(screenFrame.origin)
-      window.orderFrontRegardless()
-      window.level = .screenSaver
-      window.orderFront(self)
-      
-      windows.append(window)
+  private func calculateOrigin(for position: CornerPosition, in frame: NSRect, cornerSize: CGFloat) -> NSPoint {
+    switch position {
+    case .topLeft:
+      return NSPoint(x: frame.minX, y: frame.maxY - cornerSize)
+    case .topRight:
+      return NSPoint(x: frame.maxX - cornerSize, y: frame.maxY - cornerSize)
+    case .bottomLeft:
+      return NSPoint(x: frame.minX, y: frame.minY)
+    case .bottomRight:
+      return NSPoint(x: frame.maxX - cornerSize, y: frame.minY)
     }
   }
   
-  public func unmount() {
-    for window in windows {
-      window.close()
-    }
-    windows.removeAll()
+  private func createWindow(frame: NSRect, screen: NSScreen, position: CornerPosition, radius: CGFloat) -> NSWindow? {
+    let window = NSWindow(
+      contentRect: frame,
+      styleMask: .borderless,
+      backing: .buffered,
+      defer: false,
+      screen: screen
+    )
+    
+    configureWindow(window, frame: frame)
+    
+    let view = RounderView(
+      frame: NSRect(origin: .zero, size: frame.size),
+      radius: radius,
+      cornerPosition: position
+    )
+    
+    window.contentView = view
+    window.orderFront(nil)
+    
+    return window
   }
   
-  public func refresh() {
-    for window in windows {
-      guard let contentView = window.contentView as? RounderView else { continue }
-      contentView.radius = state.radius
-      contentView.setNeedsDisplay(contentView.bounds)
+  private func configureWindow(_ window: NSWindow, frame: NSRect) {
+    window.isOpaque = false
+    window.backgroundColor = .clear
+    window.ignoresMouseEvents = true
+    window.hasShadow = false
+    window.level = .statusBar
+    window.collectionBehavior = [.stationary, .ignoresCycle]
+    window.setFrameOrigin(frame.origin)
+    window.isReleasedWhenClosed = false
+  }
+  
+  private func updateAllWindows(with radius: CGFloat) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else { return }
+      
+      self.windows.forEach { window in
+        if let view = window.contentView as? RounderView {
+          view.radius = radius
+        }
+      }
     }
   }
 }
-

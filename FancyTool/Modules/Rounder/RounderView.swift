@@ -7,86 +7,92 @@
 
 import SwiftUI
 
+@MainActor
 class RounderView: NSView {
   
-  var radius: CGFloat
+  public var radius: CGFloat {
+    didSet {
+      guard radius != oldValue else { return }
+      needsDisplay = true
+      refresh()
+    }
+  }
   
-  init(frame frameRect: NSRect, radius: CGFloat) {
+  private let cornerPosition: Rounder.CornerPosition
+  private var cornerPath: NSBezierPath?
+  
+  init(
+    frame frameRect: NSRect,
+    radius: CGFloat,
+    cornerPosition: Rounder.CornerPosition
+  ) {
     self.radius = radius
+    self.cornerPosition = cornerPosition
     super.init(frame: frameRect)
+    refresh()
   }
   
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
   
-  override func draw(_ dirtyRect: NSRect) {
-    // 绘制透明背景
-    NSColor.clear.set()
-    dirtyRect.fill()
-    
-    // 设置绘制颜色为黑色
-    NSColor.black.set()
-    
-    // 绘制四个角落
-    drawCorner(at: .topLeft)
-    drawCorner(at: .topRight)
-    drawCorner(at: .bottomLeft)
-    drawCorner(at: .bottomRight)
+  override var bounds: NSRect {
+    didSet {
+      if bounds.size != oldValue.size {
+        refresh()
+      }
+    }
   }
   
-  // 定义角落位置的枚举
-  private enum CornerPosition {
-    case topLeft, topRight, bottomLeft, bottomRight
-  }
-  
-  // 通用方法：绘制单个角落
-  private func drawCorner(at position: CornerPosition) {
+  private func refresh() {
     let path = NSBezierPath()
+    let (start, arcFrom, arcTo) = calculate()
     
-    // 根据角落位置计算三个关键点的坐标
-    let (startPoint, arcFromPoint, arcToPoint) = calculatePoints(for: position)
-    
-    // 绘制路径
-    path.move(to: startPoint)
-    path.appendArc(from: arcFromPoint, to: arcToPoint, radius: radius)
-    path.line(to: arcFromPoint)
+    path.move(to: start)
+    path.appendArc(from: arcFrom, to: arcTo, radius: radius)
+    path.line(to: arcFrom)
     path.close()
     
-    // 填充路径（无描边）
-    path.lineWidth = 0
-    path.fill()
+    cornerPath = path
   }
   
-  // 计算指定角落的三个关键点坐标
-  private func calculatePoints(for position: CornerPosition) -> (start: NSPoint, arcFrom: NSPoint, arcTo: NSPoint) {
-    switch position {
+  // 修正坐标计算
+  private func calculate() -> (start: NSPoint, arcFrom: NSPoint, arcTo: NSPoint) {
+    switch cornerPosition {
     case .topLeft:
       return (
-        NSPoint(x: bounds.minX, y: bounds.maxY - radius),
-        NSPoint(x: bounds.minX, y: bounds.maxY),
-        NSPoint(x: bounds.minX + radius, y: bounds.maxY)
+        NSPoint(x: 0, y: bounds.height - radius),
+        NSPoint(x: 0, y: bounds.height),
+        NSPoint(x: radius, y: bounds.height)
       )
     case .topRight:
       return (
-        NSPoint(x: bounds.maxX, y: bounds.maxY - radius),
-        NSPoint(x: bounds.maxX, y: bounds.maxY),
-        NSPoint(x: bounds.maxX - radius, y: bounds.maxY)
+        NSPoint(x: bounds.width, y: bounds.height - radius),
+        NSPoint(x: bounds.width, y: bounds.height),
+        NSPoint(x: bounds.width - radius, y: bounds.height)
       )
     case .bottomLeft:
       return (
-        NSPoint(x: bounds.minX, y: bounds.minY + radius),
-        NSPoint(x: bounds.minX, y: bounds.minY),
-        NSPoint(x: bounds.minX + radius, y: bounds.minY)
+        NSPoint(x: 0, y: radius),
+        NSPoint(x: 0, y: 0),
+        NSPoint(x: radius, y: 0)
       )
     case .bottomRight:
       return (
-        NSPoint(x: bounds.maxX, y: bounds.minY + radius),
-        NSPoint(x: bounds.maxX, y: bounds.minY),
-        NSPoint(x: bounds.maxX - radius, y: bounds.minY)
+        NSPoint(x: bounds.width, y: radius),
+        NSPoint(x: bounds.width, y: 0),
+        NSPoint(x: bounds.width - radius, y: 0)
       )
     }
   }
+  
+  override func draw(_ dirtyRect: NSRect) {
+    super.draw(dirtyRect)
+    NSColor.black.setFill()
+    cornerPath?.fill()
+  }
 }
+
+
 
 

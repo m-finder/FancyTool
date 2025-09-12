@@ -5,71 +5,55 @@
 //  Created by 吴雲放 on 2025/8/25.
 //
 
-import Cocoa
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
   
-  private var runner: NSStatusItem
   
-  override init(){
-    self.runner = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-  }
+  private var timer: DispatchSourceTimer?
   
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
     
-    // Runner
-    Runner.shared.mound(item: self.runner)
+    // 初始化图标和菜单
+    Runner.shared.mount()
+    
+    // Hidder
+    if(AppState.shared.showHidder){
+      Hidder.shared.mount()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+        Hidder.shared.toggle()
+      })
+    }
     
     // Texter
     if(AppState.shared.showTexter){
       Texter.shared.mount()
     }
     
-    // Hidder
-    if(AppState.shared.showHidder){
-      Hidder.shared.mount()
-      DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
-        Hidder.shared.toggle()
-      })
-    }
     
     // Paster
     if(AppState.shared.showPaster){
       Paster.shared.mount()
     }
     
+    
     // Rounder
     if(AppState.shared.showRounder){
       Rounder.shared.mount()
     }
     
-    // 监听应用进入后台
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(appDidResignActive),
-      name: NSApplication.didResignActiveNotification,
-      object: nil
-    )
+    // 添加CPU使用率显示
+    // 直接放在主队列跑，验证是不是线程隔离问题
+    timer = DispatchSource.makeTimerSource(queue: .main)
+    timer?.schedule(deadline: .now(), repeating: .seconds(5))
+    timer?.setEventHandler {
+      // 刷新 CPU 使用率
+      CpuUtil.shared.refresh()
+      // 刷新 runner 速度
+      Runner.shared.refresh()
+    }
+    timer?.resume()
     
-    // 监听应用回到前台
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(appDidBecomeActive),
-      name: NSApplication.didBecomeActiveNotification,
-      object: nil
-    )
   }
-  
-  @objc private func appDidResignActive() {
-    // 后台时关闭动画
-    print("app 进入后台模式")
-  }
-  
-  @objc private func appDidBecomeActive() {
-    // 前台时恢复动画（如果之前是开启的）
-    print("app 进入前台模式")
-  }
-  
 }

@@ -6,6 +6,7 @@
 //
 import AppKit
 
+@MainActor
 class AppMenuActions: NSObject {
   
   static let shared = AppMenuActions()
@@ -49,6 +50,10 @@ class AppMenuActions: NSObject {
     }
   }
   
+  @IBAction func toggle(_ sender: NSStatusBarButton){
+    Hidder.shared.toggle()
+  }
+  
   @IBAction func rounder(_ sender: NSStatusBarButton){
     AppState.shared.showRounder.toggle()
     sender.state = AppState.shared.showRounder ? .on : .off
@@ -59,11 +64,7 @@ class AppMenuActions: NSObject {
     }
   }
   
-  @IBAction func toggle(_ sender: NSStatusBarButton){
-    Hidder.shared.toggle()
-  }
-  
-  
+
   @IBAction func texter(_ sender: NSStatusBarButton){
     AppState.shared.showTexter.toggle()
     sender.state = AppState.shared.showTexter ? .on : .off
@@ -94,10 +95,8 @@ class AppMenuActions: NSObject {
     sender.state = AppState.shared.showPaster ? .on : .off
     if(AppState.shared.showPaster){
       Paster.shared.mount()
-      print("Paster mount")
     }else{
       Paster.shared.unmount()
-      print("Paster unmount")
     }
   }
   
