@@ -50,6 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     timer?.setEventHandler {
       // 刷新 CPU 使用率
       CpuUtil.shared.refresh()
+      NetworkUtil.shared.refresh()
       // 刷新 runner 速度
       Runner.shared.refresh()
     }

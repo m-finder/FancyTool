@@ -125,10 +125,7 @@ class Paster: ObservableObject{
   
   public func simulatePaste(to application: NSRunningApplication? = nil) {
     let targetApp = self.targetApp
-    guard hasAccessibilityPermission() else {
-      showAccessibilityPermissionAlert()
-      return
-    }
+    guard requestAccessibilityPermission() else { return }
     
     guard let source = CGEventSource(stateID: .hidSystemState) else {
       return
@@ -156,23 +153,26 @@ class Paster: ObservableObject{
     }
   }
   
-  // 检查是否有辅助功能权限
-  private func hasAccessibilityPermission() -> Bool {
-      // 直接使用字符串键"AXTrustedCheckOptionPrompt"
-      let options: [CFString: Any] = [
-          "AXTrustedCheckOptionPrompt" as CFString: true
-      ]
+  // MARK: - 辅助功能权限申请
+  private func requestAccessibilityPermission() -> Bool {
+      // 1. 快速判断：已经授权就返回
+      let quickOptions = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
+      if AXIsProcessTrustedWithOptions(quickOptions) { return true }
 
-      let accessEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary)
-      return accessEnabled
+      // 2. 未授权 → 弹系统设置
+      let promptOptions = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+      AXIsProcessTrustedWithOptions(promptOptions)
+
+      // 3. 用户回到 App 后再查一次
+      let nowTrusted = AXIsProcessTrustedWithOptions(quickOptions)
+      if !nowTrusted {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Need Accessibility Permissions", comment: "Alert title for accessibility permission request")
+        alert.informativeText = NSLocalizedString("Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations.", comment: "Detailed explanation for accessibility permission request")
+        alert.addButton(withTitle: NSLocalizedString("OK", comment: "Confirm button text"))
+        alert.runModal()
+      }
+      return nowTrusted
   }
-  
-  // 显示权限提示
-  private func showAccessibilityPermissionAlert() {
-    let alert = NSAlert()
-    alert.messageText = NSLocalizedString("Need Accessibility Permissions", comment: "Alert title for accessibility permission request")
-    alert.informativeText = NSLocalizedString("Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations.", comment: "Detailed explanation for accessibility permission request")
-    alert.addButton(withTitle: NSLocalizedString("OK", comment: "Confirm button text"))
-    alert.runModal()
-  }
+
 }
