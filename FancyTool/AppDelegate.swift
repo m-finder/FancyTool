@@ -16,6 +16,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
     
+    if let preferredLanguages = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String],
+           let currentLanguage = preferredLanguages.first {
+            print("当前系统首选语言: \(currentLanguage)") // 例如："zh-Hans-CN"
+        } else {
+            print("未能获取到系统语言")
+        }
+    
     // 初始化图标和菜单
     Runner.shared.mount()
     
