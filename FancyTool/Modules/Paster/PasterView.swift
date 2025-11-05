@@ -55,6 +55,13 @@ struct PasterView: View {
     currentPage = 0
     // 快捷键监听
     eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {  (event: NSEvent) -> NSEvent? in
+      
+      // esc 键监听
+      if event.keyCode == 53 {
+        Paster.shared.hide()
+        return nil
+      }
+      
       // tab 键监听
       if event.keyCode == 48 {
         currentPage = (currentPage + 1) % totalPage

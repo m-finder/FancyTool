@@ -25,7 +25,7 @@ struct MainSettingView: View {
               get: { Double(state.hidderSize) },
               set: { state.hidderSize = Int($0) }
             ),
-            in: 6...12,
+            in: 5...10,
             step: 1
           )
           .frame(width: 150)

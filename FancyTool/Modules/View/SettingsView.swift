@@ -16,6 +16,7 @@ struct SettingsView: View {
         RunnerSettingView().tabItem { Text("Runner") }
 //        TexterSettingView().tabItem { Text("Texter") }
         PasterSettingView().tabItem { Text("Paster") }
+        MonitorSettingView().tabItem { Text("Monitor") }
       }
       .frame(maxHeight: .infinity)
       

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SystemInfoKit
 
 @MainActor
 class AppState : ObservableObject{
@@ -40,4 +41,30 @@ class AppState : ObservableObject{
   // Rounder
   @AppStorage("showRounder") var showRounder: Bool = false
   @AppStorage("radius") var radius = 10.0
+  
+  // Monitor
+  @AppStorage("showMonitor") var showMonitor: Bool = false
+  @AppStorage("showCpu") var showCpu: Bool = false
+  @AppStorage("showNetWork") var showNetWork: Bool = true
+  @AppStorage("showStorage") var showStorage: Bool = true
+  @AppStorage("showMemory") var showMemory: Bool = true
+  @AppStorage("showBattery") var showBattery: Bool = true
+
+  private init() {}
+  
+  // 最新的系统快照
+  @Published var bundle: SystemInfoBundle?
+  
+  private var observer = SystemInfoObserver.shared
+  // 开始系统监控
+  public func start() {
+    observer.startMonitoring(monitorInterval: 3)
+    Task {
+      for await b in observer.systemInfoStream() {
+        await MainActor.run { bundle = b }
+      }
+    }
+  }
+  
+  public func stop() { observer.stopMonitoring() }
 }

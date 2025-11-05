@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SystemInfoKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
   
@@ -43,18 +44,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       Rounder.shared.mount()
     }
     
-    // 添加CPU使用率显示
-    // 直接放在主队列跑，验证是不是线程隔离问题
-    timer = DispatchSource.makeTimerSource(queue: .main)
-    timer?.schedule(deadline: .now(), repeating: .seconds(5))
-    timer?.setEventHandler {
-      // 刷新 CPU 使用率
-      CpuUtil.shared.refresh()
-      NetworkUtil.shared.refresh()
-      // 刷新 runner 速度
-      Runner.shared.refresh()
-    }
-    timer?.resume()
     
+    // Monitor
+    if(AppState.shared.showMonitor){
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: {
+        Monitor.shared.mount()
+      })
+    }
+    
+    // 开始监控
+    AppState.shared.start()
+  }
+  
+  // 失去焦点
+  func applicationDidResignActive(_ notification: Notification) {
+    // 关闭 Monitor 的 popover
+    if Monitor.shared.popover.isShown {
+      Monitor.shared.popover.close()
+    }
+    
+    // 关闭 Texter 的 popover
+    if Texter.shared.popover.isShown {
+      Texter.shared.popover.close()
+    }
   }
 }

@@ -17,7 +17,8 @@ class Texter {
   private var controller: NSViewController!
   private var item: NSStatusItem?
   
-  func mount(){
+  // MARK: - 挂载
+  public func mount(){
     
     self.item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     
@@ -25,19 +26,20 @@ class Texter {
  
     // 设置图标视图&&绑定到按钮
     let _ = HostingView(
-      view: TexterView().frame(minWidth: 40, maxWidth: .infinity).padding(.horizontal, 5),
+      view: TexterView().frame(height: 22).frame(minWidth: 40, maxWidth: .infinity).padding(.horizontal, 4),
       button: button,
       target: AppMenuActions.shared,
-      action: #selector(AppMenuActions.popover(_:))
+      action: #selector(AppMenuActions.textPopover(_:))
     )
   }
   
-  
-  func unmount(){
+  // MARK: - 取消挂载
+  public func unmount(){
     popover.close()
     item = nil
   }
   
+  // MARK: - 弹窗
   func show(_ sender: NSStatusBarButton){
     if(controller == nil){
       controller = NSHostingController(

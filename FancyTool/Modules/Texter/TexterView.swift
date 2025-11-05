@@ -17,7 +17,6 @@ struct TexterView: View {
     
     Text(state.text)
       .foregroundStyle(textGradient)
-      .shimmering(active: state.showShimmer && isVisible, rainbow: state.rainbowShimmer)
       .onAppear {
         isVisible = true
         gradientColors = ColorUtil().getColor(index: state.colorIndex)
@@ -28,19 +27,6 @@ struct TexterView: View {
       .onChange(of: state.colorIndex) {
         gradientColors = ColorUtil.shared.getColor(index: state.colorIndex)
       }
-//    LayerShimmerText(
-//      text: state.text,
-//      font: .systemFont(ofSize: 13, weight: .medium),
-//      baseColor: NSColor(ColorUtil.shared.getColor(index: state.colorIndex).first ?? .white),
-//      active: state.showShimmer,           // 恢复 active 控制
-//      rainbow: state.rainbowShimmer,       // 恢复 rainbow 控制
-//      bandSize: 0.35,
-//      duration: 3.0,
-//      gradientColors: nil
-//    )
-//    .frame(minWidth: 40, idealWidth: 80, maxWidth: .infinity, minHeight: 18, maxHeight: 22)
-//    .padding(.horizontal, 5)
-//    
   }
   
   // 文字颜色渐变

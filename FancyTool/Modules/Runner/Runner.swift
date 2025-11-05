@@ -24,12 +24,11 @@ final class Runner {
     static let defaultIconSize: CGFloat = 28
   }
   
-  // MARK: - 属性
-//  private weak var button: NSStatusBarButton?
-  private var usage: Double {
-    CpuUtil.shared.usage
+  // MARK: - 速度属性
+  private var fps: Double {
+      let usage = AppState.shared.bundle?.cpuInfo?.percentage.value ?? 0
+      return Config.minFPS + (Config.maxFPS - Config.minFPS) * (usage / 100)
   }
-  private var fps: Double = Config.maxFPS
   
   private var cancellables = Set<AnyCancellable>()
 
@@ -99,12 +98,7 @@ final class Runner {
     RunnerFrame.shared.cache.removeAll()
     reload()
   }
-  
-  // MARK: - 刷新播放速度
-  public func refresh() {
-    fps = Config.minFPS + (Config.maxFPS - Config.minFPS) * (self.usage / 100)
-    reload()
-  }
+
 
   // MARK: - 动画处理
   private func animation() {

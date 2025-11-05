@@ -6,46 +6,92 @@
 //
 
 import SwiftUI
+import SystemInfoKit
 
 @MainActor
 class Monitor {
   
   public static let shared = Monitor()
-  private var items: [NSStatusItem] = []
+  private var item: NSStatusItem?
+  public let popover = NSPopover()
+  private var popoverView = MonitorPopoverView()
+  private var controller: NSViewController!
+  private var defaultIconName = "m-finder"
+  @ObservedObject var state = AppState.shared
   
- 
   // MARK: - 挂载
   public func mount(){
     
-    self.unmount()
-    
-    let item: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    
-    if let button = item.button {
-      button.target = AppMenuActions.shared
-      button.action = #selector(AppMenuActions.toggle(_:))
+    if item == nil {
+      item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     }
     
-    self.items.append(item)
+    guard let cpuButton = item?.button else { return }
+    
+    cpuButton.subviews.forEach { $0.removeFromSuperview() }
+    cpuButton.image = nil
+    cpuButton.title = ""
+    
+    
+    let hasActiveMonitor = state.showCpu || state.showNetWork || state.showStorage || state.showMemory || state.showBattery
+    
+    if hasActiveMonitor {
+      let _ = HostingView(
+        view: MonitorView().frame(height: 22).frame(minWidth: 40, maxWidth: .infinity).padding(.horizontal, 4),
+        button: cpuButton,
+        target: AppMenuActions.shared,
+        action: #selector(AppMenuActions.monitorPopover(_:))
+      )
+    }else{
+      cpuButton.image = NSImage(named: self.defaultIconName)?.resized(to: 28)
+      cpuButton.target = AppMenuActions.shared
+      cpuButton.action = #selector(AppMenuActions.monitorPopover(_:))
+    }
     
   }
   
   // MARK: - 取消挂载
   public func unmount(){
-    
-    for item in items {
-      if let button = item.button {
-        button.image = nil
-      }
-      NSStatusBar.system.removeStatusItem(item)
+    if let existingItem = self.item {
+      // 移除状态栏项
+      NSStatusBar.system.removeStatusItem(existingItem)
+      // 清空按钮内容
+      existingItem.button?.image = nil
+      existingItem.button?.title = ""
     }
-    items.removeAll()
-    
-  }
-
-  // MARK: - 刷新 hidder 图标的尺寸
-  public func refresh() {
-    
+    // 清空引用，避免野指针
+    self.item = nil
   }
   
+  // MARK: - 弹窗
+  public func show(_ sender: NSStatusBarButton){
+    if(controller == nil){
+      controller = NSHostingController(
+        rootView: popoverView.frame(
+          maxWidth: .infinity,
+          maxHeight: .infinity
+        ).padding()
+      )
+    }
+    popover.contentSize = .init(width: 220, height: 430)
+    popover.contentViewController = controller
+    popover.behavior = .transient
+    popover.animates = true
+    
+    self.popover.show(
+      relativeTo: sender.bounds,
+      of: sender,
+      preferredEdge: .minY
+    )
+  }
+}
+// MARK: - NSImage 扩展
+private extension NSImage {
+  func resized(to size: CGFloat) -> NSImage {
+    let newImage = NSImage(size: NSSize(width: size, height: size))
+    newImage.lockFocus()
+    draw(in: NSRect(x: 0, y: 0, width: size, height: size))
+    newImage.unlockFocus()
+    return newImage
+  }
 }

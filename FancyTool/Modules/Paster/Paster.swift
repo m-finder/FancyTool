@@ -155,15 +155,15 @@ class Paster: ObservableObject{
   
   // MARK: - 辅助功能权限申请
   private func requestAccessibilityPermission() -> Bool {
-      // 1. 快速判断：已经授权就返回
+      // 快速判断：已经授权就返回
       let quickOptions = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
       if AXIsProcessTrustedWithOptions(quickOptions) { return true }
 
-      // 2. 未授权 → 弹系统设置
+      // 未授权 → 弹系统设置
       let promptOptions = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
       AXIsProcessTrustedWithOptions(promptOptions)
 
-      // 3. 用户回到 App 后再查一次
+      // 用户回到 App 后再查一次
       let nowTrusted = AXIsProcessTrustedWithOptions(quickOptions)
       if !nowTrusted {
         let alert = NSAlert()

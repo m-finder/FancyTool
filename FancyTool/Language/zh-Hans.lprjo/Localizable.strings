@@ -12,22 +12,19 @@
 "About" = "关于";
 "Runner" = "动态图标";
 "Hidder" = "菜单折叠";
-"Texter" = "炫彩文字";
+"Texter" = "炫彩签名";
 "Paster" = "剪贴面板";
 "Rounder" = "屏幕圆角";
-"License" = "激活码";
+"Monitor" = "系统监控";
 
 // runner
-"Acknowledgments" = "鸣谢";
 "Drag and drop GIF here." = "拖拽GIF到此处";
 
 // texter
-"MenuBar Text" = "菜单栏文本";
+"MenuBar Text" = "菜单栏签名";
 "Colorful" = "缤纷色彩";
 "Keep happy." = "保持开心。";
 "Input something" = "输入些什么";
-"Shimmer" = "流光";
-"Rainbow Shimmer" = "彩虹流光";
 
 // hidder
 "Hidder size:" = "圆点尺寸:";
@@ -53,3 +50,9 @@
 
 // Rounder
 "Radius size:" = "圆角尺寸:";
+
+// Monitor
+"CPU" = "CPU";
+"Network" = "网络";
+"Storage" = "储存";
+"Memory" = "内存";

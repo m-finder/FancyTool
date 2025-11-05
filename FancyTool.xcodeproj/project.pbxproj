@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		94443E712E40A5B3009D101F /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 94443E702E40A5B3009D101F /* KeyboardShortcuts */; };
+		94BCE15A2EB318EA0052CF8B /* SystemInfoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 94BCE1592EB318EA0052CF8B /* SystemInfoKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -15,7 +16,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		94EE43DC2E1766F600D11893 /* Exceptions for "FancyTool" folder in "FancyTool" target */ = {
+		94BCE2662EBB2EA30052CF8B /* Exceptions for "FancyTool" folder in "FancyTool" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -28,7 +29,7 @@
 		94EE43172E13C66000D11893 /* FancyTool */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				94EE43DC2E1766F600D11893 /* Exceptions for "FancyTool" folder in "FancyTool" target */,
+				94BCE2662EBB2EA30052CF8B /* Exceptions for "FancyTool" folder in "FancyTool" target */,
 			);
 			path = FancyTool;
 			sourceTree = "<group>";
@@ -40,6 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				94BCE15A2EB318EA0052CF8B /* SystemInfoKit in Frameworks */,
 				94443E712E40A5B3009D101F /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -84,6 +86,7 @@
 			name = FancyTool;
 			packageProductDependencies = (
 				94443E702E40A5B3009D101F /* KeyboardShortcuts */,
+				94BCE1592EB318EA0052CF8B /* SystemInfoKit */,
 			);
 			productName = FancyTool;
 			productReference = 94EE43152E13C66000D11893 /* FancyTool.app */;
@@ -97,7 +100,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					94EE43142E13C66000D11893 = {
 						CreatedOnToolsVersion = 16.4;
@@ -115,6 +118,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				9470CCCA2E2E303E0096EEA1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				94BCE1582EB318EA0052CF8B /* XCRemoteSwiftPackageReference "SystemInfoKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 94EE43162E13C66000D11893 /* Products */;
@@ -207,6 +211,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -265,6 +270,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -282,11 +288,13 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y38DNQ273W;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FancyTool/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FancyTool;
@@ -297,7 +305,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.6;
+				MARKETING_VERSION = 1.0.8;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wu.FancyTool;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -320,11 +328,13 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y38DNQ273W;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FancyTool/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FancyTool;
@@ -335,7 +345,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.6;
+				MARKETING_VERSION = 1.0.8;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wu.FancyTool;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -377,6 +387,14 @@
 				minimumVersion = 2.3.0;
 			};
 		};
+		94BCE1582EB318EA0052CF8B /* XCRemoteSwiftPackageReference "SystemInfoKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Kyome22/SystemInfoKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.4.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -384,6 +402,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9470CCCA2E2E303E0096EEA1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
+		};
+		94BCE1592EB318EA0052CF8B /* SystemInfoKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 94BCE1582EB318EA0052CF8B /* XCRemoteSwiftPackageReference "SystemInfoKit" */;
+			productName = SystemInfoKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

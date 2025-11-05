@@ -55,6 +55,11 @@ struct AppMenuItem {
         state: AppState.shared.showRounder
       ),
       AppMenuItem(
+        title: String(localized: "Monitor"),
+        action:  #selector(AppMenuActions.monitor(_:)),
+        state: AppState.shared.showMonitor
+      ),
+      AppMenuItem(
         isSeparator: true
       ),
       AppMenuItem(

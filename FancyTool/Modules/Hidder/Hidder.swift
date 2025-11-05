@@ -39,6 +39,16 @@ class Hidder {
     
     self.unmount()
     
+    // 验证状态栏可用性
+    let testItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    guard testItem.button != nil else {
+      print("StatusBar is not available, retry mounting later")
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+        self?.mount()
+      }
+      return
+    }
+    NSStatusBar.system.removeStatusItem(testItem)
     for _ in 0..<2 {
       
       let item: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)

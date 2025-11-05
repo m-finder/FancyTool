@@ -1,5 +1,5 @@
 {
-  "originHash" : "69c39523ac0471922b625cc56b8722155cfd2afd660bdd4f5ff67335b5b87714",
+  "originHash" : "7d0784e25249c37bbd2641dac5f877f2c8a0db76176c66cdc30a87359981e5c6",
   "pins" : [
     {
       "identity" : "keyboardshortcuts",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "045cf174010beb335fa1d2567d18c057b8787165",
         "version" : "2.3.0"
+      }
+    },
+    {
+      "identity" : "systeminfokit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kyome22/SystemInfoKit",
+      "state" : {
+        "revision" : "d411f1d469d1b5f107257520d1ed3825bb8310a9",
+        "version" : "6.4.0"
       }
     }
   ],
