@@ -8,8 +8,19 @@
 import SwiftUI
 
 struct CopyrightView: View {
+  
+  private let githubURL = URL(string: "https://github.com/FancyTool/FancyToolApp")!
+  
   var body: some View {
-    Text("© FancyTool by M-finder 2025").font(.footnote).fontWeight(.light).padding(.top).padding(.bottom)
+    HStack {
+      Text("© FancyTool by ").font(.footnote).fontWeight(.light)
+
+      Link("M-finder", destination: githubURL).font(.footnote).fontWeight(.light).foregroundColor(.blue)
+      
+      Text(" 2025").font(.footnote).fontWeight(.light)
+    }
+    .padding(.top)
+    .padding(.bottom)
   }
 }
 

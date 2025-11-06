@@ -153,6 +153,11 @@ class AppMenuActions: NSObject {
       }
       Monitor.shared.mount()
     }else{
+      AppState.shared.showCpu = false
+      AppState.shared.showMemory = false
+      AppState.shared.showStorage = false
+      AppState.shared.showBattery = false
+      AppState.shared.showNetWork = false
       Monitor.shared.unmount()
     }
   }

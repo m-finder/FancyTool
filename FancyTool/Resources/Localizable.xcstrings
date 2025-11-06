@@ -4,6 +4,9 @@
     "" : {
 
     },
+    " 2025" : {
+
+    },
     "%d days ago" : {
       "localizations" : {
         "de" : {
@@ -187,7 +190,7 @@
         }
       }
     },
-    "© FancyTool by M-finder 2025" : {
+    "© FancyTool by " : {
 
     },
     "⌘+%lld" : {
@@ -630,6 +633,9 @@
           }
         }
       }
+    },
+    "M-finder" : {
+
     },
     "Main" : {
 
