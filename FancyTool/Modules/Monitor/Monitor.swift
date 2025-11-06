@@ -17,6 +17,7 @@ class Monitor {
   private var popoverView = MonitorPopoverView()
   private var controller: NSViewController!
   private var defaultIconName = "m-finder"
+  
   @ObservedObject var state = AppState.shared
   
   // MARK: - 挂载
@@ -26,11 +27,14 @@ class Monitor {
       item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     }
     
-    guard let cpuButton = item?.button else { return }
+    guard let button = item?.button else { return }
     
-    cpuButton.subviews.forEach { $0.removeFromSuperview() }
-    cpuButton.image = nil
-    cpuButton.title = ""
+    // 强制选中
+    button.state = .on
+
+    button.subviews.forEach { $0.removeFromSuperview() }
+    button.image = nil
+    button.title = ""
     
     
     let hasActiveMonitor = state.showCpu || state.showNetWork || state.showStorage || state.showMemory || state.showBattery
@@ -38,14 +42,14 @@ class Monitor {
     if hasActiveMonitor {
       let _ = HostingView(
         view: MonitorView().frame(height: 22).frame(minWidth: 40, maxWidth: .infinity).padding(.horizontal, 4),
-        button: cpuButton,
+        button: button,
         target: AppMenuActions.shared,
         action: #selector(AppMenuActions.monitorPopover(_:))
       )
     }else{
-      cpuButton.image = NSImage(named: self.defaultIconName)?.resized(to: 28)
-      cpuButton.target = AppMenuActions.shared
-      cpuButton.action = #selector(AppMenuActions.monitorPopover(_:))
+      button.image = NSImage(named: self.defaultIconName)?.resized(to: 28)
+      button.target = AppMenuActions.shared
+      button.action = #selector(AppMenuActions.monitorPopover(_:))
     }
     
   }

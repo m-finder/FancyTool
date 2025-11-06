@@ -73,7 +73,7 @@ struct MonitorView: View {
       if AppState.shared.showBattery {
         HStack(alignment: .center, spacing: 1) {
           Image(systemName: bat?.icon ?? "battery.50").resizable().frame(width: 14, height: 8)
-          Text(String(format: "%.1f%%", battery)).frame(width: 35).offset(y: 0.5)
+          Text(String(format: "%.0f%%", battery)).frame(width: 35).offset(y: 0.5)
         }.font(.caption).frame(width: 55)
       }
       

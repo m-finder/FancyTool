@@ -32,7 +32,7 @@ class AppMenu {
         self.addMenuItem(
           title: item.title!,
           action: item.action!,
-          state: item.state
+          state: item.state 
         )
         return
       }

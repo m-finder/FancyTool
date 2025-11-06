@@ -20,10 +20,8 @@ struct MonitorSettingView: View {
     Toggle(title, isOn: isOn)
       .onChange(of: isOn.wrappedValue) {
         Monitor.shared.popover.close()
-        Monitor.shared.mount()
-        // 确保监控总开关开启
-        if !state.showMonitor {
-          state.showMonitor = true
+        if(AppState.shared.showMonitor){
+          Monitor.shared.mount()
         }
       }
       .toggleStyle(SwitchToggleStyle())

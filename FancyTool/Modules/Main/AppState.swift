@@ -45,10 +45,10 @@ class AppState : ObservableObject{
   // Monitor
   @AppStorage("showMonitor") var showMonitor: Bool = false
   @AppStorage("showCpu") var showCpu: Bool = false
-  @AppStorage("showNetWork") var showNetWork: Bool = true
-  @AppStorage("showStorage") var showStorage: Bool = true
-  @AppStorage("showMemory") var showMemory: Bool = true
-  @AppStorage("showBattery") var showBattery: Bool = true
+  @AppStorage("showNetWork") var showNetWork: Bool = false
+  @AppStorage("showStorage") var showStorage: Bool = false
+  @AppStorage("showMemory") var showMemory: Bool = false
+  @AppStorage("showBattery") var showBattery: Bool = false
 
   private init() {}
   

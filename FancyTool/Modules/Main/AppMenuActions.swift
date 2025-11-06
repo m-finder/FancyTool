@@ -138,7 +138,9 @@ class AppMenuActions: NSObject {
   
   // MARK: - 停启用监控
   @IBAction func monitor(_ sender: NSStatusBarButton){
+    
     AppState.shared.showMonitor.toggle()
+    
     sender.state = AppState.shared.showMonitor ? .on : .off
     
     if(AppState.shared.showMonitor){
@@ -153,11 +155,6 @@ class AppMenuActions: NSObject {
       }
       Monitor.shared.mount()
     }else{
-      AppState.shared.showCpu = false
-      AppState.shared.showMemory = false
-      AppState.shared.showStorage = false
-      AppState.shared.showBattery = false
-      AppState.shared.showNetWork = false
       Monitor.shared.unmount()
     }
   }
