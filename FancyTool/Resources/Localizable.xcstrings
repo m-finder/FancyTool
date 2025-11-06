@@ -233,47 +233,6 @@
         }
       }
     },
-    "AccessibilityPermissionMessage" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitte gewähre in den Systemeinstellungen > Sicherheit > Datenschutz > Bedienungshilfen die Berechtigung, um Einfügen zu erlauben."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veuillez autoriser cette app dans Réglages Système > Sécurité et confidentialité > Confidentialité > Accessibilité pour permettre le collage."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "貼り付け操作を許可するため、システム設定 > セキュリティとプライバシー > プライバシー > アクセシビリティでこのアプリに権限を与えてください。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "붙여넣기 작업을 허용하려면 시스템 설정 > 보안 및 개인정보 보호 > 개인정보 보호 > 보조 기능에서 이 앱에 권한을 활성화하십시오."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请在系统设置 > 安全性与隐私 > 隐私 > 辅助功能中，启用本应用的权限，以允许粘贴操作。"
-          }
-        }
-      }
-    },
     "Battery" : {
       "localizations" : {
         "fr" : {
@@ -1295,47 +1254,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tab 键切换"
-          }
-        }
-      }
-    },
-    "Text" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Text"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Text"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Texte"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "テキスト"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "텍스트"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文本"
           }
         }
       }

@@ -63,6 +63,8 @@ struct MainSettingView: View {
         }
       }
       .padding()
+      
+      MonitorSettingView()
 
       Toggle(
         String(localized: "Launch on Startup"),
