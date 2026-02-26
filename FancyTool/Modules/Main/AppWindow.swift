@@ -33,6 +33,7 @@ class AppWindow {
     }
   }
   
+  // MARK: - 窗口显示
   public func show(){
     window?.orderFrontRegardless()
     NSApp.activate(ignoringOtherApps: true)

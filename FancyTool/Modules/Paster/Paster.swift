@@ -26,6 +26,7 @@ class Paster: ObservableObject{
     changeCount = pasteboard.changeCount
   }
   
+  // MARK: - 挂载
   public func mount(){
     unmount()
 
@@ -46,11 +47,14 @@ class Paster: ObservableObject{
     }
   }
   
+  // MARK: - 卸载
   public func unmount(){
     TaskManager.shared.removeTask(id: "paster")
     KeyboardShortcuts.disable(.paster)
   }
   
+  
+  // MARK: - 显示弹窗
   public func show(){
     if self.window == nil {
       self.window = PasterHistoryWindow(contentView: PasterView())
@@ -62,11 +66,13 @@ class Paster: ObservableObject{
     self.window?.orderFrontRegardless()
   }
   
+  // MARK: - 隐藏弹窗
   public func hide(){
     self.window?.close()
     self.window = nil
   }
   
+  // MARK: - 记录复制内容
   public func append(_ record: PasterModel){
     if history.contains(record) {
       history.removeAll(where: { $0 == record})
@@ -79,6 +85,7 @@ class Paster: ObservableObject{
     }
   }
   
+  // MARK: - tap
   public func tap(_ item: PasterModel) {
     let success = self.copyToClipboard(item)
     
@@ -91,6 +98,7 @@ class Paster: ObservableObject{
     }
   }
   
+  // MARK: - 内容处理
   public func copyToClipboard(_ item: PasterModel) -> Bool {
     pasteboard.clearContents()
     
@@ -117,6 +125,7 @@ class Paster: ObservableObject{
     return false
   }
   
+  // MARK: - 模拟粘贴
   public func simulatePaste(to application: NSRunningApplication? = nil) {
     let targetApp = self.targetApp
     guard hasAccessibilityPermission() else {
