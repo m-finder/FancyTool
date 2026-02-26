@@ -17,7 +17,6 @@ struct TexterView: View {
     
     Text(state.text)
       .foregroundStyle(textGradient)
-      .shimmering(active: state.showShimmer && isVisible, rainbow: state.rainbowShimmer)
       .onAppear {
         isVisible = true
         gradientColors = ColorUtil().getColor(index: state.colorIndex)
@@ -28,7 +27,6 @@ struct TexterView: View {
       .onChange(of: state.colorIndex) {
         gradientColors = ColorUtil.shared.getColor(index: state.colorIndex)
       }
-    
   }
   
   // 文字颜色渐变

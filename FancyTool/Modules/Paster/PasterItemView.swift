@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct PasterItemView: View {
   
   let item: PasterModel

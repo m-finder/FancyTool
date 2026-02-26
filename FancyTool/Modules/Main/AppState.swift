@@ -13,7 +13,7 @@ class AppState : ObservableObject{
   
   static let shared = AppState()
   
-  // 主程序配置, 开机自启
+  // 主程序配置
   @AppStorage("startUp") var startUp: Bool = false
   
   // Runner
@@ -25,8 +25,11 @@ class AppState : ObservableObject{
   @AppStorage("showHidder") var showHidder: Bool = false
   @AppStorage("hidderSize") var hidderSize = 6
   
+  
   // Texter
   @AppStorage("showTexter") var showTexter: Bool = false
+  @AppStorage("showShimmer") var showShimmer: Bool = true
+  @AppStorage("rainbowShimmer") var rainbowShimmer: Bool = false
   @AppStorage("colorIndex") var colorIndex: Int = 0
   @AppStorage("text") var text: String = String(localized: "Keep happy.")
   

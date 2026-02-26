@@ -48,7 +48,6 @@ class Hidder {
       }
       return
     }
-    
     NSStatusBar.system.removeStatusItem(testItem)
     for _ in 0..<2 {
       

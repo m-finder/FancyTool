@@ -31,7 +31,6 @@ struct AppMenuItem {
     self.isSeparator = isSeparator
   }
 
-  // MARK: - 菜单元素定义
   public func menus() -> [AppMenuItem] {
     return [
 

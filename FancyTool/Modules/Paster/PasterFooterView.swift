@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct PasterFooterView: View {
   
   var number: Int

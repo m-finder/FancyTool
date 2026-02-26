@@ -9,7 +9,7 @@ import Foundation
 import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
-
-    static let paster = Self("paster", default: .init(.c, modifiers: [.shift, .command]))
-    
+  
+  static let paster = Self("paster", default: .init(.c, modifiers: [.shift, .command]))
+  
 }

@@ -41,8 +41,8 @@ struct TexterPopoverView: View {
           
           TextField(String(localized: "Input something"), text: state.$text)
             .onChange(of: state.text) {
-              if state.text.count > 15 {
-                state.text = String(state.text.prefix(15))
+              if state.text.count > 30 {
+                state.text = String(state.text.prefix(30))
               }
             }
             .textFieldStyle(.roundedBorder)

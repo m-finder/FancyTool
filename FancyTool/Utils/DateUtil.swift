@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 
+@MainActor
 class DateUtil {
   
   static let shared = DateUtil()

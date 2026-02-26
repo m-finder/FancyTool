@@ -8,6 +8,7 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 class PasterHistoryWindow: NSWindow, NSWindowDelegate{
   
   @Published var history = Paster.shared.history
@@ -38,7 +39,8 @@ class PasterHistoryWindow: NSWindow, NSWindowDelegate{
     
     // 设置窗口样式
     isOpaque = false
-    hasShadow = false
+    backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.8)
+    hasShadow = true
     level = .popUpMenu
     hidesOnDeactivate = true
     

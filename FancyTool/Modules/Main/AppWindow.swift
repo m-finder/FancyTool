@@ -6,6 +6,7 @@
 //
 import SwiftUI
 
+@MainActor
 class AppWindow {
   
   private var window: NSWindow!

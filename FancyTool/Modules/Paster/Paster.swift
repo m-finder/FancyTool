@@ -9,6 +9,7 @@ import SwiftUI
 import Foundation
 import KeyboardShortcuts
 
+@MainActor
 class Paster: ObservableObject{
   
   private var timer: Timer?
@@ -29,10 +30,14 @@ class Paster: ObservableObject{
   // MARK: - 挂载
   public func mount(){
     unmount()
-
-    TaskManager.shared.addTask(id: "paster", interval: 1.0, queue: .main) {
-      AppMenuActions.shared.clipboard(NSPasteboard.general)
-    }
+    
+    timer = Timer.scheduledTimer(
+      timeInterval: 0.8,
+      target: AppMenuActions.shared,
+      selector: #selector(AppMenuActions.clipboard(_:)),
+      userInfo: nil,
+      repeats: true
+    )
     
     // 监听快捷键
     KeyboardShortcuts.onKeyUp(for: .paster) { [weak self] in
@@ -49,7 +54,8 @@ class Paster: ObservableObject{
   
   // MARK: - 卸载
   public func unmount(){
-    TaskManager.shared.removeTask(id: "paster")
+    timer?.invalidate()
+    timer = nil
     KeyboardShortcuts.disable(.paster)
   }
   
@@ -128,10 +134,7 @@ class Paster: ObservableObject{
   // MARK: - 模拟粘贴
   public func simulatePaste(to application: NSRunningApplication? = nil) {
     let targetApp = self.targetApp
-    guard hasAccessibilityPermission() else {
-      showAccessibilityPermissionAlert()
-      return
-    }
+    guard requestAccessibilityPermission() else { return }
     
     guard let source = CGEventSource(stateID: .hidSystemState) else {
       return
@@ -159,20 +162,26 @@ class Paster: ObservableObject{
     }
   }
   
-  // 检查是否有辅助功能权限
-  private func hasAccessibilityPermission() -> Bool {
-    let accessEnabled = AXIsProcessTrustedWithOptions([
-      kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true
-    ] as CFDictionary)
-    return accessEnabled
+  // MARK: - 辅助功能权限申请
+  private func requestAccessibilityPermission() -> Bool {
+      // 快速判断：已经授权就返回
+      let quickOptions = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
+      if AXIsProcessTrustedWithOptions(quickOptions) { return true }
+
+      // 未授权 → 弹系统设置
+      let promptOptions = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+      AXIsProcessTrustedWithOptions(promptOptions)
+
+      // 用户回到 App 后再查一次
+      let nowTrusted = AXIsProcessTrustedWithOptions(quickOptions)
+      if !nowTrusted {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Need Accessibility Permissions", comment: "Alert title for accessibility permission request")
+        alert.informativeText = NSLocalizedString("Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations.", comment: "Detailed explanation for accessibility permission request")
+        alert.addButton(withTitle: NSLocalizedString("OK", comment: "Confirm button text"))
+        alert.runModal()
+      }
+      return nowTrusted
   }
-  
-  // 显示权限提示
-  private func showAccessibilityPermissionAlert() {
-      let alert = NSAlert()
-      alert.messageText = NSLocalizedString("Need Accessibility Permissions", comment: "Alert title for accessibility permission request")
-      alert.informativeText = NSLocalizedString("Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations.", comment: "Detailed explanation for accessibility permission request")
-      alert.addButton(withTitle: NSLocalizedString("OK", comment: "Confirm button text"))
-      alert.runModal()
-  }
+
 }

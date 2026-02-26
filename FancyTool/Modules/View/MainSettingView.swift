@@ -7,10 +7,13 @@
 
 import SwiftUI
 import ServiceManagement
+import Combine
 
 struct MainSettingView: View {
   
   @ObservedObject var state = AppState.shared
+  @State private var radiusDebouncer: AnyCancellable?
+  @State private var hidderSizeDebouncer: AnyCancellable?
   
   var body: some View {
     VStack(alignment: .center, spacing: 0){
@@ -22,19 +25,18 @@ struct MainSettingView: View {
               get: { Double(state.hidderSize) },
               set: { state.hidderSize = Int($0) }
             ),
-            in: 6...12,
+            in: 5...10,
             step: 1
           )
           .frame(width: 150)
           
           Text("\(state.hidderSize)").frame(width: 30)
         }
-        .onChange(of: state.hidderSize) {  oldValue, newValue in
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            if state.hidderSize == newValue {
-              Hidder.shared.refresh()
-            }
-          }
+        .onChange(of: state.hidderSize) { oldValue, newValue in
+          hidderSizeDebouncer?.cancel()
+          hidderSizeDebouncer = Just(newValue)
+            .delay(for: .milliseconds(50), scheduler: RunLoop.main)
+            .sink { _ in Hidder.shared.refresh() }
         }
       }
       .padding()
@@ -53,16 +55,17 @@ struct MainSettingView: View {
           
           Text(String(format: "%.1f", state.radius)).frame(width: 30)
         }
-        .onChange(of: state.radius) {  oldValue, newValue in
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            if state.radius == newValue {
-              Rounder.shared.refresh()
-            }
-          }
+        .onChange(of: state.radius) { oldValue, newValue in
+          radiusDebouncer?.cancel()
+          radiusDebouncer = Just(newValue)
+            .delay(for: .milliseconds(50), scheduler: RunLoop.main)
+            .sink { Rounder.shared.refresh(CGFloat($0)) }
         }
       }
       .padding()
       
+      MonitorSettingView()
+
       Toggle(
         String(localized: "Launch on Startup"),
         isOn: state.$startUp

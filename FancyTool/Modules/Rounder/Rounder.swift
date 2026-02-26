@@ -5,97 +5,142 @@
 //  Created by 吴雲放 on 2025/8/23.
 //
 
-import Foundation
-import SwiftUI
 import AppKit
+import Combine
 
-class Rounder {
+@MainActor
+final class Rounder {
   
   static let shared = Rounder()
-  var windows: [NSWindow] = []
-  @Published var state = AppState.shared
-  // 存储通知观察者，用于后续移除
-  private var screenChangeObserver: NSObjectProtocol?
+  
+  enum CornerPosition { case topLeft, topRight, bottomLeft, bottomRight }
+  
+  private var windows: [NSWindow] = []
+  private var cancellables = Set<AnyCancellable>()
   
   private init() {
-    // 初始化时注册屏幕变化通知监听
-    setupScreenChangeObservation()
+    setupObservers()
   }
   
-  deinit {
-    // 释放时移除通知监听
-    if let observer = screenChangeObserver {
-      NotificationCenter.default.removeObserver(observer)
-    }
-  }
-  
-  private func setupScreenChangeObservation() {
-    // 使用更兼容的屏幕参数变化通知
-    screenChangeObserver = NotificationCenter.default.addObserver(
-      forName: NSApplication.didChangeScreenParametersNotification,
-      object: NSApplication.shared,
-      queue: .main
-    ) { [weak self] _ in
-      // 延迟执行以确保系统完成屏幕配置更新
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-        self?.mount()
-      }
-    }
-  }
-  
+  // MARK: - 挂载
   public func mount() {
-    
-    self.unmount()
-    
-    let screens: [NSScreen] = NSScreen.screens
-    
-    for screen in screens {
-      
-      let screenFrame = screen.frame
-      
-      let window: NSWindow = NSWindow(
-        contentRect: screen.frame,
-        styleMask: .borderless,
-        backing: .buffered,
-        defer: false,
-        screen: screen
-      )
-      window.isReleasedWhenClosed = false
-      window.isOpaque = false
-      window.backgroundColor = NSColor.clear
-      window.alphaValue = 1
-      window.hasShadow = false
-      window.ignoresMouseEvents = true
-      window.collectionBehavior = [.stationary, .ignoresCycle, .canJoinAllSpaces, .fullScreenAuxiliary]
-      
-      let contentView = RounderView(
-        frame: NSRect(origin: .zero, size: screenFrame.size),
-        radius: state.radius
-      )
-      window.contentView = contentView
-      
-      window.setFrameOrigin(screenFrame.origin)
-      window.orderFrontRegardless()
-      window.level = .screenSaver
-      window.orderFront(self)
-      
-      windows.append(window)
-    }
+    unmount()
+    NSScreen.screens.forEach { createWindows(for: $0) }
   }
   
+  // MARK: - 卸载
   public func unmount() {
-    for window in windows {
-      window.close()
+    windows.forEach { w in
+      w.orderOut(nil)
+      w.contentView = nil
+      w.close()
     }
     windows.removeAll()
   }
   
-  public func refresh() {
-    for window in windows {
-      guard let contentView = window.contentView as? RounderView else { continue }
-      contentView.radius = state.radius
-      contentView.setNeedsDisplay(contentView.bounds)
+  // MARK: - 刷新
+  public func refresh(_ radius: CGFloat) {
+    windows.forEach { (w) in
+      (w.contentView as? RounderView)?.radius = radius
     }
   }
+  
+  // MARK: - Observers
+  private func setupObservers() {
+    // 屏幕参数变化
+    NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
+      .sink { [weak self] _ in self?.remountAfterDelay() }
+      .store(in: &cancellables)
+    
+    // 空间切换（桌面/全屏）
+    NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.activeSpaceDidChangeNotification)
+      .sink { [weak self] _ in self?.remountAfterDelay(0.2) }
+      .store(in: &cancellables)
+    
+    // 应用从后台到前台（有时唤醒后先切活跃）
+    NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+      .sink { [weak self] _ in self?.remountAfterDelay(0.2) }
+      .store(in: &cancellables)
+    
+    // 睡眠/唤醒
+    NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidWakeNotification)
+      .sink { [weak self] _ in self?.remountAfterDelay(0.3) }
+      .store(in: &cancellables)
+    
+    // 作为兜底：系统唤醒
+    NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
+      .sink { [weak self] _ in self?.remountAfterDelay(0.3) }
+      .store(in: &cancellables)
+  }
+  
+  private func remountAfterDelay(_ delay: TimeInterval = 0.15) {
+    Task { @MainActor in
+      try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+      self.mount()
+    }
+  }
+  
+  // MARK: - Window creation
+  private func createWindows(for screen: NSScreen) {
+    let radius = AppState.shared.radius
+    let cornerSize = radius * 2
+    let frame = screen.frame
+    
+    for position in [CornerPosition.topLeft, .topRight, .bottomLeft, .bottomRight] {
+      let origin = calculateOrigin(for: position, in: frame, cornerSize: cornerSize)
+      let rect = NSRect(origin: origin, size: NSSize(width: cornerSize, height: cornerSize))
+      if let window = createWindow(frame: rect, screen: screen, position: position, radius: radius) {
+        windows.append(window)
+      }
+    }
+  }
+  
+  private func calculateOrigin(
+    for position: CornerPosition,
+    in frame: NSRect,
+    cornerSize: CGFloat
+  ) -> NSPoint {
+    switch position {
+    case .topLeft:     return NSPoint(x: frame.minX, y: frame.maxY - cornerSize)
+    case .topRight:    return NSPoint(x: frame.maxX - cornerSize, y: frame.maxY - cornerSize)
+    case .bottomLeft:  return NSPoint(x: frame.minX, y: frame.minY)
+    case .bottomRight: return NSPoint(x: frame.maxX - cornerSize, y: frame.minY)
+    }
+  }
+  
+  private func createWindow(
+    frame: NSRect,
+    screen: NSScreen,
+    position: CornerPosition,
+    radius: CGFloat
+  ) -> NSWindow? {
+    let window = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false, screen: screen)
+    
+    configureWindow(window, frame: frame)
+    
+    let view = RounderView(frame: NSRect(origin: .zero, size: frame.size), radius: radius, cornerPosition: position)
+    window.contentView = view
+    window.orderFrontRegardless()
+    return window
+  }
+  
+  private func configureWindow(_ window: NSWindow, frame: NSRect) {
+    window.isOpaque = false
+    window.backgroundColor = .clear
+    window.ignoresMouseEvents = true
+    window.hasShadow = false
+    window.level = .statusBar
+    
+    // 跨空间与全屏
+    window.collectionBehavior = [
+      .canJoinAllSpaces,
+      .fullScreenAuxiliary,
+      .ignoresCycle,
+      .stationary
+    ]
+    
+    window.setFrameOrigin(frame.origin)
+    window.isReleasedWhenClosed = false
+    window.hidesOnDeactivate = false
+  }
 }
-

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 class HostingView {
   
   init(view: some View, button: NSStatusBarButton) {

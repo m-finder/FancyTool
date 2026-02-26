@@ -5,71 +5,67 @@
 //  Created by 吴雲放 on 2025/8/25.
 //
 
-import Cocoa
 import SwiftUI
+import SystemInfoKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
   
-  private var runner: NSStatusItem
   
-  override init(){
-    self.runner = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-  }
+  private var timer: DispatchSourceTimer?
   
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
+
+    // 初始化图标和菜单
+    Runner.shared.mount()
     
-    // Runner
-    Runner.shared.mound(item: self.runner)
+    // Hidder
+    if(AppState.shared.showHidder){
+      Hidder.shared.mount()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+        Hidder.shared.toggle()
+      })
+    }
     
     // Texter
     if(AppState.shared.showTexter){
       Texter.shared.mount()
     }
     
-    // Hidder
-    if(AppState.shared.showHidder){
-      Hidder.shared.mount()
-      DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
-        Hidder.shared.toggle()
-      })
-    }
     
     // Paster
     if(AppState.shared.showPaster){
       Paster.shared.mount()
     }
     
+    
     // Rounder
     if(AppState.shared.showRounder){
       Rounder.shared.mount()
     }
     
-    // 监听应用进入后台
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(appDidResignActive),
-      name: NSApplication.didResignActiveNotification,
-      object: nil
-    )
     
-    // 监听应用回到前台
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(appDidBecomeActive),
-      name: NSApplication.didBecomeActiveNotification,
-      object: nil
-    )
+    // Monitor
+    if(AppState.shared.showMonitor){
+      DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
+        Monitor.shared.mount()
+      })
+    }
+    
+    // 开始监控
+    AppState.shared.start()
   }
   
-  @objc private func appDidResignActive() {
-    // 后台时关闭动画
-    print("app 进入后台模式")
+  // 失去焦点
+  func applicationDidResignActive(_ notification: Notification) {
+    // 关闭 Monitor 的 popover
+    if Monitor.shared.popover.isShown {
+      Monitor.shared.popover.close()
+    }
+    
+    // 关闭 Texter 的 popover
+    if Texter.shared.popover.isShown {
+      Texter.shared.popover.close()
+    }
   }
-  
-  @objc private func appDidBecomeActive() {
-    // 前台时恢复动画（如果之前是开启的）
-    print("app 进入前台模式")
-  }
-  
 }
