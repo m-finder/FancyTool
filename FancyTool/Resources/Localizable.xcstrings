@@ -4,7 +4,7 @@
     "" : {
 
     },
-    " 2025" : {
+    " 2025-2026" : {
 
     },
     "%d days ago" : {
@@ -391,9 +391,6 @@
         }
       }
     },
-    "Hello, World!" : {
-
-    },
     "Hidder" : {
       "localizations" : {
         "de" : {
@@ -635,9 +632,6 @@
       }
     },
     "M-finder" : {
-
-    },
-    "Main" : {
 
     },
     "Memory" : {
@@ -1045,9 +1039,6 @@
         }
       }
     },
-    "Rainbow Shimmer" : {
-
-    },
     "Rounder" : {
       "localizations" : {
         "de" : {
@@ -1170,9 +1161,6 @@
           }
         }
       }
-    },
-    "Shimmer" : {
-
     },
     "Shortcut:" : {
       "localizations" : {
@@ -1300,6 +1288,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "炫彩签名"
+          }
+        }
+      }
+    },
+    "Universal" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Universell"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Universel"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共通"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일반"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通用"
           }
         }
       }

@@ -12,18 +12,16 @@ struct SettingsView: View {
     VStack(alignment: .center, spacing: 0) {
       
       TabView {
-        MainSettingView().tabItem { Text("Main") }
+        MainSettingView().tabItem { Text("Universal") }
         RunnerSettingView().tabItem { Text("Runner") }
-//        TexterSettingView().tabItem { Text("Texter") }
         PasterSettingView().tabItem { Text("Paster") }
-//        MonitorSettingView().tabItem { Text("Monitor") }
+        MonitorSettingView().tabItem { Text("Monitor") }
       }
-      .frame(maxHeight: .infinity)
       
       CopyrightView().padding(.bottom, 15)
       
     }
-    .padding([.top, .leading, .trailing])
+    .padding(.top, 20)
   }
 }
 

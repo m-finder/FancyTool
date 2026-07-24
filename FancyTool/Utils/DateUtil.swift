@@ -28,12 +28,12 @@ class DateUtil {
     let calendar = Calendar.current
     let components = calendar.dateComponents([.second, .minute, .hour, .day], from: date, to: now)
     
-    // 超过2天显示具体日期
+    // 超过 2 天显示具体日期
     if let day = components.day, day >= 2 {
       return dateFormatter.string(from: date)
     }
  
-    // 2天内显示相对时间
+    // 2 天内显示相对时间
     if let day = components.day, day > 0 {
       return String.localizedStringWithFormat(NSLocalizedString("%d days ago", comment: ""), day)
     } else if let hour = components.hour, hour > 0 {

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CopyrightView: View {
   
-  private let githubURL = URL(string: "https://github.com/FancyTool/FancyToolApp")!
+  private let githubURL = URL(string: "https://github.com/m-finder/FancyTool")!
   
   var body: some View {
     HStack {
@@ -17,7 +17,7 @@ struct CopyrightView: View {
 
       Link("M-finder", destination: githubURL).font(.footnote).fontWeight(.light).foregroundColor(.blue)
       
-      Text(" 2025").font(.footnote).fontWeight(.light)
+      Text(" 2025-2026").font(.footnote).fontWeight(.light)
     }
     .padding(.top)
     .padding(.bottom)

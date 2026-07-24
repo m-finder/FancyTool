@@ -56,6 +56,7 @@ class AppState : ObservableObject{
   @Published var bundle: SystemInfoBundle?
   
   private var observer = SystemInfoObserver.shared
+  
   // 开始系统监控
   public func start() {
     observer.startMonitoring(monitorInterval: 3)
@@ -66,5 +67,6 @@ class AppState : ObservableObject{
     }
   }
   
+  // 停止系统监控
   public func stop() { observer.stopMonitoring() }
 }

@@ -43,14 +43,14 @@ struct PasterView: View {
     (paster.history.count + constant.limit - 1) / constant.limit
   }
   
-  // 取出当前页数据
+  // MARK: - 取出当前页数据
   private func rows(_ page: Int) -> [PasterModel] {
     let start = page * constant.limit
     let end = min(start + constant.limit, paster.history.count)
     return Array(paster.history[start..<end])
   }
   
-  // 快捷键监听
+  // MARK: - 快捷键监听
   private func onAppear(){
     currentPage = 0
     // 快捷键监听
@@ -88,7 +88,7 @@ struct PasterView: View {
     }
   }
   
-  // 隐藏事件，取消按键监听
+  // MARK: - 隐藏事件，取消按键监听
   private func onDisappear(){
     if let monitor = eventMonitor {
       NSEvent.removeMonitor(monitor)
