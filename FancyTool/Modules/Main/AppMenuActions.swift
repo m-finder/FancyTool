@@ -60,7 +60,7 @@ class AppMenuActions: NSObject {
     Hidder.shared.toggle()
   }
   
-  // MARK: - 停启用炫彩文字
+  // MARK: - 停启用炫彩签名
   @IBAction func texter(_ sender: NSStatusBarButton){
     AppState.shared.showTexter.toggle()
     sender.state = AppState.shared.showTexter ? .on : .off
@@ -72,7 +72,7 @@ class AppMenuActions: NSObject {
     }
   }
   
-  // MARK: - 炫彩文字点击事件，弹出操作窗口
+  // MARK: - 炫彩签名点击事件，弹出操作窗口
   @IBAction func textPopover(_ sender: NSStatusBarButton){
     if Texter.shared.popover.isShown{
       if let window = Texter.shared.popover.contentViewController?.view.window {

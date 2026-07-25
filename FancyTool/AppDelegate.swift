@@ -58,6 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   
   // 失去焦点
   func applicationDidResignActive(_ notification: Notification) {
+    
     // 关闭 Monitor 的 popover
     if Monitor.shared.popover.isShown {
       Monitor.shared.popover.close()
@@ -67,5 +68,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     if Texter.shared.popover.isShown {
       Texter.shared.popover.close()
     }
+    
+    // 关闭 Paster 的 window
+    if Paster.shared.window != nil {
+      Paster.shared.window?.close()
+    }
+
   }
 }

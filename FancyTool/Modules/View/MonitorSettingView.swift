@@ -12,11 +12,12 @@ struct MonitorSettingView: View {
   
   @ObservedObject var state = AppState.shared
   
-  // 抽取重复的Toggle配置为自定义组件
+  // 抽取重复的 Toggle 配置为自定义组件
   private func MonitorToggle(
     title: LocalizedStringKey,
     isOn: Binding<Bool>
   ) -> some View {
+    
     Toggle(title, isOn: isOn)
       .onChange(of: isOn.wrappedValue) {
         Monitor.shared.popover.close()
@@ -27,10 +28,12 @@ struct MonitorSettingView: View {
       .toggleStyle(SwitchToggleStyle())
       .font(.system(size: 12))
       .padding()
+    
   }
   
   var body: some View {
     VStack(alignment: .center, spacing: 0) {
+      
       // cpu 和 网络开关
       HStack {
         MonitorToggle(title: "CPU", isOn: state.$showCpu)
@@ -47,6 +50,7 @@ struct MonitorSettingView: View {
       HStack {
         MonitorToggle(title: "Battery", isOn: state.$showBattery)
       }
+      
     }
     .frame(maxHeight: .infinity, alignment: .top)
     .font(.system(size: 12))

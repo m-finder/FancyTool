@@ -21,7 +21,7 @@ class AppWindow {
       
       // 配置窗口属性
       window = NSWindow(
-        contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
+        contentRect: NSRect(x: 0, y: 0, width: 440, height: 400),
         styleMask: [.titled, .closable, .miniaturizable],
         backing: .buffered,
         defer: false
@@ -34,10 +34,10 @@ class AppWindow {
     }
   }
   
-  // MARK: - 窗口显示
+  // MARK: - 显示窗口
   public func show(){
-    window?.orderFrontRegardless()
     NSApp.activate(ignoringOtherApps: true)
+    window?.makeKeyAndOrderFront(nil)
   }
   
 }

@@ -52,15 +52,14 @@ class Paster: ObservableObject{
     }
   }
   
-  // MARK: - 卸载
+  // MARK: - 取消挂载
   public func unmount(){
     timer?.invalidate()
     timer = nil
     KeyboardShortcuts.disable(.paster)
   }
   
-  
-  // MARK: - 显示弹窗
+  // MARK: - 显示窗口
   public func show(){
     if self.window == nil {
       self.window = PasterHistoryWindow(contentView: PasterView())
@@ -72,13 +71,13 @@ class Paster: ObservableObject{
     self.window?.orderFrontRegardless()
   }
   
-  // MARK: - 隐藏弹窗
+  // MARK: - 隐藏窗口
   public func hide(){
     self.window?.close()
     self.window = nil
   }
   
-  // MARK: - 记录复制内容
+  // MARK: - 追加内容
   public func append(_ record: PasterModel){
     if history.contains(record) {
       history.removeAll(where: { $0 == record})
@@ -91,7 +90,15 @@ class Paster: ObservableObject{
     }
   }
   
-  // MARK: - tap
+  // MARK: - 删除数据
+  public func remove(_ record: PasterModel) {
+    if history.contains(record) {
+      history.removeAll(where: { $0 == record})
+    }
+    
+  }
+  
+  // MARK: - 选中数据
   public func tap(_ item: PasterModel) {
     let success = self.copyToClipboard(item)
     
@@ -104,7 +111,7 @@ class Paster: ObservableObject{
     }
   }
   
-  // MARK: - 内容处理
+  // MARK: - 复制到剪切板
   public func copyToClipboard(_ item: PasterModel) -> Bool {
     pasteboard.clearContents()
     

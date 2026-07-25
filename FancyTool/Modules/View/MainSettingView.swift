@@ -12,59 +12,14 @@ import Combine
 struct MainSettingView: View {
   
   @ObservedObject var state = AppState.shared
-  @State private var radiusDebouncer: AnyCancellable?
-  @State private var hidderSizeDebouncer: AnyCancellable?
-  
+
   var body: some View {
+    
     VStack(alignment: .center, spacing: 0){
       
-      LabeledContent(String(localized: "Hidder size:")) {
-        HStack {
-          Slider(
-            value: Binding(
-              get: { Double(state.hidderSize) },
-              set: { state.hidderSize = Int($0) }
-            ),
-            in: 5...10,
-            step: 1
-          )
-          .frame(width: 150)
-          
-          Text("\(state.hidderSize)").frame(width: 30)
-        }
-        .onChange(of: state.hidderSize) { oldValue, newValue in
-          hidderSizeDebouncer?.cancel()
-          hidderSizeDebouncer = Just(newValue)
-            .delay(for: .milliseconds(50), scheduler: RunLoop.main)
-            .sink { _ in Hidder.shared.refresh() }
-        }
-      }
-      .padding()
+      HidderSettingView().padding()
       
-      LabeledContent(String(localized: "Radius size:")) {
-        HStack {
-          Slider(
-            value: Binding(
-              get: { Double(state.radius) },
-              set: { state.radius = CGFloat($0) }
-            ),
-            in: 10...25,
-            step: 1
-          )
-          .frame(width: 150)
-          
-          Text(String(format: "%.1f", state.radius)).frame(width: 30)
-        }
-        .onChange(of: state.radius) { oldValue, newValue in
-          radiusDebouncer?.cancel()
-          radiusDebouncer = Just(newValue)
-            .delay(for: .milliseconds(50), scheduler: RunLoop.main)
-            .sink { Rounder.shared.refresh(CGFloat($0)) }
-        }
-      }
-      .padding()
-      
-      MonitorSettingView()
+      RounderSettingView().padding()
 
       Toggle(
         String(localized: "Launch on Startup"),
@@ -83,6 +38,7 @@ struct MainSettingView: View {
       .font(.system(size: 12))
       .padding()
       
+      
       Button(String(localized: "Quit App")) {
         NSApplication.shared.terminate(nil)
       }
@@ -90,7 +46,9 @@ struct MainSettingView: View {
       .frame(width: 100, height: 40)
       .font(.body)
       .cornerRadius(10)
-    }
-    .frame(maxHeight: .infinity, alignment: .top)
+
+      
+    }.frame(maxHeight: .infinity, alignment: .top)
+    
   }
 }
