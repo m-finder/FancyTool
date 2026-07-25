@@ -19,6 +19,8 @@ struct MainSettingView: View {
       
       HidderSettingView().padding()
       
+      TexterSettingView().padding()
+      
       RounderSettingView().padding()
 
       Toggle(

@@ -17,6 +17,7 @@ struct TexterView: View {
     
     Text(state.text)
       .foregroundStyle(textGradient)
+      .font(.system(size: CGFloat(state.fontSize)))
       .onAppear {
         isVisible = true
         gradientColors = ColorUtil().getColor(index: state.colorIndex)

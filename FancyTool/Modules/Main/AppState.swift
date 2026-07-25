@@ -31,6 +31,7 @@ class AppState : ObservableObject{
   @AppStorage("showShimmer") var showShimmer: Bool = true
   @AppStorage("rainbowShimmer") var rainbowShimmer: Bool = false
   @AppStorage("colorIndex") var colorIndex: Int = 0
+  @AppStorage("fontSize") var fontSize: Int = 14
   @AppStorage("text") var text: String = String(localized: "Keep happy.")
   
   
