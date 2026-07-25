@@ -6,15 +6,7 @@
 <img src="https://img.shields.io/badge/MacOS->=14-green">
 </p>
 
-<p align="center">
-<a href="https://www.producthunt.com/products/fancytool?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-fancytool" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1008774&theme=light&t=1756283739180" alt="FancyTool - FancyTool&#0032;is&#0032;an&#0032;mac&#0032;menu&#0032;bar&#0032;application | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-</p>
-
 FancyTool 是一款优雅高效的 Mac 菜单栏美化工具，您可以在这里免费下载使用。
-
-[ [夸克下载] ](https://pan.quark.cn/s/ecd2097bc013)
-
-[ [蓝奏下载:密码:5fea] ](https://wwrl.lanzouu.com/b011lr2q6b)
 
 [ [GitHub Release] ](https://github.com/FancyTool/FancyToolApp/releases)
 
@@ -45,6 +37,7 @@ FancyTool 是一个菜单栏软件，启动之后，菜单栏会出现一个图�
 
 软件开源免费，如果您觉得有用，可以请我喝杯咖啡☕️
 
+这是我的爱发电地址: [https://www.ifdian.net/a/m-finder](https://www.ifdian.net/a/m-finder)
 <p align="center">
 <img src="https://github.com/FancyTool/FancyToolApp/blob/main//doc/1.JPG" width="400">
 </p>

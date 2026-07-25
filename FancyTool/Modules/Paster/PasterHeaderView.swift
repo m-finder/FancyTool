@@ -42,6 +42,24 @@ struct PasterHeaderView: View {
         Image("default").frame(width: 32, height: 32).foregroundColor(.secondary)
       }
       
+      Button(
+        action: {
+          DispatchQueue.main.async {
+            Paster.shared.remove(item)
+          }
+        },
+        label: {
+          Image(systemName: "xmark.circle.fill")
+            .foregroundColor(.red)
+            .background(Color.white.opacity(0.8))
+            .clipShape(Circle())
+        }
+      )
+      .buttonStyle(PlainButtonStyle())
+      .zIndex(1)
+      .frame(width: 24, height: 24)
+      .contentShape(Circle())
+      
     }
     .padding(.leading, 15)
     .padding(.trailing, 15)

@@ -5,7 +5,6 @@
 //  Created by 吴雲放 on 2025/7/1.
 //
 
-import Foundation
 import SwiftUI
 
 @MainActor
@@ -21,13 +20,16 @@ class AppMenu {
     
     self.menu = NSMenu()
 
+    // MARK: - 菜单遍历
     AppMenuItem.shared.menus().forEach { item in
       
+      // MARK: - 分割线
       if item.isSeparator {
         self.menu.addItem(NSMenuItem.separator())
         return
       }
       
+      // MARK: - 功能菜单
       if item.state {
         self.addMenuItem(
           title: item.title!,
@@ -37,6 +39,7 @@ class AppMenu {
         return
       }
       
+      // MARK: - 快捷键菜单
       if item.key != nil {
         self.addMenuItem(
           title: item.title!,
@@ -46,6 +49,7 @@ class AppMenu {
         return
       }
       
+      // MARK: - 普通菜单
       if item.key == nil {
         self.addMenuItem(
           title: item.title!,
@@ -57,6 +61,7 @@ class AppMenu {
     }
   }
   
+  // MARK: - 添加菜单
   private func addMenuItem(title: String, action: Selector, key: String){
     let item = NSMenuItem(
       title: title,
@@ -67,6 +72,7 @@ class AppMenu {
     self.menu.addItem(item)
   }
   
+  // MARK: - 添加菜单
   private func addMenuItem(title: String, action: Selector){
     let item = NSMenuItem(
       title: title,
@@ -77,6 +83,7 @@ class AppMenu {
     self.menu.addItem(item)
   }
   
+  // MARK: - 添加菜单
   private func addMenuItem(title: String, action: Selector, state: Bool){
     let item = NSMenuItem(
       title: title,
@@ -88,6 +95,7 @@ class AppMenu {
     self.menu.addItem(item)
   }
   
+  // MARK: - 获取所有菜单
   func getMenus() -> NSMenu {
     return self.menu
   }
