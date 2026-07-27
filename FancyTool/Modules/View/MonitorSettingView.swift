@@ -17,7 +17,7 @@ struct MonitorSettingView: View {
     title: LocalizedStringKey,
     isOn: Binding<Bool>
   ) -> some View {
-    
+
     Toggle(title, isOn: isOn)
       .onChange(of: isOn.wrappedValue) {
         Monitor.shared.popover.close()
