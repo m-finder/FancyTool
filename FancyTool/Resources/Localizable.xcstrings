@@ -1073,6 +1073,16 @@
         }
       }
     },
+    "Rainbow Shimmer" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "彩虹流光"
+          }
+        }
+      }
+    },
     "Rounder" : {
       "localizations" : {
         "de" : {
@@ -1152,9 +1162,6 @@
           }
         }
       }
-    },
-    "RunnerView" : {
-
     },
     "Setting" : {
       "localizations" : {
@@ -1322,6 +1329,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "炫彩签名"
+          }
+        }
+      }
+    },
+    "Texter Shimmer" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "签名流光"
           }
         }
       }

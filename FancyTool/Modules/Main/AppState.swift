@@ -41,7 +41,7 @@ class AppState : ObservableObject{
   
   // Rounder
   @AppStorage("showRounder") var showRounder: Bool = false
-  @AppStorage("radius") var radius = 10.0
+  @AppStorage("radius") var radius = 10
   
   // Monitor
   @AppStorage("showMonitor") var showMonitor: Bool = false
@@ -60,7 +60,7 @@ class AppState : ObservableObject{
   
   // 开始系统监控
   public func start() {
-    observer.startMonitoring(monitorInterval: 3)
+    observer.startMonitoring(monitorInterval: 5)
     Task {
       for await b in observer.systemInfoStream() {
         await MainActor.run { bundle = b }

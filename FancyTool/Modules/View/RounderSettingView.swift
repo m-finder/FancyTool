@@ -19,14 +19,14 @@ struct RounderSettingView: View {
           Slider(
             value: Binding(
               get: { Double(state.radius) },
-              set: { state.radius = CGFloat($0) }
+              set: { state.radius = Int($0) }
             ),
             in: 10...25,
             step: 1
           )
           .frame(width: 150)
           
-          Text(String(format: "%.1f", state.radius)).frame(width: 30)
+          Text("\(state.radius)").frame(width: 30)
         }
         .onChange(of: state.radius) { oldValue, newValue in
           radiusDebouncer?.cancel()

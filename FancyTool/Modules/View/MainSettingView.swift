@@ -19,9 +19,9 @@ struct MainSettingView: View {
       
       HidderSettingView().padding()
       
-      TexterSettingView().padding()
-      
       RounderSettingView().padding()
+      
+      TexterSettingView().padding()
 
       Toggle(
         String(localized: "Launch on Startup"),

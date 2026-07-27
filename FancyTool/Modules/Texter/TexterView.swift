@@ -14,8 +14,12 @@ struct TexterView: View {
   @State private var isVisible: Bool = false
   
   var body: some View {
-    
+
     Text(state.text)
+      .shimmering(
+        active: (state.showShimmer || state.rainbowShimmer) && isVisible,
+        rainbow: state.rainbowShimmer
+      )
       .foregroundStyle(textGradient)
       .font(.system(size: CGFloat(state.fontSize)))
       .onAppear {
