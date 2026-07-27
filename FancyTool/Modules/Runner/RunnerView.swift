@@ -33,11 +33,11 @@ struct RunnerView: View {
         Image(
           runner.getImage(imageIndex),
           scale: 1,
-          label: Text("RunnerView")
+          label: Text("")
         )
         .interpolation(.high)
         .resizable()
-          .aspectRatio(contentMode: .fit)
+        .aspectRatio(contentMode: .fit)
         
       } else {
         Image("default").resizable().aspectRatio(contentMode: .fit).scaledToFit()
@@ -49,16 +49,16 @@ struct RunnerView: View {
       }
       
       if imageIndex == 0 {
-          direction = 1
+        direction = 1
       }
       
       if imageIndex >= frame_number - 1 {
-          if autoReverse {
-              direction = -1
-          } else {
-              direction = 1
-              imageIndex = 0
-          }
+        if autoReverse {
+          direction = -1
+        } else {
+          direction = 1
+          imageIndex = 0
+        }
       }
       
       imageIndex += direction

@@ -82,7 +82,7 @@ final class Rounder {
   
   // MARK: - Window creation
   private func createWindows(for screen: NSScreen) {
-    let radius = AppState.shared.radius
+    let radius = CGFloat(AppState.shared.radius)
     let cornerSize = radius * 2
     let frame = screen.frame
     
