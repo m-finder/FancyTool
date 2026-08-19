@@ -122,9 +122,10 @@ class Paster: ObservableObject{
     let success = self.copyToClipboard(item)
     guard success else { return }
 
-    // 在用户点击时就捕获目标应用，避免在异步延迟期间获取到错误的应用
-    // 因为复制操作可能会导致 frontmostApplication 发生变化
-    guard let targetApp = NSWorkspace.shared.frontmostApplication else { return }
+    // 目标应用在快捷键触发时已捕获到 self.targetApp；
+    // 此时 Paster 窗口已成为 key（NSApp.activate），再读 frontmostApplication
+    // 会拿到 FancyTool 自己，导致激活目标 app 时其实是激活自己，窗口不会切换。
+    guard let targetApp = self.targetApp else { return }
     self.hide()
 
     Task { @MainActor [weak self] in
