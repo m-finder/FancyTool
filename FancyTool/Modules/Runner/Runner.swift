@@ -22,10 +22,6 @@ final class Runner {
   }
 
   private var cancellables = Set<AnyCancellable>()
-  // CPU 采样每 5 秒更新一次，但小幅波动不需要重建整组 CA 动画。
-  private var lastAnimationFPS: Double?
-  // 低频采样 CPU 用于调速，避免订阅 $bundle 造成每 3 秒一次的动画重建。
-  private var speedTimer: DispatchSourceTimer?
 
   init(){
     self.item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -72,7 +68,7 @@ final class Runner {
       item.length = width
       item.button?.frame.size.width = width
       RunnerLayer.shared.layer?.frame = item.button?.bounds ?? .zero
-      animation(force: true)
+      animation()
       return
     }
 
@@ -97,18 +93,12 @@ final class Runner {
 
 
   // MARK: - 动画处理
-  private func animation(force: Bool = false) {
+  private func animation() {
     guard let layer = RunnerLayer.shared.layer else { return }
 
     let scale = layer.contentsScale
     let frames = RunnerFrame.shared.refresh(for: scale)
     guard !frames.isEmpty else { return }
-
-    let currentFPS = fps
-    if !force, let lastAnimationFPS,
-       abs(currentFPS - lastAnimationFPS) < 1 {
-      return
-    }
 
     item.button?.image = nil
     layer.isHidden = false
@@ -119,8 +109,7 @@ final class Runner {
     layer.contents = frames.first
 
     layer.removeAnimation(forKey: "runner")
-    layer.add(makeAnimation(values: frames, fps: currentFPS), forKey: "runner")
-    lastAnimationFPS = currentFPS
+    layer.add(makeAnimation(values: frames, fps: fps), forKey: "runner")
   }
 
   private func makeAnimation(values: [Any], fps: Double) -> CAKeyframeAnimation {
@@ -157,27 +146,6 @@ final class Runner {
       }
       .store(in: &cancellables)
     }
-
-    // CPU 使用率调速：低频采样（30s），只读当前 bundle，不订阅发布流，
-    // 避免 $bundle 每 3 秒发布一次触发整组 keyframe 动画重建。
-    startSpeedSampling()
-  }
-
-  private func startSpeedSampling() {
-    speedTimer?.cancel()
-    let timer = DispatchSource.makeTimerSource(queue: .main)
-    timer.schedule(deadline: .now() + 30, repeating: 30)
-    timer.setEventHandler { [weak self] in
-      self?.updateAnimationSpeed()
-    }
-    timer.resume()
-    speedTimer = timer
-  }
-
-  private func updateAnimationSpeed() {
-    // 只有速度变化达到 1 FPS 才重建动画，避免每个系统采样周期都产生
-    // 一组新的 keyframe 数组和 Core Animation 对象。
-    animation()
   }
 
   private func handleScreenChanged() {
@@ -187,6 +155,6 @@ final class Runner {
     _ = RunnerFrame.shared.refresh(for: newScale)
 
     RunnerLayer.shared.layer?.contentsScale = newScale
-    animation(force: true)
+    animation()
   }
 }

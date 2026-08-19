@@ -41,6 +41,23 @@ struct PasterHeaderView: View {
       } else {
         Image("default").frame(width: 32, height: 32).foregroundColor(.secondary)
       }
+
+      Button(
+        action: {
+          Paster.shared.togglePin(item)
+        },
+        label: {
+          Image(systemName: item.isPinned ? "pin.circle.fill" : "pin.circle")
+            .foregroundColor(item.isPinned ? .yellow : .secondary)
+            .background(Color.white.opacity(0.8))
+            .clipShape(Circle())
+        }
+      )
+      .buttonStyle(PlainButtonStyle())
+      .help(String(localized: item.isPinned ? "Unpin" : "Pin"))
+      .zIndex(1)
+      .frame(width: 24, height: 24)
+      .contentShape(Circle())
       
       Button(
         action: {

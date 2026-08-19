@@ -98,13 +98,15 @@ class Paster: ObservableObject{
       // 高频复制相同文本时 RSS 会持续膨胀。
       let existing = history.remove(at: existingIndex)
       existing.createdAt = Date()
-      history.insert(existing, at: 0)
+      history.append(existing)
+      sortHistory()
       save()
       return
     }
 
-    history.insert(record, at: 0)
+    history.append(record)
     modelContext?.insert(record)
+    sortHistory()
     trimHistory()
     save()
   }
@@ -235,13 +237,19 @@ class Paster: ObservableObject{
 
     do {
       let limit = max(1, AppState.shared.historyCount)
-      var descriptor = FetchDescriptor<PasterModel>(
+      let pinnedDescriptor = FetchDescriptor<PasterModel>(
+        predicate: #Predicate { $0.isPinned == true },
         sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
       )
-      // 不要为了显示最近几条记录，把数据库中的全部图片都读进内存。
-      descriptor.fetchLimit = limit
-      let records = try modelContext.fetch(descriptor)
-      history = records
+      var unpinnedDescriptor = FetchDescriptor<PasterModel>(
+        predicate: #Predicate { $0.isPinned == false },
+        sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+      )
+      // 未置顶记录只读取当前配额，避免为了显示最近几条记录，把数据库中的
+      // 全部图片都读进内存；置顶记录始终完整加载且不占用这个配额。
+      unpinnedDescriptor.fetchLimit = limit
+      history = try modelContext.fetch(pinnedDescriptor) + modelContext.fetch(unpinnedDescriptor)
+      sortHistory()
       var needsSave = false
 
       for record in history where record.image != nil && record.thumbnail == nil {
@@ -265,10 +273,28 @@ class Paster: ObservableObject{
 
   private func trimHistory() {
     let limit = max(1, AppState.shared.historyCount)
-    while history.count > limit {
-      if let removed = history.popLast() {
-        modelContext?.delete(removed)
+    while history.filter({ !$0.isPinned }).count > limit {
+      guard let index = history.lastIndex(where: { !$0.isPinned }) else { return }
+      let removed = history.remove(at: index)
+      modelContext?.delete(removed)
+    }
+  }
+
+  public func togglePin(_ record: PasterModel) {
+    guard history.contains(record) else { return }
+
+    record.isPinned.toggle()
+    sortHistory()
+    trimHistory()
+    save()
+  }
+
+  private func sortHistory() {
+    history.sort {
+      if $0.isPinned != $1.isPinned {
+        return $0.isPinned
       }
+      return $0.createdAt > $1.createdAt
     }
   }
 

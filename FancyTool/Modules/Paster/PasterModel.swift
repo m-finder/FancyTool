@@ -21,6 +21,7 @@ class PasterModel: Equatable {
   var imageHeight: Double? = nil
   var icon: String
   var createdAt: Date
+  var isPinned: Bool = false
   
   // 初始化
   init(content: String, icon: String) {
