@@ -29,7 +29,7 @@ struct PasterHeaderView: View {
       
       HStack{
         Text(String(localized: item.content != nil ? "Text" : "Image")).font(.title)
-        Text(DateUtil.shared.relativeTime(from: item.craetedAt)).font(.footnote)
+        Text(DateUtil.shared.relativeTime(from: item.createdAt)).font(.footnote)
       }
       .foregroundStyle(.white)
       .fontWeight(.light)

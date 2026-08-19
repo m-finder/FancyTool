@@ -15,7 +15,7 @@ class RunnerModel {
   var id: UUID
   var isDefault: Bool
   var frameNumber: Int
-  var data: Data
+  @Attribute(.externalStorage) var data: Data
   var createdAt: Date
   
   // 初始化
@@ -35,11 +35,21 @@ extension RunnerModel {
   
   static var imgCache = [RunnerModel:[Int:CGImage]]()
   private static var defaultImage = #imageLiteral(resourceName: "default").cgImage(forProposedRect: nil, context: nil, hints: nil)!
+
+  /// CGImage 会被静态字典强引用。切换或删除 Runner 时必须主动释放旧帧，
+  /// 否则每次打开设置/切换动画都会把新的帧叠加到进程内存中。
+  static func clearImageCache() {
+    imgCache.removeAll(keepingCapacity: false)
+  }
+
+  static func clearImageCache(for runner: RunnerModel) {
+    imgCache.removeValue(forKey: runner)
+  }
   
   // 获取图像选项
   private func getImageOptions() -> [CFString: Any] {
     [
-      kCGImageSourceShouldCache: kCFBooleanTrue as Any,
+      kCGImageSourceShouldCache: kCFBooleanFalse as Any,
       // 启用图像变换
       kCGImageSourceCreateThumbnailWithTransform: kCFBooleanTrue as Any,
       // 始终创建缩略图

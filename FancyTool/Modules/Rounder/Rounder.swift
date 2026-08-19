@@ -76,6 +76,7 @@ final class Rounder {
   private func remountAfterDelay(_ delay: TimeInterval = 0.15) {
     Task { @MainActor in
       try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+      guard AppState.shared.showRounder else { return }
       self.mount()
     }
   }

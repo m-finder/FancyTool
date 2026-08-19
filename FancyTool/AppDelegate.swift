@@ -21,10 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Hidder
     if(AppState.shared.showHidder){
-      Hidder.shared.mount()
-      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-        Hidder.shared.toggle()
-      })
+      Hidder.shared.mount(toggleAfterMount: true)
     }
     
     // Texter
@@ -47,9 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Monitor
     if(AppState.shared.showMonitor){
-      DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
-        Monitor.shared.mount()
-      })
+      Monitor.shared.mount()
     }
     
     // 开始监控

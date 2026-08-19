@@ -36,6 +36,11 @@ class Texter {
   // MARK: - 取消挂载
   public func unmount(){
     popover.close()
+    if let item {
+      item.button?.image = nil
+      item.button?.subviews.forEach { $0.removeFromSuperview() }
+      NSStatusBar.system.removeStatusItem(item)
+    }
     item = nil
   }
   

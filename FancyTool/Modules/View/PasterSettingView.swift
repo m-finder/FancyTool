@@ -24,6 +24,7 @@ struct PasterSettingView: View {
           )
           .onChange(of: state.historyCount) { _, newValue in
             state.historyCount = min(200, max(1, newValue))
+            Paster.shared.trimToLimit()
           }
           .frame(width: 150)
           .textFieldStyle(.roundedBorder)
@@ -31,6 +32,23 @@ struct PasterSettingView: View {
         .padding()
 
         KeyboardShortcuts.Recorder("Shortcut:", name: .paster)
+          .padding()
+
+        Toggle("Auto Paste", isOn: $state.autoPaste)
+          .onChange(of: state.autoPaste) { _, newValue in
+            if newValue {
+              let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+              if !AXIsProcessTrustedWithOptions(options) {
+                let alert = NSAlert()
+                alert.messageText = String(localized: "Need Accessibility Permissions")
+                alert.informativeText = String(localized: "Auto Paste requires Accessibility permission. Enable it in System Settings > Privacy & Security > Accessibility, then toggle Auto Paste again.")
+                alert.addButton(withTitle: String(localized: "OK"))
+                alert.runModal()
+                state.autoPaste = false
+              }
+            }
+          }
+          .padding()
     }
     .frame(maxHeight: .infinity, alignment: .top)
     .font(.system(size: 12))

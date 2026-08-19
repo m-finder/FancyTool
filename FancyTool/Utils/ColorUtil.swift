@@ -67,7 +67,7 @@ class ColorUtil: ObservableObject{
   ]
   
   public func getColor (index: Int) -> [Color] {
-    if index > colors.count {
+    if !colors.indices.contains(index) {
       return [.white]
     }
     return colors[index]

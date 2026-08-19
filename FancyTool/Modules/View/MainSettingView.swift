@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 import ServiceManagement
 import Combine
 
@@ -25,17 +26,30 @@ struct MainSettingView: View {
 
       Toggle(
         String(localized: "Launch on Startup"),
-        isOn: state.$startUp
-      ).onChange(of: state.startUp) {
-        if state.startUp {
-          if SMAppService.mainApp.status == .enabled {
-            try? SMAppService.mainApp.unregister()
+        isOn: Binding(
+          get: { state.startUp },
+          set: { newValue in
+            do {
+              if newValue {
+                if SMAppService.mainApp.status == .enabled {
+                  try SMAppService.mainApp.unregister()
+                }
+                try SMAppService.mainApp.register()
+              } else {
+                try SMAppService.mainApp.unregister()
+              }
+              state.startUp = newValue
+            } catch {
+              let alert = NSAlert()
+              alert.alertStyle = .warning
+              alert.messageText = String(localized: "Startup Setting Failed")
+              alert.informativeText = error.localizedDescription
+              alert.addButton(withTitle: String(localized: "OK"))
+              alert.runModal()
+            }
           }
-          try? SMAppService.mainApp.register()
-        } else {
-          try? SMAppService.mainApp.unregister()
-        }
-      }
+        )
+      )
       .toggleStyle(SwitchToggleStyle())
       .font(.system(size: 12))
       .padding()

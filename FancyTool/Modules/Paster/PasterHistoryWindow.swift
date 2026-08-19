@@ -11,8 +11,6 @@ import SwiftUI
 @MainActor
 class PasterHistoryWindow: NSWindow, NSWindowDelegate{
   
-  @Published var history = Paster.shared.history
-  
   func windowDidResignKey(_ notification: Notification) {
     Paster.shared.hide()
   }

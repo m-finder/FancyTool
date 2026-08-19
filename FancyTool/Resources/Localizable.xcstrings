@@ -1,1382 +1,1605 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-
-    },
-    " 2025-2026" : {
-
-    },
-    "%d days ago" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vor %d Tagen"
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    " 2025-2026": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 2025-2026"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d days ago"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 2025-2026"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "il y a %d jours"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 2025-2026"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d日前"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 2025-2026"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d일 전"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 2025-2026"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d天前"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 2025-2026"
           }
         }
       }
     },
-    "%d hours ago" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vor %d Stunden"
+    "%d days ago": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vor %d Tagen"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d hours ago"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d days ago"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "il y a %d heures"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "il y a %d jours"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d時間前"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d日前"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d시간 전"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d일 전"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d小时前"
-          }
-        }
-      }
-    },
-    "%d minutes ago" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vor %d Minuten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d minutes ago"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "il y a %d minutes"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d分前"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d분 전"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d分钟前"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d天前"
           }
         }
       }
     },
-    "%d seconds ago" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vor %d Sekunden"
+    "%d hours ago": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vor %d Stunden"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d seconds ago"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d hours ago"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "il y a %d secondes"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "il y a %d heures"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d秒前"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d時間前"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d초 전"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d시간 전"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d秒前"
-          }
-        }
-      }
-    },
-    "%lld" : {
-
-    },
-    "%lld * %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld * %2$lld"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d小时前"
           }
         }
       }
     },
-    "%lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
+    "%d minutes ago": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vor %d Minuten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d minutes ago"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "il y a %d minutes"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d分前"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d분 전"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d分钟前"
           }
         }
       }
     },
-    "© FancyTool by " : {
-
-    },
-    "⌘+%lld" : {
-
-    },
-    "About" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Über"
+    "%d seconds ago": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vor %d Sekunden"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d seconds ago"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "À propos"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "il y a %d secondes"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "について"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d秒前"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "정보"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d초 전"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关于"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d秒前"
           }
         }
       }
     },
-    "Battery" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Batterie"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "电池"
+    "%lld": {},
+    "%lld * %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld * %2$lld"
           }
         }
       }
     },
-    "chars" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zeichen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "chars"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "car."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文字"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "글자"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "字符"
+    "%lld %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld %2$@"
           }
         }
       }
     },
-    "Coding is life, life is fancy." : {
-
-    },
-    "Colorful" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bunt"
+    "© FancyTool by ": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© FancyTool by "
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colorful"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© FancyTool by "
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coloré"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© FancyTool par "
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "カラフル"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© FancyTool by "
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "형형색색"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© FancyTool by "
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缤纷色彩"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© FancyTool by "
           }
         }
       }
     },
-    "CPU" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CPU"
+    "⌘+%lld": {},
+    "About": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Über"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CPU"
-          }
-        }
-      }
-    },
-    "Drag and drop GIF here." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GIF hierhin ziehen."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drag and drop GIF here."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À propos"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Glisser le GIF ici."
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "について"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GIFをここにドラッグ＆ドロップ。"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정보"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GIF을 여기로 드래그하세요."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拖拽GIF到此处。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关于"
           }
         }
       }
     },
-    "Font size:" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schriftgröße"
+    "Auto Paste": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisches Einfügen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taille de police"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto Paste"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フォントサイズ"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collage automatique"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "글꼴 크기"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動ペースト"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "签名大小"
-          }
-        }
-      }
-    },
-    "Hidder" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Menü ausblenden"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자동 붙여넣기"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Menu Collapse"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réduire le menu"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "メニューを折りたたむ"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "메뉴 접기"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "菜单折叠"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动粘贴"
           }
         }
       }
     },
-    "Hidder size:" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Punkt-Größe:"
+    "Auto Paste requires Accessibility permission. Enable it in System Settings > Privacy & Security > Accessibility, then toggle Auto Paste again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisches Einfügen benötigt die Bedienungshilfen-Berechtigung. Aktiviere sie unter Systemeinstellungen > Datenschutz & Sicherheit > Bedienungshilfen und schalte dann Automatisches Einfügen erneut ein."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hidder size:"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto Paste requires Accessibility permission. Enable it in System Settings > Privacy & Security > Accessibility, then toggle Auto Paste again."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taille du point :"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le collage automatique nécessite l'autorisation d'accessibilité. Activez-la dans Réglages système > Confidentialité et sécurité > Accessibilité, puis réactivez le collage automatique."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ドットサイズ："
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動ペーストにはアクセシビリティ権限が必要です。システム設定 > プライバシーとセキュリティ > アクセシビリティで有効にしてから、再度自動ペーストをオンにしてください。"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "점 크기:"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자동 붙여넣기에는 접근성 권한이 필요합니다. 시스템 설정 > 개인정보 및 보안 > 접근성에서 활성화한 후 자동 붙여넣기를 다시 켜주세요."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圆点尺寸:"
-          }
-        }
-      }
-    },
-    "Input something" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Etwas eingeben"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Input something"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saisir quelque chose"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "何か入力してください"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "무언가 입력하세요"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入些什么"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动粘贴需要辅助功能权限。请在系统设置 > 隐私与安全性 > 辅助功能中启用,然后再次打开自动粘贴。"
           }
         }
       }
     },
-    "Just now" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gerade eben"
+    "Battery": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batterie"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Just now"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "À l’instant"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "たった今"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "방금"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刚刚"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "电池"
           }
         }
       }
     },
-    "Keep happy." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bleib glücklich."
+    "chars": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeichen"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keep happy."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "chars"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reste heureux."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "car."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幸せを保とう。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "행복을 유지하세요."
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "글자"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保持开心。"
-          }
-        }
-      }
-    },
-    "Launch on Startup" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beim Start öffnen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Launch on Startup"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lancer au démarrage"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "起動時に開く"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "시작 시 실행"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开机自启"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字符"
           }
         }
       }
     },
-    "M-finder" : {
-
-    },
-    "Memory" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arbeitsspeicher"
+    "Coding is life, life is fancy.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coden ist Leben, Leben ist fancy."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内存"
-          }
-        }
-      }
-    },
-    "MenuBar Text" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Menüleisten-Text"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coding is life, life is fancy."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MenuBar Text"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coder, c'est la vie, la vie est fancy."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Texte de la barre de menus"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コーディングは人生、人生はファンシー。"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "メニューバーテキスト"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "코딩은 인생, 인생은 팬시하게."
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "메뉴바 텍스트"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "菜单栏签名"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写代码是生活，生活就该精彩。"
           }
         }
       }
     },
-    "Monitor" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System-Monitor"
+    "Colorful": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bunt"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Monitor"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colorful"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moniteur système"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coloré"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "システムモニタ"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カラフル"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "시스템 모니터"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "형형색색"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统监控"
-          }
-        }
-      }
-    },
-    "Need Accessibility Permissions" : {
-      "comment" : "Alert title for accessibility permission request",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bedienungshilfen-Erlaubnis erforderlich"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Need Accessibility Permissions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autorisation d’accessibilité requise"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アクセシビリティ権限が必要です"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "보조 기능 권한 필요"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要辅助功能权限"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缤纷色彩"
           }
         }
       }
     },
-    "Network" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Netzwerk"
+    "CPU": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网络"
-          }
-        }
-      }
-    },
-    "No paste history available." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keine Einfüge-Historie vorhanden."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No paste history available."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun historique de collage."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "貼り付け履歴がありません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "붙여넣기 기록이 없습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无粘贴历史"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
           }
         }
       }
     },
-    "Number of records:" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anzahl der Einträge:"
+    "Drag and drop GIF here.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF hierhin ziehen."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Number of records:"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag and drop GIF here."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nombre d’enregistrements :"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glisser le GIF ici."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記録数："
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIFをここにドラッグ＆ドロップ。"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "기록 수:"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF을 여기로 드래그하세요."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "记录条数:"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖拽GIF到此处。"
           }
         }
       }
     },
-    "OK" : {
-      "comment" : "Confirm button text",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+    "Font size:": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schriftgröße"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille de police"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォントサイズ"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "글꼴 크기"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "확인"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "签名大小"
           }
         }
       }
     },
-    "Paster" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zwischenablage-Panel"
+    "Hidder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menü ausblenden"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clipboard Panel"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu Collapse"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Panneau presse-papiers"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réduire le menu"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "クリップボードパネル"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メニューを折りたたむ"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "클립보드 패널"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "메뉴 접기"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴面板"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "菜单折叠"
           }
         }
       }
     },
-    "Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations." : {
-      "comment" : "Detailed explanation for accessibility permission request",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请在系统设置 > 安全性与隐私 > 隐私 > 辅助功能中，启用本应用的权限，以允许粘贴操作。"
+    "Hidder size:": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punkt-Größe:"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidder size:"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille du point :"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドットサイズ："
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "점 크기:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圆点尺寸:"
           }
         }
       }
     },
-    "Quit App" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App beenden"
+    "Input something": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etwas eingeben"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quit App"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input something"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quitter l’app"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisir quelque chose"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリを終了"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "何か入力してください"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "앱 종료"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "무언가 입력하세요"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出应用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入些什么"
           }
         }
       }
     },
-    "Radius size:" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Radius-Größe:"
+    "Just now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerade eben"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Radius size:"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just now"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taille du rayon :"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À l’instant"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "角丸半径："
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "たった今"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "반경 크기:"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "방금"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圆角尺寸:"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刚刚"
           }
         }
       }
     },
-    "Rainbow Shimmer" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "彩虹流光"
+    "Keep happy.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bleib glücklich."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep happy."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reste heureux."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "幸せを保とう。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "행복을 유지하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保持开心。"
           }
         }
       }
     },
-    "Rounder" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildschirm-Ecken"
+    "Launch on Startup": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beim Start öffnen"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Screen Rounder"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch on Startup"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coins d’écran"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lancer au démarrage"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スクリーン角丸"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "起動時に開く"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "화면 모서리 둥글게"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시작 시 실행"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "屏幕圆角"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开机自启"
           }
         }
       }
     },
-    "Runner" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dynamisches Symbol"
+    "M-finder": {},
+    "Memory": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arbeitsspeicher"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dynamic Icon"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Icône dynamique"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ダイナミックアイコン"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "동적 아이콘"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "动态图标"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内存"
           }
         }
       }
     },
-    "Setting" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einstellungen"
+    "MenuBar Text": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menüleisten-Text"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MenuBar Text"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réglages"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texte de la barre de menus"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メニューバーテキスト"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "설정"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "메뉴바 텍스트"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "菜单栏签名"
           }
         }
       }
     },
-    "Shortcut:" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kürzel:"
+    "Monitor": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System-Monitor"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shortcut:"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Monitor"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raccourci :"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moniteur système"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ショートカット："
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "システムモニタ"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "단축키:"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 모니터"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快捷键:"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统监控"
           }
         }
       }
     },
-    "Storage" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "存储"
+    "Need Accessibility Permissions": {
+      "comment": "Alert title for accessibility permission request",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bedienungshilfen-Erlaubnis erforderlich"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Need Accessibility Permissions"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorisation d’accessibilité requise"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アクセシビリティ権限が必要です"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보조 기능 권한 필요"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要辅助功能权限"
           }
         }
       }
     },
-    "Tab key switch." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tab-Taste wechseln."
+    "Network": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netzwerk"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tab key switch."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Commutateur de touche Tab."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tabキーで切り替え。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tab 키 전환."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tab 键切换"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网络"
           }
         }
       }
     },
-    "Texter" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Farbige Signatur"
+    "No paste history available.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Einfüge-Historie vorhanden."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colorful Signature"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No paste history available."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signature colorée"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun historique de collage."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "カラフル署名"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼り付け履歴がありません。"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "형형색색 서명"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "붙여넣기 기록이 없습니다."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "炫彩签名"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无粘贴历史"
           }
         }
       }
     },
-    "Texter Shimmer" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "签名流光"
+    "Number of records:": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anzahl der Einträge:"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number of records:"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre d’enregistrements :"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録数："
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록 수:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记录条数:"
           }
         }
       }
     },
-    "Universal" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Universell"
+    "OK": {
+      "comment": "Confirm button text",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Universel"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "共通"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "일반"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通用"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "확인"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "确定"
+          }
+        }
+      }
+    },
+    "Paster": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwischenablage-Panel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard Panel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panneau presse-papiers"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリップボードパネル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "클립보드 패널"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴面板"
+          }
+        }
+      }
+    },
+    "Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations.": {
+      "comment": "Detailed explanation for accessibility permission request",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在系统设置 > 安全性与隐私 > 隐私 > 辅助功能中，启用本应用的权限，以允许粘贴操作。"
+          }
+        }
+      }
+    },
+    "Quit App": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App beenden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit App"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitter l’app"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリを終了"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 종료"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出应用"
+          }
+        }
+      }
+    },
+    "Radius size:": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Radius-Größe:"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Radius size:"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille du rayon :"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "角丸半径："
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "반경 크기:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圆角尺寸:"
+          }
+        }
+      }
+    },
+    "Rainbow Shimmer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "彩虹流光"
+          }
+        }
+      }
+    },
+    "Rounder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirm-Ecken"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen Rounder"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coins d’écran"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スクリーン角丸"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "화면 모서리 둥글게"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "屏幕圆角"
+          }
+        }
+      }
+    },
+    "Runner": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dynamisches Symbol"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dynamic Icon"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icône dynamique"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダイナミックアイコン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "동적 아이콘"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "动态图标"
+          }
+        }
+      }
+    },
+    "Setting": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einstellungen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置"
+          }
+        }
+      }
+    },
+    "Shortcut:": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kürzel:"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut:"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raccourci :"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ショートカット："
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "단축키:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷键:"
+          }
+        }
+      }
+    },
+    "Startup Setting Failed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starteinstellung fehlgeschlagen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startup Setting Failed"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échec du réglage au démarrage"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "起動設定に失敗しました"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시작 설정 실패"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开机启动设置失败"
+          }
+        }
+      }
+    },
+    "Storage": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "存储"
+          }
+        }
+      }
+    },
+    "Tab key switch.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tab-Taste wechseln."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tab key switch."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commutateur de touche Tab."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tabキーで切り替え。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tab 키 전환."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tab 键切换"
+          }
+        }
+      }
+    },
+    "Texter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbige Signatur"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colorful Signature"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signature colorée"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カラフル署名"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "형형색색 서명"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "炫彩签名"
+          }
+        }
+      }
+    },
+    "Texter Shimmer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "签名流光"
+          }
+        }
+      }
+    },
+    "Universal": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Universell"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Universel"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共通"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일반"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

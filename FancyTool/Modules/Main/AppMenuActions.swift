@@ -53,6 +53,7 @@ class AppMenuActions: NSObject {
     }else{
       Hidder.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   // MARK: - 菜单折叠点击事件
@@ -70,6 +71,7 @@ class AppMenuActions: NSObject {
     }else{
       Texter.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   // MARK: - 炫彩签名点击事件，弹出操作窗口
@@ -96,6 +98,7 @@ class AppMenuActions: NSObject {
     }else{
       Paster.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   // MARK: - 剪贴板监听事件
@@ -116,10 +119,14 @@ class AppMenuActions: NSObject {
     }
     else if let images = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
             let image = images.first {
-      if let imageData = image.tiffRepresentation,
-         let bitmapImage = NSBitmapImageRep(data: imageData),
-         let data = bitmapImage.representation(using: .png, properties: [:]) {
-        Paster.shared.append(PasterModel(image: data, icon: appIcon))
+      // TIFF、bitmap rep 和 PNG 会同时存在一段时间；剪贴板图片较大时，
+      // 用局部 autorelease pool 避免这些临时对象堆积到主线程的事件循环末尾。
+      autoreleasepool {
+        if let imageData = image.tiffRepresentation,
+           let bitmapImage = NSBitmapImageRep(data: imageData),
+           let data = bitmapImage.representation(using: .png, properties: [:]) {
+          Paster.shared.append(PasterModel(image: data, icon: appIcon))
+        }
       }
     }
   }
@@ -134,6 +141,7 @@ class AppMenuActions: NSObject {
     }else{
       Rounder.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   // MARK: - 停启用监控
@@ -157,6 +165,7 @@ class AppMenuActions: NSObject {
     }else{
       Monitor.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   @IBAction func monitorPopover(_ sender: NSStatusBarButton){
