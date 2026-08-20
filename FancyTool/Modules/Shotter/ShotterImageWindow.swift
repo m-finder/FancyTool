@@ -12,17 +12,23 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
   var onClose: (() -> Void)?
   private let editorView: ShotterEditorView
   private let selectionRect: NSRect?
+  private let fullScreenCaptureScreen: NSScreen?
+  private var toolbarWindow: ShotterToolbarWindow?
   private var isDismissing = false
 
   init(image: NSImage, selectionRect: NSRect?) {
-    editorView = ShotterEditorView(image: image)
     self.selectionRect = selectionRect
+    fullScreenCaptureScreen = selectionRect.flatMap(Self.fullScreenCaptureScreen(for:))
+    editorView = ShotterEditorView(image: image, fillsScreen: fullScreenCaptureScreen != nil)
 
     let imageSize = image.size
-    let visibleFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+    let screen = fullScreenCaptureScreen ?? selectionRect.flatMap { ShotterCoordinateSpace.screen(for: $0) } ?? NSScreen.main
+    let availableFrame = fullScreenCaptureScreen?.frame
+      ?? screen?.visibleFrame
+      ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
     let maximumImageSize = CGSize(
-      width: min(1000, visibleFrame.width * 0.78),
-      height: min(760, max(320, visibleFrame.height * 0.72 - 52))
+      width: max(1, availableFrame.width - (fullScreenCaptureScreen == nil ? 24 : 0)),
+      height: max(1, availableFrame.height - (fullScreenCaptureScreen == nil ? 24 : 0))
     )
     let scale = min(
       1,
@@ -31,9 +37,13 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
         maximumImageSize.height / max(imageSize.height, 1)
       )
     )
-    let contentSize = CGSize(
-      width: max(340, imageSize.width * scale),
-      height: max(250, imageSize.height * scale + 52)
+    let imageDisplaySize = CGSize(
+      width: imageSize.width * scale,
+      height: imageSize.height * scale
+    )
+    let contentSize = fullScreenCaptureScreen?.frame.size ?? CGSize(
+      width: max(340, imageDisplaySize.width + 24),
+      height: max(250, imageDisplaySize.height + 24)
     )
 
     super.init(
@@ -44,16 +54,24 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     )
 
     delegate = self
+    // NSWindow's legacy release-on-close semantics conflict with ARC-held
+    // Swift references and AppKit's deferred display/Touch Bar cleanup.
+    isReleasedWhenClosed = false
     isOpaque = false
     backgroundColor = .clear
-    hasShadow = true
+    hasShadow = fullScreenCaptureScreen == nil
     animationBehavior = .none
-    level = .normal
+    level = fullScreenCaptureScreen == nil ? .normal : .screenSaver
     isMovableByWindowBackground = false
-    collectionBehavior = [.fullScreenAuxiliary]
+    collectionBehavior = fullScreenCaptureScreen == nil
+      ? [.fullScreenAuxiliary]
+      : [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
     contentView = editorView
     editorView.hostWindow = self
+    toolbarWindow = ShotterToolbarWindow(editor: editorView)
   }
+
+  var isFullScreenCapture: Bool { fullScreenCaptureScreen != nil }
 
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { true }
@@ -91,46 +109,223 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     orderFrontRegardless()
     makeKey()
     makeFirstResponder(editorView)
+    showToolbar()
+  }
+
+  private func showToolbar() {
+    guard let toolbarWindow else { return }
+    if toolbarWindow.parent !== self {
+      addChildWindow(toolbarWindow, ordered: .above)
+    }
+    toolbarWindow.level = level
+    updateToolbarPosition()
+    toolbarWindow.orderFrontRegardless()
+  }
+
+  fileprivate func synchronizeToolbarLevel() {
+    toolbarWindow?.level = level
+  }
+
+  private func updateToolbarPosition() {
+    guard let toolbarWindow,
+          let screen = self.screen ?? selectionRect.flatMap({ ShotterCoordinateSpace.screen(for: $0) }) ?? NSScreen.main else {
+      return
+    }
+
+    let imageRectInWindow = editorView.convert(editorView.currentImageRect, to: nil)
+    let imageRect = convertToScreen(imageRectInWindow)
+    let visibleFrame = screen.visibleFrame
+    let toolbarSize = toolbarWindow.preferredSize
+    let horizontalOrigin = min(
+      max(imageRect.midX - toolbarSize.width / 2, visibleFrame.minX + 8),
+      visibleFrame.maxX - toolbarSize.width - 8
+    )
+    let belowOriginY = imageRect.minY - toolbarSize.height - 10
+    let fitsBelowImage = belowOriginY >= visibleFrame.minY + 8
+    let verticalOrigin: CGFloat
+    if fitsBelowImage {
+      verticalOrigin = belowOriginY
+    } else {
+      verticalOrigin = min(
+        max(imageRect.minY + 12, visibleFrame.minY + 8),
+        imageRect.maxY - toolbarSize.height - 12
+      )
+    }
+
+    toolbarWindow.setFrame(
+      NSRect(origin: NSPoint(x: horizontalOrigin, y: verticalOrigin), size: toolbarSize),
+      display: true
+    )
   }
 
   private func positionNearSelection() {
+    if let fullScreenCaptureScreen {
+      setFrame(fullScreenCaptureScreen.frame, display: true)
+      return
+    }
+
     guard let selectionRect else {
       center()
       return
     }
 
-    let selectionCenter = NSPoint(x: selectionRect.midX, y: selectionRect.midY)
-    let screen = NSScreen.screens.first { $0.frame.contains(selectionCenter) }
-      ?? NSScreen.main
+    let screen = ShotterCoordinateSpace.screen(for: selectionRect) ?? NSScreen.main
     guard let visibleFrame = screen?.visibleFrame else {
       center()
       return
     }
 
-    let windowSize = frame.size
-    let maximumOriginX = max(visibleFrame.minX, visibleFrame.maxX - windowSize.width)
-    let maximumOriginY = max(visibleFrame.minY, visibleFrame.maxY - windowSize.height)
+    let imageRect = editorView.currentImageRect
+    let imageOffset = NSPoint(x: imageRect.minX, y: imageRect.minY)
+    // The preview image should stay aligned with the captured region. Do not
+    // reserve space by moving the preview upward for the floating toolbar:
+    // updateToolbarPosition() will place the toolbar inside the image whenever
+    // there is not enough room below it.
+    let minimumOriginX = visibleFrame.minX - imageRect.minX
+    let minimumOriginY = visibleFrame.minY - imageRect.minY
+    let maximumOriginX = max(minimumOriginX, visibleFrame.maxX - imageRect.maxX)
+    let maximumOriginY = max(minimumOriginY, visibleFrame.maxY - imageRect.maxY)
     let origin = NSPoint(
-      x: min(max(selectionRect.minX, visibleFrame.minX), maximumOriginX),
-      y: min(max(selectionRect.maxY - windowSize.height, visibleFrame.minY), maximumOriginY)
+      x: min(max(selectionRect.minX - imageOffset.x, minimumOriginX), maximumOriginX),
+      y: min(max(selectionRect.minY - imageOffset.y, minimumOriginY), maximumOriginY)
     )
     setFrameOrigin(origin)
+  }
+
+  private static func fullScreenCaptureScreen(for selectionRect: NSRect) -> NSScreen? {
+    // A selection made through the overlay can differ from NSScreen.frame by a
+    // fractional point on a secondary display. Prefer the display containing
+    // the selection centre and treat it as full-screen only when virtually all
+    // of that display is selected; this avoids both false positives for
+    // cross-display selections and secondary-display preview shrinking.
+    let center = NSPoint(x: selectionRect.midX, y: selectionRect.midY)
+    let orderedScreens = NSScreen.screens.sorted { lhs, rhs in
+      let lhsContainsCenter = lhs.frame.contains(center)
+      let rhsContainsCenter = rhs.frame.contains(center)
+      if lhsContainsCenter != rhsContainsCenter {
+        return lhsContainsCenter
+      }
+
+      let lhsCoverage = coverage(of: lhs.frame, by: selectionRect)
+      let rhsCoverage = coverage(of: rhs.frame, by: selectionRect)
+      return lhsCoverage > rhsCoverage
+    }
+
+    return orderedScreens.first { screen in
+      coverage(of: screen.frame, by: selectionRect) >= 0.98
+    }
+  }
+
+  private static func coverage(of frame: NSRect, by selectionRect: NSRect) -> CGFloat {
+    guard frame.width > 0, frame.height > 0 else { return 0 }
+    let intersection = frame.intersection(selectionRect)
+    guard !intersection.isNull, !intersection.isEmpty else { return 0 }
+    return (intersection.width * intersection.height) / (frame.width * frame.height)
   }
 
   func dismissWindow() {
     guard !isDismissing else { return }
     isDismissing = true
 
-    makeFirstResponder(nil)
-    touchBar = nil
-    animationBehavior = .none
-    orderOut(nil)
+    dismissToolbarWindow()
     close()
   }
 
+  private func dismissToolbarWindow() {
+    guard let toolbarWindow else { return }
+    self.toolbarWindow = nil
+
+    if toolbarWindow.parent === self {
+      removeChildWindow(toolbarWindow)
+    }
+    toolbarWindow.orderOut(nil)
+    toolbarWindow.close()
+  }
+
+  func windowDidMove(_ notification: Notification) {
+    updateToolbarPosition()
+  }
+
+  func windowDidResize(_ notification: Notification) {
+    updateToolbarPosition()
+  }
+
+  func windowDidChangeScreen(_ notification: Notification) {
+    updateToolbarPosition()
+  }
+
   func windowWillClose(_ notification: Notification) {
+    dismissToolbarWindow()
     onClose?()
     onClose = nil
+  }
+}
+
+@MainActor
+private final class ShotterToolbarWindow: NSPanel {
+
+  private let toolbarContainer: ShotterToolbarContainerView
+
+  var preferredSize: NSSize {
+    toolbarContainer.preferredSize
+  }
+
+  init(editor: ShotterEditorView) {
+    toolbarContainer = ShotterToolbarContainerView(editor: editor)
+    super.init(
+      contentRect: NSRect(origin: .zero, size: toolbarContainer.preferredSize),
+      styleMask: [.borderless, .nonactivatingPanel],
+      backing: .buffered,
+      defer: false
+    )
+
+    isReleasedWhenClosed = false
+    isOpaque = false
+    backgroundColor = .clear
+    hasShadow = true
+    animationBehavior = .none
+    level = .floating
+    collectionBehavior = [.fullScreenAuxiliary, .stationary, .ignoresCycle]
+    hidesOnDeactivate = false
+    isMovable = false
+    contentView = toolbarContainer
+  }
+
+  override var canBecomeKey: Bool { true }
+  override var canBecomeMain: Bool { false }
+
+  override func sendEvent(_ event: NSEvent) {
+    if event.type == .keyDown, event.keyCode == 53 {
+      (parent as? ShotterImageWindow)?.dismissWindow()
+      return
+    }
+    super.sendEvent(event)
+  }
+}
+
+@MainActor
+private final class ShotterToolbarContainerView: NSView {
+
+  private weak var editor: ShotterEditorView?
+
+  var preferredSize: NSSize {
+    editor?.toolbarPreferredSize ?? NSSize(width: 286, height: 60)
+  }
+
+  init(editor: ShotterEditorView) {
+    self.editor = editor
+    super.init(frame: NSRect(origin: .zero, size: editor.toolbarPreferredSize))
+    wantsLayer = true
+    editor.installToolbar(in: self)
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func layout() {
+    super.layout()
+    editor?.layoutToolbar(in: bounds)
   }
 }
 
@@ -162,6 +357,7 @@ private final class ShotterEditorView: NSView {
   weak var hostWindow: ShotterImageWindow?
 
   private let image: NSImage
+  private let fillsScreen: Bool
   private var annotations: [Annotation] = []
   private var selectedTool: Tool = .none
   private var annotationStart: NSPoint?
@@ -178,8 +374,9 @@ private final class ShotterEditorView: NSView {
   private var draggedAnnotationStart: NSPoint?
   private var draggedAnnotation: Annotation?
 
-  init(image: NSImage) {
+  init(image: NSImage, fillsScreen: Bool) {
     self.image = image
+    self.fillsScreen = fillsScreen
     super.init(frame: .zero)
     wantsLayer = true
     layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.94).cgColor
@@ -192,29 +389,19 @@ private final class ShotterEditorView: NSView {
 
   override var acceptsFirstResponder: Bool { true }
 
-  override func layout() {
-    super.layout()
-    toolbar.frame = NSRect(x: 10, y: 8, width: bounds.width - 20, height: 34)
-    opacityPanel.frame = NSRect(
-      x: max(12, bounds.midX - 60),
-      y: toolbar.frame.maxY + 15,
-      width: 120,
-      height: 16
-    )
-    opacitySlider.frame = opacityPanel.bounds
-  }
-
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
 
     let rect = imageRect
     guard !rect.isEmpty else { return }
 
-    NSColor.black.withAlphaComponent(0.16).setFill()
-    NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).fill()
+    if !fillsScreen {
+      NSColor.black.withAlphaComponent(0.16).setFill()
+      NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).fill()
+    }
 
     NSGraphicsContext.current?.saveGraphicsState()
-    NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
+    NSBezierPath(roundedRect: rect, xRadius: fillsScreen ? 0 : 14, yRadius: fillsScreen ? 0 : 14).addClip()
     image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
 
     annotations.forEach { draw($0, in: rect) }
@@ -376,8 +563,38 @@ private final class ShotterEditorView: NSView {
     toolbar.alignment = .centerY
     toolbar.distribution = .fill
     toolbar.spacing = 6
-    addSubview(toolbar)
-    addSubview(opacityPanel)
+    toolbar.wantsLayer = true
+    toolbar.layer?.cornerRadius = 10
+    toolbar.layer?.masksToBounds = true
+  }
+
+  var toolbarPreferredSize: NSSize {
+    NSSize(width: max(286, toolbar.fittingSize.width + 20), height: 60)
+  }
+
+  func installToolbar(in container: NSView) {
+    toolbar.removeFromSuperview()
+    opacityPanel.removeFromSuperview()
+    container.addSubview(toolbar)
+    container.addSubview(opacityPanel)
+    container.needsLayout = true
+  }
+
+  func layoutToolbar(in bounds: NSRect) {
+    toolbar.frame = NSRect(
+      x: 10,
+      y: 8,
+      width: max(0, bounds.width - 20),
+      height: 34
+    )
+    toolbar.layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.88).cgColor
+    opacityPanel.frame = NSRect(
+      x: max(12, bounds.midX - 60),
+      y: 42,
+      width: 120,
+      height: 16
+    )
+    opacitySlider.frame = opacityPanel.bounds
   }
 
   private func makeToolButton(
@@ -451,10 +668,16 @@ private final class ShotterEditorView: NSView {
 
   @objc private func togglePin(_ sender: NSButton) {
     isPinned.toggle()
-    hostWindow?.level = isPinned ? .floating : .normal
-    hostWindow?.collectionBehavior = isPinned
-      ? [.canJoinAllSpaces, .fullScreenAuxiliary]
-      : [.fullScreenAuxiliary]
+    if hostWindow?.isFullScreenCapture == true {
+      hostWindow?.level = .screenSaver
+      hostWindow?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+    } else {
+      hostWindow?.level = isPinned ? .floating : .normal
+      hostWindow?.collectionBehavior = isPinned
+        ? [.canJoinAllSpaces, .fullScreenAuxiliary]
+        : [.fullScreenAuxiliary]
+    }
+    hostWindow?.synchronizeToolbarLevel()
     opacityPanel.isHidden = !isPinned
     if !isPinned {
       opacitySlider.doubleValue = 1
@@ -465,6 +688,7 @@ private final class ShotterEditorView: NSView {
       accessibilityDescription: String(localized: "Pin")
     )
     sender.toolTip = String(localized: isPinned ? "Unpin" : "Pin")
+    toolbar.superview?.needsLayout = true
   }
 
   @objc private func updateOpacity(_ sender: NSSlider) {
@@ -569,11 +793,17 @@ private final class ShotterEditorView: NSView {
   }
 
   private var imageRect: NSRect {
+    if fillsScreen {
+      return bounds
+    }
+
+    let topInset: CGFloat = 12
+    let bottomInset: CGFloat = 12
     let available = NSRect(
       x: 12,
-      y: 54,
+      y: bottomInset,
       width: max(0, bounds.width - 24),
-      height: max(0, bounds.height - 66)
+      height: max(0, bounds.height - bottomInset - topInset)
     )
     guard image.size.width > 0, image.size.height > 0 else { return .zero }
 
@@ -585,6 +815,11 @@ private final class ShotterEditorView: NSView {
       width: size.width,
       height: size.height
     )
+  }
+
+  var currentImageRect: NSRect {
+    layoutSubtreeIfNeeded()
+    return imageRect
   }
 
   private func imagePoint(from point: NSPoint) -> NSPoint? {
