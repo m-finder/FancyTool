@@ -64,6 +64,12 @@ struct AppMenuItem {
         action:  #selector(AppMenuActions.monitor(_:)),
         state: AppState.shared.showMonitor
       ),
+      // 截图工具
+      AppMenuItem(
+        title: String(localized: "Shotter"),
+        action: #selector(AppMenuActions.shotter(_:)),
+        state: AppState.shared.showShotter
+      ),
       // 分割线
       AppMenuItem(
         isSeparator: true
@@ -89,4 +95,3 @@ struct AppMenuItem {
     ]
   }
 }
-

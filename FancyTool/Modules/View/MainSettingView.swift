@@ -8,7 +8,6 @@
 import SwiftUI
 import AppKit
 import ServiceManagement
-import Combine
 
 struct MainSettingView: View {
   
@@ -16,13 +15,7 @@ struct MainSettingView: View {
 
   var body: some View {
     
-    VStack(alignment: .center, spacing: 0){
-      
-      HidderSettingView().padding()
-      
-      RounderSettingView().padding()
-      
-      TexterSettingView().padding()
+    VStack(alignment: .leading, spacing: 12) {
 
       Toggle(
         String(localized: "Launch on Startup"),
@@ -52,8 +45,6 @@ struct MainSettingView: View {
       )
       .toggleStyle(SwitchToggleStyle())
       .font(.system(size: 12))
-      .padding()
-      
       
       Button(String(localized: "Quit App")) {
         NSApplication.shared.terminate(nil)
@@ -62,9 +53,7 @@ struct MainSettingView: View {
       .frame(width: 100, height: 40)
       .font(.body)
       .cornerRadius(10)
-
-      
-    }.frame(maxHeight: .infinity, alignment: .top)
-    
+    }
+    .frame(width: 260, alignment: .leading)
   }
 }

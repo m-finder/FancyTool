@@ -14,7 +14,7 @@ struct PasterSettingView: View {
   
   var body: some View {
     
-    VStack(alignment: .center, spacing: 0){
+    VStack(alignment: .center, spacing: 4) {
 
         LabeledContent(String(localized: "Number of records:")){
           TextField(
@@ -29,10 +29,10 @@ struct PasterSettingView: View {
           .frame(width: 150)
           .textFieldStyle(.roundedBorder)
         }
-        .padding()
+        .padding(.vertical, 8)
 
         KeyboardShortcuts.Recorder("Shortcut:", name: .paster)
-          .padding()
+          .padding(.vertical, 8)
 
         Toggle("Auto Paste", isOn: $state.autoPaste)
           .onChange(of: state.autoPaste) { _, newValue in
@@ -48,9 +48,8 @@ struct PasterSettingView: View {
               }
             }
           }
-          .padding()
+          .padding(.vertical, 8)
     }
-    .frame(maxHeight: .infinity, alignment: .top)
     .font(.system(size: 12))
   }
 }

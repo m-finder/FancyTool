@@ -24,6 +24,10 @@ class AppMenuActions: NSObject {
     if settingsWindow == nil{
       settingsWindow = AppWindow(
         title: String(localized: "Setting"),
+        size: NSSize(width: 640, height: 400),
+        minimumSize: NSSize(width: 600, height: 380),
+        isResizable: true,
+        hidesToolbar: true,
         contentView: SettingsView()
       )
     }
@@ -180,7 +184,20 @@ class AppMenuActions: NSObject {
 
     Monitor.shared.show(sender)
   }
-  
+
+  // MARK: - 停启用 Shotter
+  @IBAction func shotter(_ sender: NSStatusBarButton){
+    AppState.shared.showShotter.toggle()
+    sender.state = AppState.shared.showShotter ? .on : .off
+
+    if AppState.shared.showShotter {
+      Shotter.shared.mount()
+    } else {
+      Shotter.shared.unmount()
+    }
+    AppMenu.shared.refreshFeatureStates()
+  }
+
   // MARK: - 空响应
   @IBAction func nullAction(_ sender: NSStatusBarButton){
 

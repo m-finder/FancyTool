@@ -46,6 +46,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     if(AppState.shared.showMonitor){
       Monitor.shared.mount()
     }
+
+    // Shotter
+    if(AppState.shared.showShotter){
+      Shotter.shared.mount()
+    }
     
     // 开始监控
     AppState.shared.start()

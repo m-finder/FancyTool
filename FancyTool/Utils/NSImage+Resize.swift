@@ -1,3 +1,10 @@
+//
+//  ColorModel.swift
+//  M-Tools
+//
+//  Created by 吴雲放 on 2026/8/19.
+//
+
 import AppKit
 
 extension NSImage {

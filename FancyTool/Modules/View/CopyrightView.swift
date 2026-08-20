@@ -19,8 +19,7 @@ struct CopyrightView: View {
       
       Text(" 2025-2026").font(.footnote).fontWeight(.light)
     }
-    .padding(.top)
-    .padding(.bottom)
+    .padding(.vertical, 5)
   }
 }
 

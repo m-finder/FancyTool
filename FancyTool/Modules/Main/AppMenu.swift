@@ -115,6 +115,8 @@ class AppMenu {
         menuItem.state = AppState.shared.showRounder ? .on : .off
       } else if action == #selector(AppMenuActions.monitor(_:)) {
         menuItem.state = AppState.shared.showMonitor ? .on : .off
+      } else if action == #selector(AppMenuActions.shotter(_:)) {
+        menuItem.state = AppState.shared.showShotter ? .on : .off
       }
     }
   }

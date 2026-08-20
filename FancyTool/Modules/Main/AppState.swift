@@ -54,7 +54,16 @@ class AppState : ObservableObject{
   @AppStorage("showMemory") var showMemory: Bool = false
   @AppStorage("showBattery") var showBattery: Bool = false
 
-  private init() {}
+  // Shotter
+  @AppStorage("showShotter") var showShotter: Bool = false
+
+  private init() {
+    let defaults = UserDefaults.standard
+    if defaults.object(forKey: "showShotter") == nil,
+       defaults.object(forKey: "showScreenshot") != nil {
+      defaults.set(defaults.bool(forKey: "showScreenshot"), forKey: "showShotter")
+    }
+  }
   
   // 最新的系统快照
   @Published var bundle: SystemInfoBundle?

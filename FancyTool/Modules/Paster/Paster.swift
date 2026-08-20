@@ -237,18 +237,20 @@ class Paster: ObservableObject{
 
     do {
       let limit = max(1, AppState.shared.historyCount)
-      let pinnedDescriptor = FetchDescriptor<PasterModel>(
+      var pinnedDescriptor = FetchDescriptor<PasterModel>(
         predicate: #Predicate { $0.isPinned == true },
         sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
       )
+      pinnedDescriptor.fetchLimit = limit
+      let pinnedRecords = try modelContext.fetch(pinnedDescriptor)
+
       var unpinnedDescriptor = FetchDescriptor<PasterModel>(
         predicate: #Predicate { $0.isPinned == false },
         sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
       )
-      // 未置顶记录只读取当前配额，避免为了显示最近几条记录，把数据库中的
-      // 全部图片都读进内存；置顶记录始终完整加载且不占用这个配额。
-      unpinnedDescriptor.fetchLimit = limit
-      history = try modelContext.fetch(pinnedDescriptor) + modelContext.fetch(unpinnedDescriptor)
+      // 置顶项参与总记录数计算，普通项只读取剩余可用额度。
+      unpinnedDescriptor.fetchLimit = max(0, limit - pinnedRecords.count)
+      history = pinnedRecords + (try modelContext.fetch(unpinnedDescriptor))
       sortHistory()
       var needsSave = false
 
@@ -273,9 +275,10 @@ class Paster: ObservableObject{
 
   private func trimHistory() {
     let limit = max(1, AppState.shared.historyCount)
-    while history.filter({ !$0.isPinned }).count > limit {
-      guard let index = history.lastIndex(where: { !$0.isPinned }) else { return }
-      let removed = history.remove(at: index)
+    while history.count > limit {
+      // history 已按置顶和创建时间排序，队尾是最旧的普通项；只有全部
+      // 都置顶时才会淘汰最早置顶的记录。
+      let removed = history.removeLast()
       modelContext?.delete(removed)
     }
   }

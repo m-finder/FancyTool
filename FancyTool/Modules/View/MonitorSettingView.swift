@@ -27,12 +27,13 @@ struct MonitorSettingView: View {
       }
       .toggleStyle(SwitchToggleStyle())
       .font(.system(size: 12))
-      .padding()
+      .padding(.vertical, 8)
+      .padding(.horizontal, 6)
     
   }
   
   var body: some View {
-    VStack(alignment: .center, spacing: 0) {
+    VStack(alignment: .center, spacing: 4) {
       
       // cpu 和 网络开关
       HStack {
@@ -52,7 +53,6 @@ struct MonitorSettingView: View {
       }
       
     }
-    .frame(maxHeight: .infinity, alignment: .top)
     .font(.system(size: 12))
   }
 }
