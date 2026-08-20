@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import KeyboardShortcuts
+import ScreenCaptureKit
 
 struct ShotterCaptureSelection {
   let rect: NSRect
@@ -41,6 +42,15 @@ enum ShotterCoordinateSpace {
     NSPoint(x: point.x, y: primaryDisplayTop - point.y)
   }
 
+  static func quartzRect(fromAppKit rect: NSRect) -> CGRect {
+    CGRect(
+      x: rect.minX,
+      y: primaryDisplayTop - rect.maxY,
+      width: rect.width,
+      height: rect.height
+    )
+  }
+
   static func appKitRects(fromQuartz rect: CGRect) -> [NSRect] {
     [NSRect(
       x: rect.minX,
@@ -59,25 +69,22 @@ enum ShotterCoordinateSpace {
     )
   }
 
-  /// Creates a display-local physical-pixel rectangle for
-  /// CGDisplayCreateImage(_:rect:).
-  static func displayLocalQuartzRect(fromAppKit rect: NSRect, on screen: NSScreen) -> CGRect? {
-    guard let displayID = displayID(for: screen) else { return nil }
+  /// Creates a display-local logical-point rectangle for
+  /// SCStreamConfiguration.sourceRect. ScreenCaptureKit uses an upper-left
+  /// origin in each display's logical coordinate space.
+  static func displayLocalScreenCaptureRect(fromAppKit rect: NSRect, on screen: NSScreen) -> CGRect? {
     let portion = rect.intersection(screen.frame)
     guard !portion.isNull, !portion.isEmpty,
           screen.frame.width > 0, screen.frame.height > 0 else {
       return nil
     }
 
-    let displayBounds = CGDisplayBounds(displayID)
-    let xScale = displayBounds.width / screen.frame.width
-    let yScale = displayBounds.height / screen.frame.height
     return CGRect(
-      x: (portion.minX - screen.frame.minX) * xScale,
-      y: (screen.frame.maxY - portion.maxY) * yScale,
-      width: portion.width * xScale,
-      height: portion.height * yScale
-    ).integral
+      x: portion.minX - screen.frame.minX,
+      y: screen.frame.maxY - portion.maxY,
+      width: portion.width,
+      height: portion.height
+    )
   }
 
   static func displayID(for screen: NSScreen) -> CGDirectDisplayID? {
@@ -167,38 +174,96 @@ final class Shotter {
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
 
-      let image: CGImage?
-      if let windowID = selection.windowID {
-        image = CGWindowListCreateImage(
-          .null,
-          .optionIncludingWindow,
-          windowID,
-          [.bestResolution, .boundsIgnoreFraming]
-        )
-      } else {
-        image = self.captureDisplays(in: selection.rect)
-      }
+      Task { [weak self] in
+        guard let self else { return }
+        let image = await self.captureImage(for: selection)
+        guard let image, image.width > 0, image.height > 0 else {
+          print("[Shotter] unable to capture selected area")
+          return
+        }
 
-      guard let image, image.width > 0, image.height > 0 else {
-        print("[Shotter] unable to capture selected area")
-        return
+        let imageSize = selection.rect.size
+        self.showImage(NSImage(cgImage: image, size: imageSize), at: selection.rect)
       }
-
-      let imageSize = selection.rect.size
-      self.showImage(NSImage(cgImage: image, size: imageSize), at: selection.rect)
     }
   }
 
-  /// Captures each intersecting display in its own coordinate space and
-  /// composites the result in AppKit selection coordinates. This avoids relying
-  /// on a single global conversion, which breaks when displays are positioned
-  /// above/below one another or use different backing scales.
-  private func captureDisplays(in selectionRect: NSRect) -> CGImage? {
-    let portions: [(screen: NSScreen, displayID: CGDirectDisplayID, rect: NSRect)] = NSScreen.screens.compactMap { screen in
-      guard let displayID = ShotterCoordinateSpace.displayID(for: screen) else { return nil }
+  /// Captures once through ScreenCaptureKit. It is the supported replacement
+  /// for CGWindowListCreateImage and CGDisplayCreateImage, and avoids the
+  /// deprecated Quartz screenshot APIs on every supported macOS release.
+  private func captureImage(for selection: ShotterCaptureSelection) async -> CGImage? {
+    do {
+      let content = try await SCShareableContent.excludingDesktopWindows(
+        false,
+        onScreenWindowsOnly: true
+      )
+
+      if let windowID = selection.windowID {
+        return try await captureWindow(windowID: windowID, from: content)
+      }
+      return try await captureSelection(in: selection.rect, from: content)
+    } catch {
+      print("[Shotter] ScreenCaptureKit capture failed: \(error.localizedDescription)")
+      return nil
+    }
+  }
+
+  private func captureWindow(
+    windowID: CGWindowID,
+    from content: SCShareableContent
+  ) async throws -> CGImage? {
+    guard let window = content.windows.first(where: { $0.windowID == windowID }) else {
+      return nil
+    }
+
+    let filter = SCContentFilter(desktopIndependentWindow: window)
+    var configuration = SCStreamConfiguration()
+    configuration.showsCursor = false
+
+    // SCScreenshotManager defaults to 1920×1080. Explicit physical-pixel
+    // dimensions preserve Retina detail instead of silently scaling a window.
+    let scale = max(CGFloat(filter.pointPixelScale), 1)
+    configuration.width = max(1, Int((window.frame.width * scale).rounded(.up)))
+    configuration.height = max(1, Int((window.frame.height * scale).rounded(.up)))
+    return try await SCScreenshotManager.captureImage(
+      contentFilter: filter,
+      configuration: configuration
+    )
+  }
+
+  private func captureSelection(
+    in selectionRect: NSRect,
+    from content: SCShareableContent
+  ) async throws -> CGImage? {
+    // macOS 15.2 supplies a display-agnostic, multi-display screenshot API.
+    // It keeps all coordinate conversion inside ScreenCaptureKit and is the
+    // most reliable path for differently arranged/scaled monitors.
+    if #available(macOS 15.2, *) {
+      return try await SCScreenshotManager.captureImage(
+        in: ShotterCoordinateSpace.quartzRect(fromAppKit: selectionRect)
+      )
+    }
+
+    // macOS 14.6–15.1 fallback: capture every intersected display separately
+    // with ScreenCaptureKit, then composite at the highest involved scale.
+    return try await captureDisplays(in: selectionRect, from: content)
+  }
+
+  /// Captures each intersecting display through ScreenCaptureKit and composites
+  /// the result in AppKit selection coordinates. This fallback is only used on
+  /// macOS 14.6–15.1, which lack SCScreenshotManager.captureImage(in:).
+  private func captureDisplays(
+    in selectionRect: NSRect,
+    from content: SCShareableContent
+  ) async throws -> CGImage? {
+    let portions: [(screen: NSScreen, display: SCDisplay, rect: NSRect)] = NSScreen.screens.compactMap { screen in
+      guard let displayID = ShotterCoordinateSpace.displayID(for: screen),
+            let display = content.displays.first(where: { $0.displayID == displayID }) else {
+        return nil
+      }
       let portion = selectionRect.intersection(screen.frame)
       guard !portion.isNull, !portion.isEmpty else { return nil }
-      return (screen, displayID, portion)
+      return (screen, display, portion)
     }
     guard !portions.isEmpty else { return nil }
 
@@ -219,11 +284,25 @@ final class Shotter {
 
     context.interpolationQuality = .high
     for portion in portions {
-      guard let captureRect = ShotterCoordinateSpace.displayLocalQuartzRect(fromAppKit: portion.rect, on: portion.screen),
-            let displayImage = CGDisplayCreateImage(portion.displayID, rect: captureRect) else {
+      guard let sourceRect = ShotterCoordinateSpace.displayLocalScreenCaptureRect(
+        fromAppKit: portion.rect,
+        on: portion.screen
+      ) else {
         continue
       }
 
+      let filter = SCContentFilter(display: portion.display, excludingWindows: [])
+      var configuration = SCStreamConfiguration()
+      configuration.showsCursor = false
+      configuration.sourceRect = sourceRect
+      let scale = max(CGFloat(filter.pointPixelScale), 1)
+      configuration.width = max(1, Int((sourceRect.width * scale).rounded(.up)))
+      configuration.height = max(1, Int((sourceRect.height * scale).rounded(.up)))
+
+      let displayImage = try await SCScreenshotManager.captureImage(
+        contentFilter: filter,
+        configuration: configuration
+      )
       let destination = CGRect(
         x: (portion.rect.minX - selectionRect.minX) * outputScale,
         y: (portion.rect.minY - selectionRect.minY) * outputScale,
