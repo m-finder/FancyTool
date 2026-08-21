@@ -154,7 +154,10 @@ final class Shotter {
     controller.onCancel = { [weak self] in
       self?.finishSelection()
     }
-    guard controller.start() else { return }
+    guard controller.start() else {
+      finishSelection()
+      return
+    }
     selectionController = controller
     isCapturing = true
   }
@@ -171,7 +174,7 @@ final class Shotter {
 
     // The selection overlay is above every application. Capture on the next
     // run-loop turn so it has been removed from the window server first.
-    DispatchQueue.main.async { [weak self] in
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
       guard let self else { return }
 
       Task { [weak self] in
@@ -235,39 +238,31 @@ final class Shotter {
     in selectionRect: NSRect,
     from content: SCShareableContent
   ) async throws -> CGImage? {
-    // macOS 15.2 supplies a display-agnostic, multi-display screenshot API.
-    // It keeps all coordinate conversion inside ScreenCaptureKit and is the
-    // most reliable path for differently arranged/scaled monitors.
-    if #available(macOS 15.2, *) {
-      return try await SCScreenshotManager.captureImage(
-        in: ShotterCoordinateSpace.quartzRect(fromAppKit: selectionRect)
-      )
-    }
-
-    // macOS 14.6–15.1 fallback: capture every intersected display separately
-    // with ScreenCaptureKit, then composite at the highest involved scale.
+    // Capture every intersected display explicitly and composite the result.
+    // This avoids SCScreenshotManager.captureImage(in:)'s default dimensions,
+    // which can downscale small/Retina selections and make previews blurry.
     return try await captureDisplays(in: selectionRect, from: content)
   }
 
   /// Captures each intersecting display through ScreenCaptureKit and composites
-  /// the result in AppKit selection coordinates. This fallback is only used on
-  /// macOS 14.6–15.1, which lack SCScreenshotManager.captureImage(in:).
+  /// the result in AppKit selection coordinates at physical-pixel resolution.
   private func captureDisplays(
     in selectionRect: NSRect,
     from content: SCShareableContent
   ) async throws -> CGImage? {
-    let portions: [(screen: NSScreen, display: SCDisplay, rect: NSRect)] = NSScreen.screens.compactMap { screen in
+    let portions: [(screen: NSScreen, display: SCDisplay, rect: NSRect, scale: CGFloat)] = NSScreen.screens.compactMap { screen in
       guard let displayID = ShotterCoordinateSpace.displayID(for: screen),
             let display = content.displays.first(where: { $0.displayID == displayID }) else {
         return nil
       }
       let portion = selectionRect.intersection(screen.frame)
       guard !portion.isNull, !portion.isEmpty else { return nil }
-      return (screen, display, portion)
+      let filter = SCContentFilter(display: display, excludingWindows: [])
+      return (screen, display, portion, max(CGFloat(filter.pointPixelScale), 1))
     }
     guard !portions.isEmpty else { return nil }
 
-    let outputScale = portions.map { ShotterCoordinateSpace.backingScale(for: $0.screen) }.max() ?? 1
+    let outputScale = portions.map(\.scale).max() ?? 1
     let outputWidth = max(1, Int((selectionRect.width * outputScale).rounded(.up)))
     let outputHeight = max(1, Int((selectionRect.height * outputScale).rounded(.up)))
     guard let context = CGContext(
@@ -282,7 +277,7 @@ final class Shotter {
       return nil
     }
 
-    context.interpolationQuality = .high
+    context.interpolationQuality = .none
     for portion in portions {
       guard let sourceRect = ShotterCoordinateSpace.displayLocalScreenCaptureRect(
         fromAppKit: portion.rect,
@@ -295,9 +290,8 @@ final class Shotter {
       let configuration = SCStreamConfiguration()
       configuration.showsCursor = false
       configuration.sourceRect = sourceRect
-      let scale = max(CGFloat(filter.pointPixelScale), 1)
-      configuration.width = max(1, Int((sourceRect.width * scale).rounded(.up)))
-      configuration.height = max(1, Int((sourceRect.height * scale).rounded(.up)))
+      configuration.width = max(1, Int((sourceRect.width * portion.scale).rounded(.up)))
+      configuration.height = max(1, Int((sourceRect.height * portion.scale).rounded(.up)))
 
       let displayImage = try await SCScreenshotManager.captureImage(
         contentFilter: filter,

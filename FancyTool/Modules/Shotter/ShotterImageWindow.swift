@@ -24,11 +24,11 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     let imageSize = image.size
     let screen = fullScreenCaptureScreen ?? selectionRect.flatMap { ShotterCoordinateSpace.screen(for: $0) } ?? NSScreen.main
     let availableFrame = fullScreenCaptureScreen?.frame
-      ?? screen?.visibleFrame
+      ?? screen?.frame
       ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
     let maximumImageSize = CGSize(
-      width: max(1, availableFrame.width - (fullScreenCaptureScreen == nil ? 24 : 0)),
-      height: max(1, availableFrame.height - (fullScreenCaptureScreen == nil ? 24 : 0))
+      width: max(1, availableFrame.width),
+      height: max(1, availableFrame.height)
     )
     let scale = min(
       1,
@@ -41,10 +41,7 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
       width: imageSize.width * scale,
       height: imageSize.height * scale
     )
-    let contentSize = fullScreenCaptureScreen?.frame.size ?? CGSize(
-      width: max(340, imageDisplaySize.width + 24),
-      height: max(250, imageDisplaySize.height + 24)
-    )
+    let contentSize = fullScreenCaptureScreen?.frame.size ?? imageDisplaySize
 
     super.init(
       contentRect: NSRect(origin: .zero, size: contentSize),
@@ -59,13 +56,11 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     isReleasedWhenClosed = false
     isOpaque = false
     backgroundColor = .clear
-    hasShadow = fullScreenCaptureScreen == nil
+    hasShadow = false
     animationBehavior = .none
-    level = fullScreenCaptureScreen == nil ? .normal : .screenSaver
+    level = .screenSaver
     isMovableByWindowBackground = false
-    collectionBehavior = fullScreenCaptureScreen == nil
-      ? [.fullScreenAuxiliary]
-      : [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+    collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
     contentView = editorView
     editorView.hostWindow = self
     toolbarWindow = ShotterToolbarWindow(editor: editorView)
@@ -134,20 +129,20 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
 
     let imageRectInWindow = editorView.convert(editorView.currentImageRect, to: nil)
     let imageRect = convertToScreen(imageRectInWindow)
-    let visibleFrame = screen.visibleFrame
+    let availableFrame = screen.frame
     let toolbarSize = toolbarWindow.preferredSize
     let horizontalOrigin = min(
-      max(imageRect.midX - toolbarSize.width / 2, visibleFrame.minX + 8),
-      visibleFrame.maxX - toolbarSize.width - 8
+      max(imageRect.midX - toolbarSize.width / 2, availableFrame.minX + 8),
+      availableFrame.maxX - toolbarSize.width - 8
     )
     let belowOriginY = imageRect.minY - toolbarSize.height - 10
-    let fitsBelowImage = belowOriginY >= visibleFrame.minY + 8
+    let fitsBelowImage = belowOriginY >= availableFrame.minY + 8
     let verticalOrigin: CGFloat
     if fitsBelowImage {
       verticalOrigin = belowOriginY
     } else {
       verticalOrigin = min(
-        max(imageRect.minY + 12, visibleFrame.minY + 8),
+        max(imageRect.minY + 12, availableFrame.minY + 8),
         imageRect.maxY - toolbarSize.height - 12
       )
     }
@@ -170,7 +165,7 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     }
 
     let screen = ShotterCoordinateSpace.screen(for: selectionRect) ?? NSScreen.main
-    guard let visibleFrame = screen?.visibleFrame else {
+    guard let availableFrame = screen?.frame else {
       center()
       return
     }
@@ -181,10 +176,10 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     // reserve space by moving the preview upward for the floating toolbar:
     // updateToolbarPosition() will place the toolbar inside the image whenever
     // there is not enough room below it.
-    let minimumOriginX = visibleFrame.minX - imageRect.minX
-    let minimumOriginY = visibleFrame.minY - imageRect.minY
-    let maximumOriginX = max(minimumOriginX, visibleFrame.maxX - imageRect.maxX)
-    let maximumOriginY = max(minimumOriginY, visibleFrame.maxY - imageRect.maxY)
+    let minimumOriginX = availableFrame.minX - imageRect.minX
+    let minimumOriginY = availableFrame.minY - imageRect.minY
+    let maximumOriginX = max(minimumOriginX, availableFrame.maxX - imageRect.maxX)
+    let maximumOriginY = max(minimumOriginY, availableFrame.maxY - imageRect.maxY)
     let origin = NSPoint(
       x: min(max(selectionRect.minX - imageOffset.x, minimumOriginX), maximumOriginX),
       y: min(max(selectionRect.minY - imageOffset.y, minimumOriginY), maximumOriginY)
@@ -379,7 +374,8 @@ private final class ShotterEditorView: NSView {
     self.fillsScreen = fillsScreen
     super.init(frame: .zero)
     wantsLayer = true
-    layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.94).cgColor
+    layer?.backgroundColor = NSColor.clear.cgColor
+    layer?.contentsGravity = .resize
     setupToolbar()
   }
 
@@ -389,26 +385,53 @@ private final class ShotterEditorView: NSView {
 
   override var acceptsFirstResponder: Bool { true }
 
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+    updateLayerScale()
+  }
+
+  override func viewDidChangeBackingProperties() {
+    super.viewDidChangeBackingProperties()
+    updateLayerScale()
+  }
+
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
 
     let rect = imageRect
     guard !rect.isEmpty else { return }
 
-    if !fillsScreen {
-      NSColor.black.withAlphaComponent(0.16).setFill()
-      NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).fill()
-    }
-
     NSGraphicsContext.current?.saveGraphicsState()
-    NSBezierPath(roundedRect: rect, xRadius: fillsScreen ? 0 : 14, yRadius: fillsScreen ? 0 : 14).addClip()
+    NSGraphicsContext.current?.imageInterpolation = .none
+    previewPath(in: rect).addClip()
     image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
 
     annotations.forEach { draw($0, in: rect) }
     if let start = annotationStart, let end = annotationEnd {
       draw(Annotation(tool: selectedTool, start: start, end: end), in: rect)
     }
+    drawPreviewBorder(in: rect)
     NSGraphicsContext.current?.restoreGraphicsState()
+  }
+
+  private func drawPreviewBorder(in rect: NSRect) {
+    let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+    let lineWidth = 1 / max(scale, 1)
+    let borderRect = rect.insetBy(dx: lineWidth / 2, dy: lineWidth / 2)
+    NSColor(calibratedWhite: 0.78, alpha: 1).setStroke()
+    let path = previewPath(in: borderRect)
+    path.lineWidth = lineWidth
+    path.stroke()
+  }
+
+  private func previewPath(in rect: NSRect) -> NSBezierPath {
+    let radius = fillsScreen ? 0 : min(12, min(rect.width, rect.height) / 2)
+    return NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+  }
+
+  private func updateLayerScale() {
+    layer?.contentsScale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+    needsDisplay = true
   }
 
   override func mouseDown(with event: NSEvent) {
@@ -672,10 +695,8 @@ private final class ShotterEditorView: NSView {
       hostWindow?.level = .screenSaver
       hostWindow?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
     } else {
-      hostWindow?.level = isPinned ? .floating : .normal
-      hostWindow?.collectionBehavior = isPinned
-        ? [.canJoinAllSpaces, .fullScreenAuxiliary]
-        : [.fullScreenAuxiliary]
+      hostWindow?.level = .screenSaver
+      hostWindow?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
     }
     hostWindow?.synchronizeToolbarLevel()
     opacityPanel.isHidden = !isPinned
@@ -796,22 +817,13 @@ private final class ShotterEditorView: NSView {
     if fillsScreen {
       return bounds
     }
-
-    let topInset: CGFloat = 12
-    let bottomInset: CGFloat = 12
-    let available = NSRect(
-      x: 12,
-      y: bottomInset,
-      width: max(0, bounds.width - 24),
-      height: max(0, bounds.height - bottomInset - topInset)
-    )
     guard image.size.width > 0, image.size.height > 0 else { return .zero }
 
-    let scale = min(available.width / image.size.width, available.height / image.size.height)
+    let scale = min(bounds.width / image.size.width, bounds.height / image.size.height)
     let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
     return NSRect(
-      x: available.midX - size.width / 2,
-      y: available.midY - size.height / 2,
+      x: bounds.midX - size.width / 2,
+      y: bounds.midY - size.height / 2,
       width: size.width,
       height: size.height
     )

@@ -220,7 +220,7 @@ final class ShotterSelectionController {
       y: min(start.y, end.y),
       width: abs(end.x - start.x),
       height: abs(end.y - start.y)
-    )
+    ).integral
   }
 
   private func finish(with selection: ShotterCaptureSelection) {
