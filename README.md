@@ -6,6 +6,8 @@
 <img src="https://img.shields.io/badge/MacOS->=14-green">
 </p>
 
+我的目标是构建一个轻量、有趣，且始终保持系统资源低占用的菜单栏工具，在得到 AI 加持后，我想要的功能暂时都做到了。后续短期内应该不会再增加新的功能，除非我把现有模块打磨到了极致。
+
 FancyTool 是一款优雅高效的 Mac 菜单栏美化工具，您可以在这里免费下载使用。
 
 [ [GitHub Release] ](https://github.com/FancyTool/FancyToolApp/releases)

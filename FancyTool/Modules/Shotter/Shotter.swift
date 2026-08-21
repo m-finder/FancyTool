@@ -217,7 +217,7 @@ final class Shotter {
     }
 
     let filter = SCContentFilter(desktopIndependentWindow: window)
-    var configuration = SCStreamConfiguration()
+    let configuration = SCStreamConfiguration()
     configuration.showsCursor = false
 
     // SCScreenshotManager defaults to 1920×1080. Explicit physical-pixel
@@ -292,7 +292,7 @@ final class Shotter {
       }
 
       let filter = SCContentFilter(display: portion.display, excludingWindows: [])
-      var configuration = SCStreamConfiguration()
+      let configuration = SCStreamConfiguration()
       configuration.showsCursor = false
       configuration.sourceRect = sourceRect
       let scale = max(CGFloat(filter.pointPixelScale), 1)
