@@ -16,10 +16,14 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
   private var toolbarWindow: ShotterToolbarWindow?
   private var isDismissing = false
 
-  init(image: NSImage, selectionRect: NSRect?) {
+  init(image: NSImage, sourceCGImage: CGImage? = nil, selectionRect: NSRect?) {
     self.selectionRect = selectionRect
     fullScreenCaptureScreen = selectionRect.flatMap(Self.fullScreenCaptureScreen(for:))
-    editorView = ShotterEditorView(image: image, fillsScreen: fullScreenCaptureScreen != nil)
+    editorView = ShotterEditorView(
+      image: image,
+      sourceCGImage: sourceCGImage,
+      fillsScreen: fullScreenCaptureScreen != nil
+    )
 
     let imageSize = image.size
     let screen = fullScreenCaptureScreen ?? selectionRect.flatMap { ShotterCoordinateSpace.screen(for: $0) } ?? NSScreen.main
@@ -352,6 +356,7 @@ private final class ShotterEditorView: NSView {
   weak var hostWindow: ShotterImageWindow?
 
   private let image: NSImage
+  private let sourceCGImage: CGImage?
   private let fillsScreen: Bool
   private var annotations: [Annotation] = []
   private var selectedTool: Tool = .none
@@ -369,8 +374,9 @@ private final class ShotterEditorView: NSView {
   private var draggedAnnotationStart: NSPoint?
   private var draggedAnnotation: Annotation?
 
-  init(image: NSImage, fillsScreen: Bool) {
+  init(image: NSImage, sourceCGImage: CGImage? = nil, fillsScreen: Bool) {
     self.image = image
+    self.sourceCGImage = sourceCGImage
     self.fillsScreen = fillsScreen
     super.init(frame: .zero)
     wantsLayer = true
@@ -990,7 +996,7 @@ private final class ShotterEditorView: NSView {
 
   private func pngData() -> Data? {
     var proposedRect = NSRect(origin: .zero, size: image.size)
-    guard let sourceCGImage = image.cgImage(
+    guard let sourceCGImage = sourceCGImage ?? image.cgImage(
       forProposedRect: &proposedRect,
       context: nil,
       hints: nil
@@ -1022,6 +1028,7 @@ private final class ShotterEditorView: NSView {
     let sourceImage = NSImage(cgImage: sourceCGImage, size: outputSize)
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = context
+    NSGraphicsContext.current?.imageInterpolation = .high
     NSColor.clear.setFill()
     outputRect.fill()
     sourceImage.draw(in: outputRect, from: .zero, operation: .copy, fraction: 1)

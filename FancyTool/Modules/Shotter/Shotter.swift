@@ -186,7 +186,7 @@ final class Shotter {
         }
 
         let imageSize = selection.rect.size
-        self.showImage(NSImage(cgImage: image, size: imageSize), at: selection.rect)
+        self.showImage(NSImage(cgImage: image, size: imageSize), sourceCGImage: image, at: selection.rect)
       }
     }
   }
@@ -222,6 +222,9 @@ final class Shotter {
     let filter = SCContentFilter(desktopIndependentWindow: window)
     let configuration = SCStreamConfiguration()
     configuration.showsCursor = false
+    // Never let ScreenCaptureKit upscale a source to satisfy the requested size.
+    // The requested dimensions below already match the display's native pixels.
+    configuration.scalesToFit = false
 
     // SCScreenshotManager defaults to 1920×1080. Explicit physical-pixel
     // dimensions preserve Retina detail instead of silently scaling a window.
@@ -269,7 +272,7 @@ final class Shotter {
       data: nil,
       width: outputWidth,
       height: outputHeight,
-      bitsPerComponent: 16,
+      bitsPerComponent: 8,
       bytesPerRow: 0,
       space: CGColorSpaceCreateDeviceRGB(),
       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
@@ -289,6 +292,7 @@ final class Shotter {
       let filter = SCContentFilter(display: portion.display, excludingWindows: [])
       let configuration = SCStreamConfiguration()
       configuration.showsCursor = false
+      configuration.scalesToFit = false
       configuration.sourceRect = sourceRect
       configuration.width = max(1, Int((sourceRect.width * portion.scale).rounded(.up)))
       configuration.height = max(1, Int((sourceRect.height * portion.scale).rounded(.up)))
@@ -297,12 +301,24 @@ final class Shotter {
         contentFilter: filter,
         configuration: configuration
       )
+      // Align every edge to an integral output pixel. A fractional destination
+      // makes Core Graphics resample even when source and destination have the
+      // same native scale, which is visible as a soft 1px blur on Retina text.
+      let destinationX = ((portion.rect.minX - selectionRect.minX) * outputScale).rounded()
+      let destinationY = ((portion.rect.minY - selectionRect.minY) * outputScale).rounded()
+      let destinationWidth = (portion.rect.width * outputScale).rounded()
+      let destinationHeight = (portion.rect.height * outputScale).rounded()
       let destination = CGRect(
-        x: (portion.rect.minX - selectionRect.minX) * outputScale,
-        y: (portion.rect.minY - selectionRect.minY) * outputScale,
-        width: portion.rect.width * outputScale,
-        height: portion.rect.height * outputScale
+        x: destinationX,
+        y: destinationY,
+        width: max(1, destinationWidth),
+        height: max(1, destinationHeight)
       )
+#if DEBUG
+      let actualScaleX = CGFloat(displayImage.width) / max(sourceRect.width, 1)
+      let actualScaleY = CGFloat(displayImage.height) / max(sourceRect.height, 1)
+      print(String(format: "[Shotter] portion points=%@ requested=%zux%zu actual=%zux%zu scale=%.2fx%.2f", NSStringFromSize(sourceRect.size), configuration.width, configuration.height, displayImage.width, displayImage.height, actualScaleX, actualScaleY))
+#endif
       context.draw(displayImage, in: destination)
     }
     return context.makeImage()
@@ -331,7 +347,7 @@ final class Shotter {
     }
   }
 
-  private func showImage(_ image: NSImage, at selectionRect: NSRect?) {
+  private func showImage(_ image: NSImage, sourceCGImage: CGImage? = nil, at selectionRect: NSRect?) {
     let window = ShotterImageWindow(image: image, selectionRect: selectionRect)
     let handle = ShotterImageWindowHandle(window: window)
     imageWindows.append(handle)
