@@ -308,6 +308,11 @@ final class ShotterSelectionController {
   private struct WindowListEntry {
     let id: CGWindowID
     let quartzRect: CGRect
+    let layer: Int
+    let ownerPID: Int
+    let ownerName: String?
+    let title: String?
+    let order: Int
   }
 
   private func windowCandidate(at point: NSPoint) -> WindowCandidate? {
@@ -333,9 +338,11 @@ final class ShotterSelectionController {
     guard AXUIElementCopyElementAtPosition(systemWide, Float(quartzPoint.x), Float(quartzPoint.y), &element) == .success,
           let element,
           let window = accessibilityWindow(for: element),
+          !isOwnAccessibilityElement(window),
           let quartzRect = accessibilityFrame(for: window),
           quartzRect.width > 2,
-          quartzRect.height > 2 else {
+          quartzRect.height > 2,
+          !isScreenSizedQuartzRect(quartzRect) else {
       return nil
     }
 
@@ -360,6 +367,12 @@ final class ShotterSelectionController {
       current = accessibilityElementAttribute(kAXParentAttribute, from: currentElement)
     }
     return nil
+  }
+
+  private func isOwnAccessibilityElement(_ element: AXUIElement) -> Bool {
+    var pid = pid_t(0)
+    guard AXUIElementGetPid(element, &pid) == .success else { return false }
+    return pid == ProcessInfo.processInfo.processIdentifier
   }
 
   private func accessibilityFrame(for element: AXUIElement) -> CGRect? {
@@ -414,7 +427,10 @@ final class ShotterSelectionController {
 
   private func windowListCandidate(at quartzPoint: CGPoint, refreshCache: Bool = false) -> WindowCandidate? {
     let entries = windowEntries(refreshCache: refreshCache)
-    guard let entry = entries.first(where: { $0.quartzRect.contains(quartzPoint) }) else { return nil }
+    guard let entry = entries
+      .filter({ $0.quartzRect.contains(quartzPoint) })
+      .sorted(by: betterWindowCandidate)
+      .first else { return nil }
     let rects = ShotterCoordinateSpace.appKitRects(fromQuartz: entry.quartzRect)
     return WindowCandidate(
       id: entry.id,
@@ -436,23 +452,63 @@ final class ShotterSelectionController {
     }
 
     let ownProcessID = ProcessInfo.processInfo.processIdentifier
-    cachedWindowEntries = infos.compactMap { info in
+    cachedWindowEntries = infos.enumerated().compactMap { index, info in
       guard let layer = info[kCGWindowLayer as String] as? Int,
             layer == 0,
             let ownerPID = info[kCGWindowOwnerPID as String] as? Int,
             ownerPID != ownProcessID,
             let bounds = info[kCGWindowBounds as String] as? NSDictionary,
             let quartzRect = CGRect(dictionaryRepresentation: bounds),
-            quartzRect.width > 2,
-            quartzRect.height > 2,
+            isUsableWindowListRect(quartzRect),
             let windowID = info[kCGWindowNumber as String] as? CGWindowID else {
         return nil
       }
-      return WindowListEntry(id: windowID, quartzRect: quartzRect)
+      let alpha = info[kCGWindowAlpha as String] as? CGFloat ?? 1
+      guard alpha > 0.01 else { return nil }
+
+      return WindowListEntry(
+        id: windowID,
+        quartzRect: quartzRect,
+        layer: layer,
+        ownerPID: ownerPID,
+        ownerName: info[kCGWindowOwnerName as String] as? String,
+        title: info[kCGWindowName as String] as? String,
+        order: index
+      )
     }
     windowCacheUptime = now
     return cachedWindowEntries
   }
+
+  private func betterWindowCandidate(_ lhs: WindowListEntry, _ rhs: WindowListEntry) -> Bool {
+    let lhsScreenSized = isScreenSizedQuartzRect(lhs.quartzRect)
+    let rhsScreenSized = isScreenSizedQuartzRect(rhs.quartzRect)
+    if lhsScreenSized != rhsScreenSized {
+      return !lhsScreenSized
+    }
+
+    let lhsHasTitle = lhs.title?.isEmpty == false
+    let rhsHasTitle = rhs.title?.isEmpty == false
+    if lhsHasTitle != rhsHasTitle {
+      return lhsHasTitle
+    }
+
+    return lhs.order < rhs.order
+  }
+
+  private func isUsableWindowListRect(_ rect: CGRect) -> Bool {
+    rect.width > 24 && rect.height > 24
+  }
+
+  private func isScreenSizedQuartzRect(_ rect: CGRect) -> Bool {
+    NSScreen.screens.contains { screen in
+      let screenRect = ShotterCoordinateSpace.quartzRect(fromAppKit: screen.frame)
+      let widthDelta = abs(rect.width - screenRect.width)
+      let heightDelta = abs(rect.height - screenRect.height)
+      return widthDelta <= 2 && heightDelta <= 2 && rect.intersects(screenRect)
+    }
+  }
+
 }
 
 @MainActor
