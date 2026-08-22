@@ -44,13 +44,16 @@ class Paster: ObservableObject{
   public func mount(){
     unmount()
 
-    timer = Timer.scheduledTimer(
-      timeInterval: 0.8,
-      target: AppMenuActions.shared,
-      selector: #selector(AppMenuActions.clipboard(_:)),
-      userInfo: nil,
-      repeats: true
-    )
+    // NSPasteboard 没有可靠的变更通知，只能轮询 changeCount。
+    // 使用 tolerance 让系统合并定时器唤醒，避免每次都精确唤醒主线程，
+    // 同时保留约 2 秒的剪贴板响应延迟。真正读取文本/图片只在 changeCount 变化时进行。
+    timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+      self?.pollClipboard()
+    }
+    timer?.tolerance = 1
+    if let timer {
+      RunLoop.main.add(timer, forMode: .common)
+    }
 
     // 监听快捷键
     KeyboardShortcuts.onKeyUp(for: .paster) { [weak self] in
@@ -60,6 +63,36 @@ class Paster: ObservableObject{
           self?.show()
         } else {
           self?.hide()
+        }
+      }
+    }
+  }
+
+  // MARK: - 剪贴板监听
+  func pollClipboard(){
+    let currentChangeCount = pasteboard.changeCount
+    guard currentChangeCount != changeCount else { return }
+    changeCount = currentChangeCount
+
+    let sourceApp = NSWorkspace.shared.frontmostApplication
+    let appIcon = sourceApp?.bundleURL?.path ?? "Unknown"
+
+    if let copiedText = pasteboard.string(forType: .string) {
+      let trimmedText = copiedText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+      if !trimmedText.isEmpty {
+        append(PasterModel(content: copiedText, icon: appIcon))
+      }
+    }
+    else if let images = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
+            let image = images.first {
+      // TIFF、bitmap rep 和 PNG 会同时存在一段时间；剪贴板图片较大时，
+      // 用局部 autorelease pool 避免这些临时对象堆积到主线程的事件循环末尾。
+      autoreleasepool {
+        if let imageData = image.tiffRepresentation,
+           let bitmapImage = NSBitmapImageRep(data: imageData),
+           let data = bitmapImage.representation(using: .png, properties: [:]) {
+          append(PasterModel(image: data, icon: appIcon))
         }
       }
     }

@@ -269,7 +269,7 @@ final class Shotter {
       data: nil,
       width: outputWidth,
       height: outputHeight,
-      bitsPerComponent: 8,
+      bitsPerComponent: 16,
       bytesPerRow: 0,
       space: CGColorSpaceCreateDeviceRGB(),
       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
@@ -277,7 +277,7 @@ final class Shotter {
       return nil
     }
 
-    context.interpolationQuality = .none
+    context.interpolationQuality = .high
     for portion in portions {
       guard let sourceRect = ShotterCoordinateSpace.displayLocalScreenCaptureRect(
         fromAppKit: portion.rect,

@@ -11,8 +11,6 @@ import SystemInfoKit
 class AppDelegate: NSObject, NSApplicationDelegate {
   
   
-  private var timer: DispatchSourceTimer?
-  
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
 

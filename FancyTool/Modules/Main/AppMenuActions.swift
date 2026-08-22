@@ -107,32 +107,7 @@ class AppMenuActions: NSObject {
   
   // MARK: - 剪贴板监听事件
   @IBAction func clipboard(_: NSPasteboard) {
-    let pasteboard = NSPasteboard.general
-    guard pasteboard.changeCount != Paster.shared.changeCount else { return }
-    Paster.shared.changeCount = pasteboard.changeCount
-    
-    let sourceApp = NSWorkspace.shared.frontmostApplication
-    let appIcon = sourceApp?.bundleURL?.path ?? "Unknown"
-
-    if let copiedText = pasteboard.string(forType: .string) {
-      let trimmedText = copiedText.trimmingCharacters(in: .whitespacesAndNewlines)
-      
-      if !trimmedText.isEmpty {
-        Paster.shared.append(PasterModel(content: copiedText, icon: appIcon))
-      }
-    }
-    else if let images = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
-            let image = images.first {
-      // TIFF、bitmap rep 和 PNG 会同时存在一段时间；剪贴板图片较大时，
-      // 用局部 autorelease pool 避免这些临时对象堆积到主线程的事件循环末尾。
-      autoreleasepool {
-        if let imageData = image.tiffRepresentation,
-           let bitmapImage = NSBitmapImageRep(data: imageData),
-           let data = bitmapImage.representation(using: .png, properties: [:]) {
-          Paster.shared.append(PasterModel(image: data, icon: appIcon))
-        }
-      }
-    }
+    Paster.shared.pollClipboard()
   }
   
   // MARK: - 停启用屏幕圆角

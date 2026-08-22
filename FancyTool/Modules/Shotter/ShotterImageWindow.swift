@@ -402,7 +402,7 @@ private final class ShotterEditorView: NSView {
     guard !rect.isEmpty else { return }
 
     NSGraphicsContext.current?.saveGraphicsState()
-    NSGraphicsContext.current?.imageInterpolation = .none
+    NSGraphicsContext.current?.imageInterpolation = .high
     previewPath(in: rect).addClip()
     image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
 
@@ -721,7 +721,20 @@ private final class ShotterEditorView: NSView {
     commitTextEntry()
     let panel = NSSavePanel()
     activeSavePanel = panel
+    // 预览窗口使用 .screenSaver 层级。保存面板必须使用更高的独立层级，
+    // 仅设置为相同层级时，预览窗口的 toolbar 子窗口仍可能把它压住。
+    let savePanelLevel = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
+    panel.level = savePanelLevel
     panel.animationBehavior = .none
+
+    // NSSavePanel 在 runModal() 内部才完成窗口显示，提前 orderFront 可能会被
+    // 它自己的显示流程覆盖；在进入 modal event loop 后再强制置前一次。
+    DispatchQueue.main.async { [weak panel] in
+      guard let panel else { return }
+      panel.level = savePanelLevel
+      panel.makeKeyAndOrderFront(nil)
+      panel.orderFrontRegardless()
+    }
     panel.allowedContentTypes = [.png]
     panel.nameFieldStringValue = "FT-\(Int(Date().timeIntervalSince1970 * 1000)).png"
     panel.canCreateDirectories = true
