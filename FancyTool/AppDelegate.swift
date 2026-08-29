@@ -8,11 +8,23 @@
 import SwiftUI
 import SystemInfoKit
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
   
   
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
+    // Prevent two copies of the same bundle from concurrently mutating the
+    // app-scoped JSON manifests and media files.
+    guard AppInstanceLock.shared.acquire() else {
+      let alert = NSAlert()
+      alert.messageText = "FancyTool is already running"
+      alert.informativeText = "Another copy is using this app's local data."
+      alert.addButton(withTitle: "OK")
+      alert.runModal()
+      NSApp.terminate(nil)
+      return
+    }
 
     // 初始化图标和菜单
     Runner.shared.mount()
