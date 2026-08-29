@@ -57,7 +57,10 @@ class Texter {
     popover.contentSize = .init(width: 350, height: 320)
     popover.contentViewController = controller
     popover.behavior = .transient
-    popover.animates = true
+    // Avoid overlapping AppKit popover animations when the status item is
+    // clicked repeatedly. The popover remains responsive but does not
+    // visibly jump between intermediate frames.
+    popover.animates = false
 
     self.popover.show(
       relativeTo: sender.bounds,
