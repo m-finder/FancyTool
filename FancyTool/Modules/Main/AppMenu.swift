@@ -102,22 +102,19 @@ class AppMenu {
 
   // MARK: - 刷新功能菜单的勾选状态
   public func refreshFeatureStates() {
+    let stateMappings: [Selector: () -> Bool] = [
+      #selector(AppMenuActions.hidder(_:)): { AppState.shared.showHidder },
+      #selector(AppMenuActions.texter(_:)): { AppState.shared.showTexter },
+      #selector(AppMenuActions.paster(_:)): { AppState.shared.showPaster },
+      #selector(AppMenuActions.rounder(_:)): { AppState.shared.showRounder },
+      #selector(AppMenuActions.monitor(_:)): { AppState.shared.showMonitor },
+      #selector(AppMenuActions.shotter(_:)): { AppState.shared.showShotter }
+    ]
+    
     for menuItem in menu.items {
-      guard let action = menuItem.action else { continue }
-
-      if action == #selector(AppMenuActions.hidder(_:)) {
-        menuItem.state = AppState.shared.showHidder ? .on : .off
-      } else if action == #selector(AppMenuActions.texter(_:)) {
-        menuItem.state = AppState.shared.showTexter ? .on : .off
-      } else if action == #selector(AppMenuActions.paster(_:)) {
-        menuItem.state = AppState.shared.showPaster ? .on : .off
-      } else if action == #selector(AppMenuActions.rounder(_:)) {
-        menuItem.state = AppState.shared.showRounder ? .on : .off
-      } else if action == #selector(AppMenuActions.monitor(_:)) {
-        menuItem.state = AppState.shared.showMonitor ? .on : .off
-      } else if action == #selector(AppMenuActions.shotter(_:)) {
-        menuItem.state = AppState.shared.showShotter ? .on : .off
-      }
+      guard let action = menuItem.action,
+            let stateProvider = stateMappings[action] else { continue }
+      menuItem.state = stateProvider() ? .on : .off
     }
   }
 
