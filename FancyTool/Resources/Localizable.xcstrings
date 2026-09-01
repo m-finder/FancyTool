@@ -310,6 +310,9 @@
         }
       }
     },
+    "Allow FancyTool in System Settings → Privacy & Security → Screen Recording, then restart FancyTool before taking a screenshot." : {
+
+    },
     "Allow FancyTool to record your screen in System Settings, then try again." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -486,6 +489,9 @@
           }
         }
       }
+    },
+    "Cancel" : {
+
     },
     "chars" : {
       "localizations" : {
@@ -1381,6 +1387,9 @@
         }
       }
     },
+    "Open Settings" : {
+
+    },
     "Paster" : {
       "localizations" : {
         "de" : {
@@ -1683,7 +1692,6 @@
       }
     },
     "Screen Recording Permission Required" : {
-      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

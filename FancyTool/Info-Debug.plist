@@ -10,5 +10,7 @@
 	<string>FancyTool Debug</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>FancyTool needs Screen Recording access to capture selected windows and areas.</string>
 </dict>
 </plist>

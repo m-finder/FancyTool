@@ -1,4 +1,5 @@
 import AppKit
+import CoreGraphics
 import Foundation
 import KeyboardShortcuts
 import ScreenCaptureKit
@@ -146,6 +147,7 @@ final class Shotter {
 
   public func startSelection() {
     guard !isCapturing else { return }
+    guard ensureScreenCapturePermission() else { return }
 
     let controller = ShotterSelectionController()
     controller.onComplete = { [weak self] selection in
@@ -160,6 +162,29 @@ final class Shotter {
     }
     selectionController = controller
     isCapturing = true
+  }
+
+  private func ensureScreenCapturePermission() -> Bool {
+    guard !CGPreflightScreenCaptureAccess() else { return true }
+
+    NSApp.activate(ignoringOtherApps: true)
+    _ = CGRequestScreenCaptureAccess()
+    guard CGPreflightScreenCaptureAccess() else {
+      let alert = NSAlert()
+      alert.alertStyle = .warning
+      alert.messageText = String(localized: "Screen Recording Permission Required")
+      alert.informativeText = String(localized: "Allow FancyTool in System Settings → Privacy & Security → Screen Recording, then restart FancyTool before taking a screenshot.")
+      alert.addButton(withTitle: String(localized: "Open Settings"))
+      alert.addButton(withTitle: String(localized: "Cancel"))
+
+      if alert.runModal() == .alertFirstButtonReturn,
+         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+        NSWorkspace.shared.open(url)
+      }
+      return false
+    }
+
+    return true
   }
 
   public func cancelSelection() {
