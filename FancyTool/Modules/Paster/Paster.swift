@@ -134,7 +134,7 @@ class Paster: ObservableObject{
   // MARK: - 删除数据
   public func remove(_ record: PasterModel) {
     guard let index = history.firstIndex(of: record) else { return }
-    let removed = history.remove(at: index)
+    _ = history.remove(at: index)
     save()
   }
 
