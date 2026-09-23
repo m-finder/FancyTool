@@ -10,7 +10,7 @@
 
 FancyTool 是一款优雅高效的 Mac 菜单栏美化工具，您可以在这里免费下载使用。
 
-[ [GitHub Release] ](https://github.com/FancyTool/FancyToolApp/releases)
+[ [下载地址] ](https://github.com/m-finder/FancyTool/releases)
 
 #### 核心功能
 * 🌍 多语言支持: 中文｜英文｜日文｜韩文｜德文
