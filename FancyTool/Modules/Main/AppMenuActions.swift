@@ -24,6 +24,10 @@ class AppMenuActions: NSObject {
     if settingsWindow == nil{
       settingsWindow = AppWindow(
         title: String(localized: "Setting"),
+        size: NSSize(width: 640, height: 400),
+        minimumSize: NSSize(width: 600, height: 380),
+        isResizable: true,
+        hidesToolbar: true,
         contentView: SettingsView()
       )
     }
@@ -45,6 +49,12 @@ class AppMenuActions: NSObject {
   
   // MARK: - 停启用菜单折叠
   @IBAction func hidder(_ sender: NSStatusBarButton){
+    guard Hidder.isSupported else {
+      AppState.shared.showHidder = false
+      sender.state = .off
+      return
+    }
+
     AppState.shared.showHidder.toggle()
     sender.state = AppState.shared.showHidder ? .on : .off
     
@@ -53,6 +63,7 @@ class AppMenuActions: NSObject {
     }else{
       Hidder.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   // MARK: - 菜单折叠点击事件
@@ -70,16 +81,17 @@ class AppMenuActions: NSObject {
     }else{
       Texter.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   // MARK: - 炫彩签名点击事件，弹出操作窗口
   @IBAction func textPopover(_ sender: NSStatusBarButton){
-    if Texter.shared.popover.isShown{
-      if let window = Texter.shared.popover.contentViewController?.view.window {
-        window.orderFrontRegardless()
-      }
-
-      Texter.shared.popover.performClose(sender)
+    if Texter.shared.popover.isShown {
+      // The status item is also the popover's anchor. Bringing its window to
+      // front before closing can cause a visible jump after repeated clicks.
+      // Close synchronously so a new show request cannot race the close
+      // animation.
+      Texter.shared.popover.close()
       return
     }
 
@@ -96,32 +108,12 @@ class AppMenuActions: NSObject {
     }else{
       Paster.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   // MARK: - 剪贴板监听事件
   @IBAction func clipboard(_: NSPasteboard) {
-    let pasteboard = NSPasteboard.general
-    guard pasteboard.changeCount != Paster.shared.changeCount else { return }
-    Paster.shared.changeCount = pasteboard.changeCount
-    
-    let sourceApp = NSWorkspace.shared.frontmostApplication
-    let appIcon = sourceApp?.bundleURL?.path ?? "Unknown"
-
-    if let copiedText = pasteboard.string(forType: .string) {
-      let trimmedText = copiedText.trimmingCharacters(in: .whitespacesAndNewlines)
-      
-      if !trimmedText.isEmpty {
-        Paster.shared.append(PasterModel(content: copiedText, icon: appIcon))
-      }
-    }
-    else if let images = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
-            let image = images.first {
-      if let imageData = image.tiffRepresentation,
-         let bitmapImage = NSBitmapImageRep(data: imageData),
-         let data = bitmapImage.representation(using: .png, properties: [:]) {
-        Paster.shared.append(PasterModel(image: data, icon: appIcon))
-      }
-    }
+    Paster.shared.pollClipboard()
   }
   
   // MARK: - 停启用屏幕圆角
@@ -134,6 +126,7 @@ class AppMenuActions: NSObject {
     }else{
       Rounder.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   // MARK: - 停启用监控
@@ -157,6 +150,7 @@ class AppMenuActions: NSObject {
     }else{
       Monitor.shared.unmount()
     }
+    AppMenu.shared.refreshFeatureStates()
   }
   
   @IBAction func monitorPopover(_ sender: NSStatusBarButton){
@@ -171,7 +165,20 @@ class AppMenuActions: NSObject {
 
     Monitor.shared.show(sender)
   }
-  
+
+  // MARK: - 停启用 Shotter
+  @IBAction func shotter(_ sender: NSStatusBarButton){
+    AppState.shared.showShotter.toggle()
+    sender.state = AppState.shared.showShotter ? .on : .off
+
+    if AppState.shared.showShotter {
+      Shotter.shared.mount()
+    } else {
+      Shotter.shared.unmount()
+    }
+    AppMenu.shared.refreshFeatureStates()
+  }
+
   // MARK: - 空响应
   @IBAction func nullAction(_ sender: NSStatusBarButton){
 

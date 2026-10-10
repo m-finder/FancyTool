@@ -16,7 +16,6 @@ class Monitor {
   public let popover = NSPopover()
   private var popoverView = MonitorPopoverView()
   private var controller: NSViewController!
-  private var defaultIconName = "m-finder"
   
   @ObservedObject var state = AppState.shared
   
@@ -47,7 +46,7 @@ class Monitor {
         action: #selector(AppMenuActions.monitorPopover(_:))
       )
     }else{
-      button.image = NSImage(named: self.defaultIconName)?.resized(to: 28)
+      button.image = NSImage(named: RunnerConfig.defaultIconName)?.resized(to: RunnerConfig.defaultIconSize)
       button.target = AppMenuActions.shared
       button.action = #selector(AppMenuActions.monitorPopover(_:))
     }
@@ -87,15 +86,5 @@ class Monitor {
       of: sender,
       preferredEdge: .minY
     )
-  }
-}
-// MARK: - NSImage 扩展
-private extension NSImage {
-  func resized(to size: CGFloat) -> NSImage {
-    let newImage = NSImage(size: NSSize(width: size, height: size))
-    newImage.lockFocus()
-    draw(in: NSRect(x: 0, y: 0, width: size, height: size))
-    newImage.unlockFocus()
-    return newImage
   }
 }

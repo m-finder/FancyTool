@@ -113,7 +113,9 @@ struct PasterView: View {
             
             ForEach(0..<totalPage, id: \.self) { pageIndex in
               HStack(spacing: constant.spacing) {
-                ForEach(Array(rows(pageIndex).enumerated()), id: \.element) { index, item in
+                // 必须使用模型唯一 ID。PasterModel 的 Equatable 按内容判断相等，
+                // 不能把整个对象作为 SwiftUI 行 ID；置顶导致重排时会出现行复用错误。
+                ForEach(Array(rows(pageIndex).enumerated()), id: \.element.id) { index, item in
                   PasterItemView(
                     item: item,
                     shortcutNumber: index + 1

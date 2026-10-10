@@ -38,6 +38,9 @@ class AppState : ObservableObject{
   // Paster
   @AppStorage("showPaster") var showPaster: Bool = false
   @AppStorage("historyCount") var historyCount: Int = 20
+  // 开启后选中历史项会自动模拟 Command+V 粘贴到目标 app，需要辅助功能权限。
+  // 关闭时只写入剪贴板并切回目标 app，用户自行按一次 Command+V。
+  @AppStorage("autoPaste") var autoPaste: Bool = false
   
   // Rounder
   @AppStorage("showRounder") var showRounder: Bool = false
@@ -51,7 +54,16 @@ class AppState : ObservableObject{
   @AppStorage("showMemory") var showMemory: Bool = false
   @AppStorage("showBattery") var showBattery: Bool = false
 
-  private init() {}
+  // Shotter
+  @AppStorage("showShotter") var showShotter: Bool = false
+
+  private init() {
+    let defaults = UserDefaults.standard
+    if defaults.object(forKey: "showShotter") == nil,
+       defaults.object(forKey: "showScreenshot") != nil {
+      defaults.set(defaults.bool(forKey: "showScreenshot"), forKey: "showShotter")
+    }
+  }
   
   // 最新的系统快照
   @Published var bundle: SystemInfoBundle?

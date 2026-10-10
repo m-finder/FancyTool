@@ -10,8 +10,6 @@ import SystemInfoKit
 
 struct MonitorView: View {
   
-  @ObservedObject var appState = AppState.shared
-  
   @ObservedObject var state = AppState.shared
   
   // 快速读取，省得每次都写可选链
@@ -38,7 +36,7 @@ struct MonitorView: View {
   }
   
   private var memory: Double {
-    AppState.shared.bundle?.memoryInfo?.percentage.value ?? 0
+    state.bundle?.memoryInfo?.percentage.value ?? 0
   }
   
   private var storage: Double {
@@ -47,7 +45,7 @@ struct MonitorView: View {
   
   var body: some View {
     HStack(spacing: 4) {
-      if AppState.shared.showCpu {
+      if state.showCpu {
         HStack(alignment: .center, spacing: 1) {
           Image(systemName: cpu?.icon ?? "cpu").resizable().frame(width: 12, height: 12)
           Text(String(format: "%.1f%%", usage)).frame(width: 35).offset(y: 0.5)
@@ -55,14 +53,14 @@ struct MonitorView: View {
       }
       
       
-      if AppState.shared.showMemory {
+      if state.showMemory {
         HStack(alignment: .center, spacing: 1) {
           Image(systemName: mem?.icon ?? "memorychip").resizable().frame(width: 14, height: 8)
           Text(String(format: "%.1f%%", memory)).frame(width: 35).offset(y: 0.5)
         }.font(.caption).frame(width: 55)
       }
       
-      if AppState.shared.showStorage {
+      if state.showStorage {
         HStack(alignment: .center, spacing: 1) {
           Image(systemName: sto?.icon ?? "internaldrive").resizable().frame(width: 14, height: 8)
           Text(String(format: "%.1f%%", storage)).frame(width: 35).offset(y: 0.5)
@@ -70,14 +68,14 @@ struct MonitorView: View {
       }
       
       
-      if AppState.shared.showBattery {
+      if state.showBattery {
         HStack(alignment: .center, spacing: 1) {
           Image(systemName: bat?.icon ?? "battery.50").resizable().frame(width: 14, height: 8)
           Text(String(format: "%.0f%%", battery)).frame(width: 35).offset(y: 0.5)
         }.font(.caption).frame(width: 55)
       }
       
-      if AppState.shared.showNetWork {
+      if state.showNetWork {
         HStack(alignment: .center, spacing: 1) {
           Image(systemName: "arrow.up.arrow.down").resizable().frame(width: 10, height: 8)
           
