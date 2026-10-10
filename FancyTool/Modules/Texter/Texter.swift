@@ -36,6 +36,11 @@ class Texter {
   // MARK: - 取消挂载
   public func unmount(){
     popover.close()
+    if let item {
+      item.button?.image = nil
+      item.button?.subviews.forEach { $0.removeFromSuperview() }
+      NSStatusBar.system.removeStatusItem(item)
+    }
     item = nil
   }
   
@@ -52,7 +57,10 @@ class Texter {
     popover.contentSize = .init(width: 350, height: 320)
     popover.contentViewController = controller
     popover.behavior = .transient
-    popover.animates = true
+    // Avoid overlapping AppKit popover animations when the status item is
+    // clicked repeatedly. The popover remains responsive but does not
+    // visibly jump between intermediate frames.
+    popover.animates = false
 
     self.popover.show(
       relativeTo: sender.bounds,

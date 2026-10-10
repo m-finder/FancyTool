@@ -3,10 +3,12 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>com.wu.FancyTool</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleName</key>
-	<string>FancyTool</string>
+	<string>$(PRODUCT_DISPLAY_NAME)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.10</string>
+	<string>$(MARKETING_VERSION)</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>FancyTool needs Screen Recording access to capture selected windows and areas.</string>
 </dict>
 </plist>

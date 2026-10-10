@@ -15,9 +15,11 @@ struct TexterSettingView: View {
   @State private var fontSizeDebouncer: AnyCancellable?
   
   var body: some View {
-    
-    LabeledContent(String(localized: "Font size:")) {
+    VStack(alignment: .leading, spacing: 12) {
       HStack {
+        Text(String(localized: "Font size:"))
+          .frame(width: 72, alignment: .leading)
+
         Slider(
           value: Binding(
             get: { Double(state.fontSize) },
@@ -25,9 +27,11 @@ struct TexterSettingView: View {
           ),
           in: 12...16,
           step: 1
-        ).frame(width: 150)
+        )
+        .frame(width: 150)
         
-        Text("\(state.fontSize)").frame(width: 30)
+        Text("\(state.fontSize)")
+          .frame(width: 24, alignment: .trailing)
       }
       .onChange(of: state.fontSize) { oldValue, newValue in
         fontSizeDebouncer?.cancel()
@@ -35,35 +39,27 @@ struct TexterSettingView: View {
           .delay(for: .milliseconds(50), scheduler: RunLoop.main)
           .sink { _ in }
       }
-    }
-    
-    HStack{
-      
-      HStack {
-        Text(String(localized: "Texter Shimmer")).font(.system(size: 12))
-        
-        Toggle("", isOn: state.$showShimmer).onChange(of: state.showShimmer) { _, newValue in
+
+      Toggle(String(localized: "Texter Shimmer"), isOn: state.$showShimmer)
+        .onChange(of: state.showShimmer) { _, newValue in
           if newValue {
             state.rainbowShimmer = false
           }
           state.showShimmer = newValue
-        }.toggleStyle(SwitchToggleStyle())
-      }
-      
-      HStack {
-        Text(String(localized: "Rainbow Shimmer")).font(.system(size: 12))
-        
-        Toggle("", isOn: state.$rainbowShimmer).onChange(of: state.rainbowShimmer) { _, newValue in
+        }
+        .toggleStyle(SwitchToggleStyle())
+
+      Toggle(String(localized: "Rainbow Shimmer"), isOn: state.$rainbowShimmer)
+        .onChange(of: state.rainbowShimmer) { _, newValue in
           if newValue {
             state.showShimmer = false
           }
           state.rainbowShimmer = newValue
-         
-        }.toggleStyle(SwitchToggleStyle())
-      }
-      
-    }.frame(maxHeight: .infinity, alignment: .top)
-    
+        }
+        .toggleStyle(SwitchToggleStyle())
+    }
+    .font(.system(size: 12))
+    .frame(width: 270, alignment: .leading)
   }
 }
 

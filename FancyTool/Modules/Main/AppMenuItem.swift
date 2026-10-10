@@ -32,14 +32,18 @@ struct AppMenuItem {
   }
 
   public func menus() -> [AppMenuItem] {
-    return [
+    var items: [AppMenuItem] = []
 
-      // 菜单折叠
-      AppMenuItem(
+    // 菜单折叠仅在 macOS 27 以下提供。
+    if Hidder.isSupported {
+      items.append(AppMenuItem(
         title: String(localized: "Hidder"),
         action:  #selector(AppMenuActions.hidder(_:)),
         state: AppState.shared.showHidder
-      ),
+      ))
+    }
+
+    items += [
       // 炫彩签名
       AppMenuItem(
         title: String(localized: "Texter"),
@@ -64,6 +68,12 @@ struct AppMenuItem {
         action:  #selector(AppMenuActions.monitor(_:)),
         state: AppState.shared.showMonitor
       ),
+      // 截图工具
+      AppMenuItem(
+        title: String(localized: "Shotter"),
+        action: #selector(AppMenuActions.shotter(_:)),
+        state: AppState.shared.showShotter
+      ),
       // 分割线
       AppMenuItem(
         isSeparator: true
@@ -87,6 +97,7 @@ struct AppMenuItem {
         key: "q"
       ),
     ]
+
+    return items
   }
 }
-

@@ -8,23 +8,34 @@
 import SwiftUI
 import SystemInfoKit
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
   
   
-  private var timer: DispatchSourceTimer?
-  
   // 启动完成
   func applicationDidFinishLaunching(_ notification: Notification) {
+    // Prevent two copies of the same bundle from concurrently mutating the
+    // app-scoped JSON manifests and media files.
+    guard AppInstanceLock.shared.acquire() else {
+      let alert = NSAlert()
+      alert.messageText = "FancyTool is already running"
+      alert.informativeText = "Another copy is using this app's local data."
+      alert.addButton(withTitle: "OK")
+      alert.runModal()
+      NSApp.terminate(nil)
+      return
+    }
 
     // 初始化图标和菜单
     Runner.shared.mount()
     
-    // Hidder
-    if(AppState.shared.showHidder){
-      Hidder.shared.mount()
-      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-        Hidder.shared.toggle()
-      })
+    // Hidder：macOS 27 及以上不提供该功能。
+    if Hidder.isSupported {
+      if AppState.shared.showHidder {
+        Hidder.shared.mount(toggleAfterMount: true)
+      }
+    } else {
+      AppState.shared.showHidder = false
     }
     
     // Texter
@@ -47,9 +58,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Monitor
     if(AppState.shared.showMonitor){
-      DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
-        Monitor.shared.mount()
-      })
+      Monitor.shared.mount()
+    }
+
+    // Shotter
+    if(AppState.shared.showShotter){
+      Shotter.shared.mount()
     }
     
     // 开始监控

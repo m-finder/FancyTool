@@ -22,6 +22,16 @@ struct PasterFooterView: View {
     self.number = number
     self.item = item
   }
+
+  private var imageSize: CGSize {
+    guard let imageData = item.thumbnail ?? item.image, !imageData.isEmpty else {
+      return .zero
+    }
+    if let width = item.imageWidth, let height = item.imageHeight {
+      return CGSize(width: width, height: height)
+    }
+    return NSImage(data: imageData)?.size ?? .zero
+  }
   
   var body: some View {
     HStack {
@@ -43,12 +53,10 @@ struct PasterFooterView: View {
       }
       
       // 图片尺寸
-      if let imageData = item.image, !imageData.isEmpty {
-        if let nsImage = NSImage(data: imageData) {
-          Text("\(Int(nsImage.size.width)) * \(Int(nsImage.size.height))")
-            .font(.caption)
-            .foregroundColor(.secondary)
-        }
+      if imageSize.width > 0, imageSize.height > 0 {
+        Text("\(Int(imageSize.width)) * \(Int(imageSize.height))")
+          .font(.caption)
+          .foregroundColor(.secondary)
       }
       
     }

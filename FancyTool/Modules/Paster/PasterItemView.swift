@@ -32,7 +32,7 @@ struct PasterItemView: View {
           Text(textContent).lineSpacing(5).fontWeight(.light)
         }
         
-        if let imageData = item.image, !imageData.isEmpty {
+        if let imageData = item.thumbnail ?? item.image, !imageData.isEmpty {
           if let nsImage = NSImage(data: imageData) {
             
             HStack {

@@ -12,15 +12,6 @@ class RunnerFrame {
   
   public static var shared = RunnerFrame()
   
-  // MARK: - 配置常量
-  private enum Config {
-    static let baseSize: CGFloat = 22
-    static let minFPS: Double = 5
-    static let maxFPS: Double = 60
-    static let defaultIconName = "m-finder"
-    static let defaultIconSize: CGFloat = 28
-  }
-  
   // MARK: - 当前激活的Runner
   public var runner: RunnerModel? {
     RunnerHandler.shared.getRunnerById(AppState.shared.runnerId)
@@ -43,7 +34,7 @@ class RunnerFrame {
     
     guard let runner = runner else { return [] }
     
-    let pixelH = Int(Config.baseSize * scale)
+    let pixelH = Int(RunnerConfig.baseSize * scale)
     
     return (0..<runner.frameNumber).compactMap { index in
       let src = runner.getImage(index)
@@ -62,7 +53,7 @@ class RunnerFrame {
       
       ctx.scaleBy(x: scale, y: scale)
       let drawWidth = CGFloat(pixelH) * ratio / scale
-      ctx.draw(src, in: CGRect(x: 0, y: 0, width: drawWidth, height: Config.baseSize))
+      ctx.draw(src, in: CGRect(x: 0, y: 0, width: drawWidth, height: RunnerConfig.baseSize))
       
       return ctx.makeImage()
     }
