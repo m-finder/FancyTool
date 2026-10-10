@@ -49,6 +49,12 @@ class AppMenuActions: NSObject {
   
   // MARK: - 停启用菜单折叠
   @IBAction func hidder(_ sender: NSStatusBarButton){
+    guard Hidder.isSupported else {
+      AppState.shared.showHidder = false
+      sender.state = .off
+      return
+    }
+
     AppState.shared.showHidder.toggle()
     sender.state = AppState.shared.showHidder ? .on : .off
     

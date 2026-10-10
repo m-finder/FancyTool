@@ -29,9 +29,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // 初始化图标和菜单
     Runner.shared.mount()
     
-    // Hidder
-    if(AppState.shared.showHidder){
-      Hidder.shared.mount(toggleAfterMount: true)
+    // Hidder：macOS 27 及以上不提供该功能。
+    if Hidder.isSupported {
+      if AppState.shared.showHidder {
+        Hidder.shared.mount(toggleAfterMount: true)
+      }
+    } else {
+      AppState.shared.showHidder = false
     }
     
     // Texter

@@ -21,6 +21,10 @@ struct SettingsView: View {
 
     var id: Self { self }
 
+    static var visibleCases: [Self] {
+      allCases.filter { $0 != .hidder || Hidder.isSupported }
+    }
+
     var title: LocalizedStringKey {
       switch self {
       case .universal: "Universal"
@@ -52,7 +56,7 @@ struct SettingsView: View {
 
   var body: some View {
     HStack(spacing: 0) {
-      List(Section.allCases, selection: $selection) { section in
+      List(Section.visibleCases, selection: $selection) { section in
         Label(section.title, systemImage: section.symbol)
           .tag(section)
       }
