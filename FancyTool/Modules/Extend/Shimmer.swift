@@ -33,6 +33,73 @@ private struct ShimmerColors {
   ]
 }
 
+/// AppKit panels can be ordered out without SwiftUI sending onDisappear.
+/// Tie the layer's lifetime to actual window visibility instead.
+@MainActor
+private final class ShimmerVisibilityView: NSView {
+  var onVisibilityChange: ((Bool) -> Void)?
+  private var observers: [(NotificationCenter, NSObjectProtocol)] = []
+  private var displaySleeping = false
+  private var systemSleeping = false
+
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+    removeObservers()
+    if let window {
+      for name in [NSWindow.didChangeOcclusionStateNotification,
+                   NSWindow.didMiniaturizeNotification, NSWindow.didDeminiaturizeNotification,
+                   NSWindow.willCloseNotification] {
+        observe(.default, name, object: window)
+      }
+      let workspace = NSWorkspace.shared.notificationCenter
+      for name in [NSWorkspace.screensDidSleepNotification, NSWorkspace.screensDidWakeNotification,
+                   NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification] {
+        observe(workspace, name)
+      }
+    }
+    updateVisibility()
+  }
+
+  override func viewDidHide() { super.viewDidHide(); updateVisibility() }
+  override func viewDidUnhide() { super.viewDidUnhide(); updateVisibility() }
+
+  func dismantle() {
+    removeObservers()
+    onVisibilityChange?(false)
+    onVisibilityChange = nil
+  }
+
+  private func observe(_ center: NotificationCenter, _ name: Notification.Name, object: AnyObject? = nil) {
+    let token = center.addObserver(forName: name, object: object, queue: .main) { [weak self] _ in
+      MainActor.assumeIsolated {
+        guard let self else { return }
+        switch name {
+        case NSWorkspace.screensDidSleepNotification: self.displaySleeping = true
+        case NSWorkspace.screensDidWakeNotification: self.displaySleeping = false
+        case NSWorkspace.willSleepNotification: self.systemSleeping = true
+        case NSWorkspace.didWakeNotification: self.systemSleeping = false
+        case NSWindow.willCloseNotification:
+          self.onVisibilityChange?(false)
+          return
+        default: break
+        }
+        self.updateVisibility()
+      }
+    }
+    observers.append((center, token))
+  }
+
+  private func updateVisibility() {
+    let visible = window.map { $0.isVisible && $0.occlusionState.contains(.visible) } ?? false
+    onVisibilityChange?(visible && !isHiddenOrHasHiddenAncestor && !displaySleeping && !systemSleeping)
+  }
+
+  private func removeObservers() {
+    for (center, token) in observers { center.removeObserver(token) }
+    observers.removeAll()
+  }
+}
+
 private struct ShimmerView: NSViewRepresentable {
   
   let rainbow: Bool
@@ -47,8 +114,8 @@ private struct ShimmerView: NSViewRepresentable {
     applyInitialPoints(layer: layer, rtl: rtl)
   }
   
-  func makeNSView(context: Context) -> NSView {
-    let view = NSView(frame: NSRect(origin: .zero, size: bounds))
+  func makeNSView(context: Context) -> ShimmerVisibilityView {
+    let view = ShimmerVisibilityView(frame: NSRect(origin: .zero, size: bounds))
     view.wantsLayer = true
     view.layer?.backgroundColor = NSColor.clear.cgColor
     
@@ -64,14 +131,14 @@ private struct ShimmerView: NSViewRepresentable {
     
     configureLayer(gradLayer, rainbow: rainbow, rtl: rtl)
     view.layer?.addSublayer(gradLayer)
-    context.coordinator.beginDelay()
+    view.onVisibilityChange = { [coordinator = context.coordinator] in coordinator.setVisible($0) }
     return view
   }
   
-  func updateNSView(_ nsView: NSView, context: Context) {
+  func updateNSView(_ nsView: ShimmerVisibilityView, context: Context) {
     let newRtl = layoutDirection == .rightToLeft
     let rainbowChanged = context.coordinator.rainbow != rainbow
-    let boundsChanged = nsView.bounds.size != bounds
+    let boundsChanged = context.coordinator.gradientLayer?.frame.size != bounds
     
     if context.coordinator.rtl != newRtl || rainbowChanged || boundsChanged{
       context.coordinator.rtl = newRtl
@@ -85,6 +152,11 @@ private struct ShimmerView: NSViewRepresentable {
       context.coordinator.reset()
     }
   }
+
+  static func dismantleNSView(_ nsView: ShimmerVisibilityView, coordinator: Coordinator) {
+    nsView.dismantle()
+    coordinator.stop()
+  }
   
   private func applyInitialPoints(layer: CAGradientLayer, rtl: Bool) {
     let t = ShimmerConst.tiltFactor
@@ -93,27 +165,38 @@ private struct ShimmerView: NSViewRepresentable {
       layer.endPoint   = CGPoint(x: 1, y: 0)
     } else {
       layer.startPoint = CGPoint(x: ShimmerConst.minP, y: ShimmerConst.minP * t)
-      //layer.endPoint   = CGPoint(x: 0, y: 0)
       layer.endPoint   = CGPoint(x: ShimmerConst.minP, y: ShimmerConst.minP * t)
     }
   }
   
+  @MainActor
   class Coordinator{
     weak var gradientLayer: CAGradientLayer?
     var rtl = false
     var rainbow = false
+    private var isVisible = false
+
+    func setVisible(_ visible: Bool) {
+      guard isVisible != visible else { return }
+      isVisible = visible
+      if visible { beginAnimation() } else { stop() }
+    }
     
-    func beginDelay() {
+    private func beginAnimation() {
       guard let layer = gradientLayer else { return }
       layer.opacity = 1
       runAnimation(layer: layer)
     }
     
     func reset() {
+      stop()
+      if isVisible { beginAnimation() }
+    }
+
+    func stop() {
       guard let layer = gradientLayer else { return }
       layer.opacity = 0
       layer.removeAllAnimations()
-      beginDelay()
     }
     
     private func runAnimation(layer: CAGradientLayer) {

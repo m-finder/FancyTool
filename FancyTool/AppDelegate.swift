@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SystemInfoKit
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -25,6 +24,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       NSApp.terminate(nil)
       return
     }
+
+    AppState.shared.applyAppearance()
 
     // 初始化图标和菜单
     Runner.shared.mount()
@@ -67,26 +68,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     // 开始监控
-    AppState.shared.start()
+    SystemMetrics.shared.start()
   }
   
   // 失去焦点
   func applicationDidResignActive(_ notification: Notification) {
     
-    // 关闭 Monitor 的 popover
-    if Monitor.shared.popover.isShown {
-      Monitor.shared.popover.close()
-    }
-    
-    // 关闭 Texter 的 popover
-    if Texter.shared.popover.isShown {
-      Texter.shared.popover.close()
-    }
-    
     // 关闭 Paster 的 window
-    if Paster.shared.window != nil {
-      Paster.shared.window?.close()
-    }
+    Paster.shared.hide()
 
+  }
+
+  func applicationWillTerminate(_ notification: Notification) {
+    SystemMetrics.shared.stop()
   }
 }

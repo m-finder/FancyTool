@@ -16,30 +16,23 @@ class RunnerLayer {
 
   // MARK: - 挂载动画layer
   public func mount(button: NSStatusBarButton, scale: Double) {
-    DispatchQueue.main.async { [weak self] in
-      guard let self = self else { return }
+    self.layer?.removeFromSuperlayer()
 
-      self.layer?.removeFromSuperlayer()
+    let layer = CALayer()
+    layer.frame = button.bounds
+    layer.contentsGravity = .resizeAspect
+    layer.masksToBounds = false
+    layer.isOpaque = false
+    layer.contentsScale = scale
 
-      let layer = CALayer()
-      layer.frame = button.bounds
-      layer.contentsGravity = .resizeAspect
-      layer.masksToBounds = false
-      layer.isOpaque = false
-      layer.contentsScale = scale
-
-      button.wantsLayer = true
-      button.layer?.addSublayer(layer)
-      self.layer = layer
-    }
+    button.wantsLayer = true
+    button.layer?.addSublayer(layer)
+    self.layer = layer
   }
 
   // MARK: - 模拟卸载动画layer
   public func unmount(){
-    DispatchQueue.main.async { [weak self] in
-      guard let self = self else { return }
-      self.layer?.removeAnimation(forKey: "runner")
-      self.layer?.isHidden = true
-    }
+    self.layer?.removeAnimation(forKey: "runner")
+    self.layer?.isHidden = true
   }
 }

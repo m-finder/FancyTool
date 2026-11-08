@@ -17,19 +17,37 @@ final class Rounder {
   
   private var windows: [NSWindow] = []
   private var cancellables = Set<AnyCancellable>()
+  private var remountTask: Task<Void, Never>?
+  private var isMounted = false
   
-  private init() {
-    setupObservers()
-  }
+  private init() {}
   
   // MARK: - 挂载
   public func mount() {
-    unmount()
-    NSScreen.screens.forEach { createWindows(for: $0) }
+    if !isMounted {
+      isMounted = true
+      setupObservers()
+    }
+    remountTask?.cancel()
+    remountTask = nil
+    rebuildWindows()
   }
   
   // MARK: - 卸载
   public func unmount() {
+    isMounted = false
+    remountTask?.cancel()
+    remountTask = nil
+    cancellables.removeAll()
+    closeWindows()
+  }
+
+  private func rebuildWindows() {
+    closeWindows()
+    NSScreen.screens.forEach { createWindows(for: $0) }
+  }
+
+  private func closeWindows() {
     windows.forEach { w in
       w.orderOut(nil)
       w.contentView = nil
@@ -74,10 +92,15 @@ final class Rounder {
   }
   
   private func remountAfterDelay(_ delay: TimeInterval = 0.15) {
-    Task { @MainActor in
-      try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-      guard AppState.shared.showRounder else { return }
-      self.mount()
+    guard isMounted else { return }
+    remountTask?.cancel()
+    remountTask = Task { [weak self] in
+      do {
+        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+      } catch { return }
+      guard !Task.isCancelled, let self, self.isMounted else { return }
+      self.remountTask = nil
+      self.rebuildWindows()
     }
   }
   

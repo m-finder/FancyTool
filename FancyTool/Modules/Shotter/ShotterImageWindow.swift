@@ -60,7 +60,7 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     isReleasedWhenClosed = false
     isOpaque = false
     backgroundColor = .clear
-    hasShadow = false
+    hasShadow = fullScreenCaptureScreen == nil
     animationBehavior = .none
     level = .screenSaver
     isMovableByWindowBackground = false
@@ -80,10 +80,7 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
   }
 
   override func sendEvent(_ event: NSEvent) {
-    if event.type == .keyDown, event.keyCode == 53 {
-      dismissWindow()
-      return
-    }
+    if event.type == .keyDown, event.keyCode == 53, editorView.handleShortcut(event) { return }
     super.sendEvent(event)
   }
 
@@ -96,6 +93,7 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
   }
 
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
+    if editorView.handleShortcut(event) { return true }
     if event.type == .keyDown, event.keyCode == 53 {
       dismissWindow()
       return true
@@ -133,7 +131,7 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
 
     let imageRectInWindow = editorView.convert(editorView.currentImageRect, to: nil)
     let imageRect = convertToScreen(imageRectInWindow)
-    let availableFrame = screen.frame
+    let availableFrame = screen.visibleFrame
     let toolbarSize = toolbarWindow.preferredSize
     let horizontalOrigin = min(
       max(imageRect.midX - toolbarSize.width / 2, availableFrame.minX + 8),
@@ -144,10 +142,12 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     let verticalOrigin: CGFloat
     if fitsBelowImage {
       verticalOrigin = belowOriginY
+    } else if imageRect.maxY + 10 + toolbarSize.height <= availableFrame.maxY - 8 {
+      verticalOrigin = imageRect.maxY + 10
     } else {
       verticalOrigin = min(
         max(imageRect.minY + 12, availableFrame.minY + 8),
-        imageRect.maxY - toolbarSize.height - 12
+        availableFrame.maxY - toolbarSize.height - 8
       )
     }
 
@@ -264,12 +264,14 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
 private final class ShotterToolbarWindow: NSPanel {
 
   private let toolbarContainer: ShotterToolbarContainerView
+  private weak var editor: ShotterEditorView?
 
   var preferredSize: NSSize {
     toolbarContainer.preferredSize
   }
 
   init(editor: ShotterEditorView) {
+    self.editor = editor
     toolbarContainer = ShotterToolbarContainerView(editor: editor)
     super.init(
       contentRect: NSRect(origin: .zero, size: toolbarContainer.preferredSize),
@@ -293,11 +295,13 @@ private final class ShotterToolbarWindow: NSPanel {
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { false }
 
+  override func performKeyEquivalent(with event: NSEvent) -> Bool {
+    if editor?.handleShortcut(event) == true { return true }
+    return super.performKeyEquivalent(with: event)
+  }
+
   override func sendEvent(_ event: NSEvent) {
-    if event.type == .keyDown, event.keyCode == 53 {
-      (parent as? ShotterImageWindow)?.dismissWindow()
-      return
-    }
+    if event.type == .keyDown, editor?.handleShortcut(event) == true { return }
     super.sendEvent(event)
   }
 }
@@ -308,7 +312,7 @@ private final class ShotterToolbarContainerView: NSView {
   private weak var editor: ShotterEditorView?
 
   var preferredSize: NSSize {
-    editor?.toolbarPreferredSize ?? NSSize(width: 286, height: 60)
+    editor?.toolbarPreferredSize ?? ShotterToolbarView.preferredSize
   }
 
   init(editor: ShotterEditorView) {
@@ -329,50 +333,29 @@ private final class ShotterToolbarContainerView: NSView {
 }
 
 @MainActor
-private final class ShotterEditorView: NSView {
-
-  enum Tool: Hashable {
-    case none
-    case rectangle
-    case oval
-    case arrow
-    case text
-  }
-
-  struct Annotation {
-    let tool: Tool
-    let start: NSPoint
-    let end: NSPoint
-    let text: String?
-
-    init(tool: Tool, start: NSPoint, end: NSPoint, text: String? = nil) {
-      self.tool = tool
-      self.start = start
-      self.end = end
-      self.text = text
-    }
-  }
+final class ShotterEditorView: NSView {
+  typealias Tool = ShotterTool
+  typealias Annotation = ShotterAnnotation
 
   weak var hostWindow: ShotterImageWindow?
-
   private let image: NSImage
   private let sourceCGImage: CGImage?
   private let fillsScreen: Bool
-  private var annotations: [Annotation] = []
+  private var editHistory = ShotterEditHistory<[Annotation]>(initial: [])
+  private var annotations: [Annotation] { editHistory.value }
   private var selectedTool: Tool = .none
-  private var annotationStart: NSPoint?
-  private var annotationEnd: NSPoint?
+  private var style = ShotterAnnotationStyle(color: .red, lineWidth: 4, fontSize: 22)
+  private var selectedIndex: Int?
+  private var draft: Annotation?
+  private var dragOrigin: NSPoint?
+  private var originalAnnotation: Annotation?
+  private var movedAnnotation: Annotation?
   private var isPinned = false
-  private var toolbar: NSStackView!
-  private var opacitySlider: NSSlider!
-  private var opacityPanel: NSView!
-  private var toolButtons: [Tool: NSButton] = [:]
+  private var toolbar: ShotterToolbarView!
   private var activeSavePanel: NSSavePanel?
   private var textField: NSTextField?
   private var textEntryPoint: NSPoint?
-  private var draggedAnnotationIndex: Int?
-  private var draggedAnnotationStart: NSPoint?
-  private var draggedAnnotation: Annotation?
+  private var editingTextIndex: Int?
 
   init(image: NSImage, sourceCGImage: CGImage? = nil, fillsScreen: Bool) {
     self.image = image
@@ -381,674 +364,369 @@ private final class ShotterEditorView: NSView {
     super.init(frame: .zero)
     wantsLayer = true
     layer?.backgroundColor = NSColor.clear.cgColor
-    layer?.contentsGravity = .resize
     setupToolbar()
   }
 
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
   override var acceptsFirstResponder: Bool { true }
-
-  override func viewDidMoveToWindow() {
-    super.viewDidMoveToWindow()
-    updateLayerScale()
-  }
-
-  override func viewDidChangeBackingProperties() {
-    super.viewDidChangeBackingProperties()
-    updateLayerScale()
+  override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); updateLayerScale() }
+  override func viewDidChangeBackingProperties() { super.viewDidChangeBackingProperties(); updateLayerScale() }
+  override func resetCursorRects() {
+    addCursorRect(bounds, cursor: selectedTool == .none ? .arrow : .crosshair)
   }
 
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
-
     let rect = imageRect
     guard !rect.isEmpty else { return }
-
-    NSGraphicsContext.current?.saveGraphicsState()
+    NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current?.imageInterpolation = .high
-    previewPath(in: rect).addClip()
+    NSBezierPath(rect: rect).addClip()
     image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
-
-    annotations.forEach { draw($0, in: rect) }
-    if let start = annotationStart, let end = annotationEnd {
-      draw(Annotation(tool: selectedTool, start: start, end: end), in: rect)
+    for (index, annotation) in annotations.enumerated() where index != editingTextIndex {
+      (index == selectedIndex ? (movedAnnotation ?? annotation) : annotation).draw(in: rect, imageSize: image.size)
     }
-    drawPreviewBorder(in: rect)
-    NSGraphicsContext.current?.restoreGraphicsState()
-  }
-
-  private func drawPreviewBorder(in rect: NSRect) {
-    let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
-    let lineWidth = 1 / max(scale, 1)
-    let borderRect = rect.insetBy(dx: lineWidth / 2, dy: lineWidth / 2)
-    NSColor(calibratedWhite: 0.78, alpha: 1).setStroke()
-    let path = previewPath(in: borderRect)
-    path.lineWidth = lineWidth
-    path.stroke()
-  }
-
-  private func previewPath(in rect: NSRect) -> NSBezierPath {
-    let radius = fillsScreen ? 0 : min(12, min(rect.width, rect.height) / 2)
-    return NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+    draft?.draw(in: rect, imageSize: image.size)
+    if let index = selectedIndex, annotations.indices.contains(index), editingTextIndex == nil {
+      let annotation = movedAnnotation ?? annotations[index]
+      let selection = viewRect(annotation.bounds, in: rect).insetBy(dx: -4, dy: -4)
+      let path = NSBezierPath(roundedRect: selection, xRadius: 4, yRadius: 4)
+      path.lineWidth = 1
+      path.setLineDash([4, 3], count: 2, phase: 0)
+      NSColor.controlAccentColor.setStroke(); path.stroke()
+      for point in [NSPoint(x: selection.minX, y: selection.minY), NSPoint(x: selection.maxX, y: selection.minY),
+                    NSPoint(x: selection.minX, y: selection.maxY), NSPoint(x: selection.maxX, y: selection.maxY)] {
+        NSColor.white.setFill()
+        let dot = NSBezierPath(ovalIn: NSRect(x: point.x-2.5, y: point.y-2.5, width: 5, height: 5))
+        dot.fill(); NSColor.controlAccentColor.setStroke(); dot.lineWidth = 1; dot.stroke()
+      }
+    }
+    let border = NSBezierPath(rect: rect.insetBy(dx: 0.5, dy: 0.5))
+    border.lineWidth = 1 / max(window?.backingScaleFactor ?? 2, 1)
+    NSColor.labelColor.withAlphaComponent(0.25).setStroke(); border.stroke()
+    NSGraphicsContext.restoreGraphicsState()
   }
 
   private func updateLayerScale() {
-    layer?.contentsScale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+    layer?.contentsScale = window?.backingScaleFactor ?? 2
     needsDisplay = true
   }
 
   override func mouseDown(with event: NSEvent) {
-    let point = convert(event.locationInWindow, from: nil)
-    guard let imagePoint = imagePoint(from: point) else {
-      commitTextEntry()
-      hostWindow?.performDrag(with: event)
+    commitTextEntry()
+    window?.makeFirstResponder(self)
+    let local = convert(event.locationInWindow, from: nil)
+    guard imageRect.contains(local) else { return }
+    let point = imagePoint(from: local)
+    if selectedTool == .none {
+      selectedIndex = annotations.indices.reversed().first { annotations[$0].contains(point, tolerance: 6 / displayScale) }
+      if let index = selectedIndex {
+        style = annotations[index].style
+        if event.clickCount == 2, annotations[index].tool == .text {
+          beginTextEntry(at: annotations[index].start, editing: index)
+        } else {
+          dragOrigin = point
+          originalAnnotation = annotations[index]
+        }
+      } else {
+        hostWindow?.performDrag(with: event)
+      }
+      updateToolbar(); needsDisplay = true
       return
     }
-
-    if let index = annotationIndex(at: imagePoint) {
-      commitTextEntry()
-      draggedAnnotationIndex = index
-      draggedAnnotationStart = imagePoint
-      draggedAnnotation = annotations[index]
-      return
-    }
-
+    selectedIndex = nil
     if selectedTool == .text {
-      beginTextEntry(at: point, imagePoint: imagePoint)
-      return
+      beginTextEntry(at: point)
+    } else if selectedTool == .number {
+      let next = (annotations.filter { $0.tool == .number }.map(\.number).max() ?? 0) + 1
+      append(Annotation(tool: .number, start: point, end: point, number: next, style: style))
+    } else {
+      draft = Annotation(tool: selectedTool, start: point, end: point, points: [.pen, .highlighter].contains(selectedTool) ? [point] : [], style: style)
     }
-
-    guard selectedTool != .none else {
-      commitTextEntry()
-      hostWindow?.performDrag(with: event)
-      return
-    }
-    annotationStart = imagePoint
-    annotationEnd = imagePoint
-    needsDisplay = true
+    updateToolbar(); needsDisplay = true
   }
 
   override func mouseDragged(with event: NSEvent) {
-    if let index = draggedAnnotationIndex,
-       let start = draggedAnnotationStart,
-       let annotation = draggedAnnotation,
-       let point = imagePoint(from: convert(event.locationInWindow, from: nil)) {
-      let offset = NSPoint(x: point.x - start.x, y: point.y - start.y)
-      annotations[index] = Annotation(
-        tool: annotation.tool,
-        start: NSPoint(x: annotation.start.x + offset.x, y: annotation.start.y + offset.y),
-        end: NSPoint(x: annotation.end.x + offset.x, y: annotation.end.y + offset.y),
-        text: annotation.text
-      )
-      needsDisplay = true
-      return
+    let point = imagePoint(from: convert(event.locationInWindow, from: nil))
+    if let origin = dragOrigin, let original = originalAnnotation {
+      movedAnnotation = translatedWithinImage(original, by: NSPoint(x: point.x-origin.x, y: point.y-origin.y))
+    } else if var annotation = draft {
+      var end = point
+      if event.modifierFlags.contains(.shift) {
+        let dx = end.x-annotation.start.x, dy = end.y-annotation.start.y
+        if [.rectangle, .oval].contains(annotation.tool) {
+          let length = min(abs(dx), abs(dy))
+          end = NSPoint(x: annotation.start.x + (dx < 0 ? -length : length), y: annotation.start.y + (dy < 0 ? -length : length))
+        } else if annotation.tool == .arrow {
+          let angle = (atan2(dy, dx) / (.pi/4)).rounded() * (.pi/4)
+          let length = hypot(dx, dy)
+          end = NSPoint(x: annotation.start.x + cos(angle)*length, y: annotation.start.y + sin(angle)*length)
+        }
+      }
+      annotation.end = end
+      if [.pen, .highlighter].contains(annotation.tool), let last = annotation.points.last,
+         hypot(point.x-last.x, point.y-last.y) >= 0.5 / displayScale {
+        annotation.points.append(point)
+      }
+      draft = annotation
     }
-
-    guard annotationStart != nil else { return }
-    let point = convert(event.locationInWindow, from: nil)
-    annotationEnd = imagePoint(from: point)
     needsDisplay = true
   }
 
   override func mouseUp(with event: NSEvent) {
-    if draggedAnnotationIndex != nil {
-      draggedAnnotationIndex = nil
-      draggedAnnotationStart = nil
-      draggedAnnotation = nil
-      needsDisplay = true
-      return
+    if let index = selectedIndex, let movedAnnotation {
+      var updated = annotations
+      updated[index] = movedAnnotation
+      editHistory.commit(updated)
+    } else if let draft, hypot(draft.end.x-draft.start.x, draft.end.y-draft.start.y) > 2 || draft.points.count > 2 {
+      append(draft)
     }
-
-    guard let start = annotationStart,
-          let end = annotationEnd,
-          selectedTool != .none else {
-      annotationStart = nil
-      annotationEnd = nil
-      return
-    }
-
-    if abs(end.x - start.x) > 2 || abs(end.y - start.y) > 2 {
-      annotations.append(Annotation(tool: selectedTool, start: start, end: end))
-    }
-    annotationStart = nil
-    annotationEnd = nil
-    needsDisplay = true
+    clearDrag()
+    updateToolbar(); needsDisplay = true
   }
 
   override func keyDown(with event: NSEvent) {
+    if !handleShortcut(event) { super.keyDown(with: event) }
+  }
+
+  func handleShortcut(_ event: NSEvent) -> Bool {
+    guard event.type == .keyDown else { return false }
     if event.keyCode == 53 {
-      hostWindow?.dismissWindow()
-      return
+      if textField != nil { cancelTextEntry() }
+      else if draft != nil { clearDrag(); needsDisplay = true }
+      else { hostWindow?.dismissWindow() }
+      return true
     }
-    super.keyDown(with: event)
-  }
-
-  private func setupToolbar() {
-    let rectangle = makeToolButton(
-      symbol: "rectangle",
-      tooltip: String(localized: "Rectangle"),
-      action: #selector(selectRectangle),
-      isToggle: true
-    )
-    let oval = makeToolButton(
-      symbol: "circle",
-      tooltip: String(localized: "Circle"),
-      action: #selector(selectOval),
-      isToggle: true
-    )
-    let arrow = makeToolButton(
-      symbol: "arrow.up.right",
-      tooltip: String(localized: "Arrow"),
-      action: #selector(selectArrow),
-      isToggle: true
-    )
-    let text = makeToolButton(
-      symbol: "text.cursor",
-      tooltip: String(localized: "Text"),
-      action: #selector(selectText),
-      isToggle: true
-    )
-    let pin = makeToolButton(
-      symbol: "pin",
-      tooltip: String(localized: "Pin"),
-      action: #selector(togglePin)
-    )
-    pin.tag = 100
-    opacitySlider = OpacitySlider(
-      value: 1,
-      minValue: 0.2,
-      maxValue: 1,
-      target: self,
-      action: #selector(updateOpacity)
-    )
-    opacitySlider.isContinuous = true
-    opacitySlider.controlSize = .small
-    opacitySlider.toolTip = String(localized: "Opacity")
-    opacityPanel = NSView()
-    opacityPanel.isHidden = true
-    opacityPanel.addSubview(opacitySlider)
-    let download = makeToolButton(
-      symbol: "arrow.down.to.line",
-      tooltip: String(localized: "Download"),
-      action: #selector(downloadImage)
-    )
-    let close = makeToolButton(
-      symbol: "checkmark",
-      tooltip: String(localized: "Copy to Clipboard"),
-      action: #selector(copyImageToPasteboard)
-    )
-
-    toolButtons = [
-      .rectangle: rectangle,
-      .oval: oval,
-      .arrow: arrow,
-      .text: text
-    ]
-    toolbar = NSStackView(views: [rectangle, oval, arrow, text, pin, download, close])
-    toolbar.orientation = .horizontal
-    toolbar.alignment = .centerY
-    toolbar.distribution = .fill
-    toolbar.spacing = 6
-    toolbar.wantsLayer = true
-    toolbar.layer?.cornerRadius = 10
-    toolbar.layer?.masksToBounds = true
-  }
-
-  var toolbarPreferredSize: NSSize {
-    NSSize(width: max(286, toolbar.fittingSize.width + 20), height: 60)
-  }
-
-  func installToolbar(in container: NSView) {
-    toolbar.removeFromSuperview()
-    opacityPanel.removeFromSuperview()
-    container.addSubview(toolbar)
-    container.addSubview(opacityPanel)
-    container.needsLayout = true
-  }
-
-  func layoutToolbar(in bounds: NSRect) {
-    toolbar.frame = NSRect(
-      x: 10,
-      y: 8,
-      width: max(0, bounds.width - 20),
-      height: 34
-    )
-    toolbar.layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.88).cgColor
-    opacityPanel.frame = NSRect(
-      x: max(12, bounds.midX - 60),
-      y: 42,
-      width: 120,
-      height: 16
-    )
-    opacitySlider.frame = opacityPanel.bounds
-  }
-
-  private func makeToolButton(
-    symbol: String,
-    tooltip: String,
-    action: Selector,
-    isToggle: Bool = false,
-    title: String? = nil
-  ) -> NSButton {
-    let button = NSButton(
-      image: NSImage(systemSymbolName: symbol, accessibilityDescription: tooltip) ?? NSImage(),
-      target: self,
-      action: action
-    )
-    button.bezelStyle = .regularSquare
-    if isToggle {
-      button.setButtonType(.toggle)
+    if textField?.currentEditor() != nil { return false }
+    let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
+    let key = event.charactersIgnoringModifiers?.lowercased()
+    if flags.contains(.command), !flags.contains(.option), !flags.contains(.control) {
+      switch key {
+      case "z": if flags.contains(.shift) { redo() } else { undo() }; return true
+      case "c": copyImage(); return true
+      case "s": saveImage(); return true
+      default: return false
+      }
     }
-    button.isBordered = false
-    if let title {
-      button.title = title
-      button.image = nil
-      button.font = NSFont.systemFont(ofSize: 17, weight: .semibold)
+    guard flags.subtracting(.shift).isEmpty else { return false }
+    if event.keyCode == 51 || event.keyCode == 117 { deleteSelection(); return true }
+    if event.keyCode == 36 || event.keyCode == 76 { copyImage(); return true }
+    let tools: [String: Tool] = ["v": .none, "r": .rectangle, "o": .oval, "a": .arrow, "p": .pen, "h": .highlighter, "t": .text, "n": .number, "x": .redact]
+    if let key, let tool = tools[key] { select(tool); return true }
+    if let index = selectedIndex, annotations.indices.contains(index), (123...126).contains(event.keyCode) {
+      let step: CGFloat = flags.contains(.shift) ? 10 : 1
+      let delta = NSPoint(x: event.keyCode == 123 ? -step : (event.keyCode == 124 ? step : 0),
+                          y: event.keyCode == 125 ? -step : (event.keyCode == 126 ? step : 0))
+      var updated = annotations
+      updated[index] = translatedWithinImage(updated[index], by: delta)
+      editHistory.commit(updated)
+      updateToolbar(); needsDisplay = true
+      return true
     }
-    button.wantsLayer = true
-    button.layer?.cornerRadius = 7
-    button.layer?.masksToBounds = true
-    button.contentTintColor = .labelColor
-    button.toolTip = tooltip
-    button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-    button.widthAnchor.constraint(equalToConstant: 34).isActive = true
-    button.heightAnchor.constraint(equalToConstant: 34).isActive = true
-    return button
+    return false
   }
 
-  @objc private func selectRectangle(_ sender: NSButton) {
-    commitTextEntry()
-    selectedTool = selectedTool == .rectangle ? .none : .rectangle
-    updateToolStates()
-  }
-
-  @objc private func selectOval(_ sender: NSButton) {
-    commitTextEntry()
-    selectedTool = selectedTool == .oval ? .none : .oval
-    updateToolStates()
-  }
-
-  @objc private func selectArrow(_ sender: NSButton) {
-    commitTextEntry()
-    selectedTool = selectedTool == .arrow ? .none : .arrow
-    updateToolStates()
-  }
-
-  @objc private func selectText(_ sender: NSButton) {
-    commitTextEntry()
-    selectedTool = selectedTool == .text ? .none : .text
-    updateToolStates()
-  }
-
-  private func updateToolStates() {
-    for (tool, button) in toolButtons {
-      let isSelected = selectedTool == tool
-      button.state = isSelected ? .on : .off
-      button.contentTintColor = isSelected ? .white : .labelColor
-      button.layer?.backgroundColor = isSelected
-        ? NSColor.controlAccentColor.cgColor
-        : NSColor.clear.cgColor
-    }
+  private func select(_ tool: Tool) {
+    commitTextEntry(); clearDrag()
+    selectedTool = selectedTool == tool ? .none : tool
+    selectedIndex = nil
+    updateToolbar(); needsDisplay = true
+    window?.makeFirstResponder(self)
     window?.invalidateCursorRects(for: self)
   }
 
-  @objc private func togglePin(_ sender: NSButton) {
-    isPinned.toggle()
-    if hostWindow?.isFullScreenCapture == true {
-      hostWindow?.level = .screenSaver
-      hostWindow?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-    } else {
-      hostWindow?.level = .screenSaver
-      hostWindow?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-    }
-    hostWindow?.synchronizeToolbarLevel()
-    opacityPanel.isHidden = !isPinned
-    if !isPinned {
-      opacitySlider.doubleValue = 1
-      hostWindow?.alphaValue = 1
-    }
-    sender.image = NSImage(
-      systemSymbolName: isPinned ? "pin.fill" : "pin",
-      accessibilityDescription: String(localized: "Pin")
-    )
-    sender.toolTip = String(localized: isPinned ? "Unpin" : "Pin")
-    toolbar.superview?.needsLayout = true
+  private func append(_ annotation: Annotation) {
+    editHistory.commit(annotations + [annotation])
+    updateToolbar(); needsDisplay = true
   }
 
-  @objc private func updateOpacity(_ sender: NSSlider) {
-    guard isPinned else { return }
-    hostWindow?.alphaValue = CGFloat(sender.doubleValue)
+  private func undo() {
+    commitTextEntry(); clearDrag(); selectedIndex = nil
+    editHistory.undo(); updateToolbar(); needsDisplay = true
+  }
+  private func redo() {
+    commitTextEntry(); clearDrag(); selectedIndex = nil
+    editHistory.redo(); updateToolbar(); needsDisplay = true
+  }
+  private func deleteSelection() {
+    guard let index = selectedIndex, annotations.indices.contains(index) else { return }
+    if textField != nil { cancelTextEntry() }
+    var updated = annotations; updated.remove(at: index)
+    editHistory.commit(updated); selectedIndex = nil
+    updateToolbar(); needsDisplay = true
+  }
+  private func clearDrag() { draft = nil; dragOrigin = nil; originalAnnotation = nil; movedAnnotation = nil }
+
+  private func translatedWithinImage(_ annotation: Annotation, by delta: NSPoint) -> Annotation {
+    var offset = delta
+    let box = annotation.bounds
+    if box.width <= image.size.width { offset.x = min(max(offset.x, -box.minX), image.size.width-box.maxX) }
+    if box.height <= image.size.height { offset.y = min(max(offset.y, -box.minY), image.size.height-box.maxY) }
+    return annotation.translated(by: offset)
   }
 
-  @objc private func downloadImage() {
-    commitTextEntry()
-    let panel = NSSavePanel()
-    activeSavePanel = panel
-    // 预览窗口使用 .screenSaver 层级。保存面板必须使用更高的独立层级，
-    // 仅设置为相同层级时，预览窗口的 toolbar 子窗口仍可能把它压住。
-    let savePanelLevel = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
-    panel.level = savePanelLevel
-    panel.animationBehavior = .none
-
-    // NSSavePanel 在 runModal() 内部才完成窗口显示，提前 orderFront 可能会被
-    // 它自己的显示流程覆盖；在进入 modal event loop 后再强制置前一次。
-    DispatchQueue.main.async { [weak panel] in
-      guard let panel else { return }
-      panel.level = savePanelLevel
-      panel.makeKeyAndOrderFront(nil)
-      panel.orderFrontRegardless()
+  private func setupToolbar() {
+    toolbar = ShotterToolbarView(frame: NSRect(origin: .zero, size: ShotterToolbarView.preferredSize))
+    toolbar.onTool = { [weak self] in self?.select($0) }
+    toolbar.onColor = { [weak self] color in self?.changeStyle { $0.color = color } }
+    toolbar.onWidth = { [weak self] width in self?.changeStyle { $0.lineWidth = width } }
+    toolbar.onFontSize = { [weak self] size in self?.changeStyle { $0.fontSize = size } }
+    toolbar.onOpacity = { [weak self] in self?.hostWindow?.alphaValue = $0 }
+    toolbar.onAction = { [weak self] action in
+      guard let self else { return }
+      switch action {
+      case .undo: self.undo()
+      case .redo: self.redo()
+      case .delete: self.deleteSelection()
+      case .pin:
+        self.commitTextEntry(); self.isPinned.toggle()
+        self.hostWindow?.alphaValue = 1
+        self.hostWindow?.level = self.isPinned ? .floating : .screenSaver
+        self.hostWindow?.synchronizeToolbarLevel()
+        self.updateToolbar()
+      case .save: self.saveImage()
+      case .copy: self.copyImage()
+      case .close: self.hostWindow?.dismissWindow()
+      }
     }
-    panel.allowedContentTypes = [.png]
-    panel.nameFieldStringValue = "FT-\(Int(Date().timeIntervalSince1970 * 1000)).png"
-    panel.canCreateDirectories = true
-
-    guard panel.runModal() == .OK, let url = panel.url else {
-      releaseSavePanelAfterCurrentEvent()
-      return
-    }
-    guard let pngData = pngData() else {
-      releaseSavePanelAfterCurrentEvent()
-      showSaveError(String(localized: "Unable to create PNG data."))
-      return
-    }
-
-    do {
-      try pngData.write(to: url, options: .atomic)
-      closeHostWindowAfterCurrentEvent()
-    } catch {
-      releaseSavePanelAfterCurrentEvent()
-      showSaveError(error.localizedDescription)
-    }
+    updateToolbar()
   }
 
-  private func closeHostWindowAfterCurrentEvent() {
-    guard let hostWindow else { return }
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self, weak hostWindow] in
-      self?.activeSavePanel = nil
-      hostWindow?.dismissWindow()
+  private func changeStyle(_ mutation: (inout ShotterAnnotationStyle) -> Void) {
+    mutation(&style)
+    if let field = textField {
+      field.font = .systemFont(ofSize: style.fontSize * displayScale, weight: .medium)
+      field.textColor = style.color.nsColor
+      field.setFrameSize(NSSize(width: field.frame.width, height: max(28, style.fontSize * displayScale + 12)))
+      window?.makeFirstResponder(field)
+    } else if let index = selectedIndex, annotations.indices.contains(index) {
+      var updated = annotations; updated[index].style = style
+      editHistory.commit(updated)
     }
+    updateToolbar(); needsDisplay = true
   }
 
-  private func releaseSavePanelAfterCurrentEvent() {
-    DispatchQueue.main.async { [weak self] in
-      self?.activeSavePanel = nil
-    }
+  private func updateToolbar() {
+    let size = sourceCGImage.map { NSSize(width: $0.width, height: $0.height) } ?? image.representations.first.map { NSSize(width: $0.pixelsWide, height: $0.pixelsHigh) } ?? image.size
+    let selectionTool = selectedIndex.flatMap { annotations.indices.contains($0) ? annotations[$0].tool : nil }
+    toolbar?.update(tool: selectedTool, selectionTool: selectionTool, style: style, canUndo: editHistory.canUndo, canRedo: editHistory.canRedo,
+                    hasSelection: selectedIndex != nil, isPinned: isPinned, pixelSize: size)
   }
-
-  private func showSaveError(_ message: String) {
-    let alert = NSAlert()
-    alert.alertStyle = .warning
-    alert.messageText = String(localized: "Could not save image")
-    alert.informativeText = message
-    alert.runModal()
+  var toolbarPreferredSize: NSSize { ShotterToolbarView.preferredSize }
+  func installToolbar(in container: NSView) {
+    toolbar.removeFromSuperview(); container.addSubview(toolbar)
+    toolbar.frame = container.bounds; toolbar.autoresizingMask = [.width, .height]
   }
+  func layoutToolbar(in bounds: NSRect) { toolbar.frame = bounds }
 
-  @objc private func copyImageToPasteboard() {
-    commitTextEntry()
-    guard let pngData = pngData() else { return }
-
-    let pasteboard = NSPasteboard.general
-    pasteboard.clearContents()
-    pasteboard.setData(pngData, forType: .png)
-    hostWindow?.dismissWindow()
-  }
-
-  private func beginTextEntry(at point: NSPoint, imagePoint: NSPoint) {
-    commitTextEntry()
-
-    let font = textFont(in: imageRect)
-    let field = NSTextField(frame: NSRect(
-      x: point.x,
-      y: point.y - 3,
-      width: min(240, max(100, imageRect.maxX - point.x - 4)),
-      height: max(28, font.pointSize + 12)
-    ))
-    field.font = font
-    field.textColor = .systemRed
-    field.placeholderString = String(localized: "Text")
-    field.target = self
-    field.action = #selector(commitTextEntry)
+  private func beginTextEntry(at point: NSPoint, editing index: Int? = nil) {
+    let view = viewPoint(point)
+    let fontSize = style.fontSize * displayScale
+    let field = NSTextField(frame: NSRect(x: view.x, y: view.y-4, width: max(36, min(280, imageRect.maxX-view.x)), height: max(28, fontSize+12)))
+    field.font = .systemFont(ofSize: fontSize, weight: .medium)
+    field.textColor = style.color.nsColor
+    field.backgroundColor = .textBackgroundColor
+    field.placeholderString = String(localized: "Type a label…")
+    field.focusRingType = .none
+    field.target = self; field.action = #selector(commitTextEntry)
+    if let index { field.stringValue = annotations[index].text ?? "" }
     addSubview(field)
-
-    textField = field
-    textEntryPoint = imagePoint
+    textField = field; textEntryPoint = point; editingTextIndex = index
     window?.makeFirstResponder(field)
-  }
-
-  @objc private func commitTextEntry() {
-    guard let textField, let textEntryPoint else { return }
-
-    let text = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-    if !text.isEmpty {
-      annotations.append(Annotation(tool: .text, start: textEntryPoint, end: textEntryPoint, text: text))
-    }
-    textField.removeFromSuperview()
-    self.textField = nil
-    self.textEntryPoint = nil
-    window?.makeFirstResponder(self)
     needsDisplay = true
   }
 
+  @objc private func commitTextEntry() {
+    guard let field = textField, let point = textEntryPoint else { return }
+    let text = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+    let index = editingTextIndex
+    field.removeFromSuperview(); textField = nil; textEntryPoint = nil; editingTextIndex = nil
+    if !text.isEmpty {
+      let annotation = Annotation(tool: .text, start: point, end: point, text: text, style: style)
+      if let index, annotations.indices.contains(index) {
+        var updated = annotations; updated[index] = annotation; editHistory.commit(updated)
+      } else { append(annotation) }
+    }
+    window?.makeFirstResponder(self)
+    updateToolbar(); needsDisplay = true
+  }
+  private func cancelTextEntry() {
+    textField?.removeFromSuperview(); textField = nil; textEntryPoint = nil; editingTextIndex = nil
+    window?.makeFirstResponder(self); needsDisplay = true
+  }
+
   private var imageRect: NSRect {
-    if fillsScreen {
-      return bounds
-    }
     guard image.size.width > 0, image.size.height > 0 else { return .zero }
-
-    let scale = min(bounds.width / image.size.width, bounds.height / image.size.height)
-    let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-    return NSRect(
-      x: bounds.midX - size.width / 2,
-      y: bounds.midY - size.height / 2,
-      width: size.width,
-      height: size.height
-    )
+    if fillsScreen { return bounds }
+    let factor = min(bounds.width/image.size.width, bounds.height/image.size.height)
+    let size = NSSize(width: image.size.width*factor, height: image.size.height*factor)
+    return NSRect(x: bounds.midX-size.width/2, y: bounds.midY-size.height/2, width: size.width, height: size.height)
+  }
+  var currentImageRect: NSRect { layoutSubtreeIfNeeded(); return imageRect }
+  private var displayScale: CGFloat { max(imageRect.width / max(image.size.width, 1), 0.01) }
+  private func imagePoint(from point: NSPoint) -> NSPoint {
+    NSPoint(x: min(image.size.width, max(0, (point.x-imageRect.minX)/displayScale)),
+            y: min(image.size.height, max(0, (point.y-imageRect.minY)/displayScale)))
+  }
+  private func viewPoint(_ point: NSPoint) -> NSPoint {
+    NSPoint(x: imageRect.minX + point.x*displayScale, y: imageRect.minY + point.y*displayScale)
+  }
+  private func viewRect(_ rect: NSRect, in target: NSRect) -> NSRect {
+    NSRect(x: target.minX + rect.minX*displayScale, y: target.minY + rect.minY*displayScale,
+           width: rect.width*displayScale, height: rect.height*displayScale)
   }
 
-  var currentImageRect: NSRect {
-    layoutSubtreeIfNeeded()
-    return imageRect
-  }
-
-  private func imagePoint(from point: NSPoint) -> NSPoint? {
-    let rect = imageRect
-    guard rect.contains(point), rect.width > 0, rect.height > 0 else { return nil }
-    return NSPoint(
-      x: (point.x - rect.minX) / rect.width * image.size.width,
-      y: (point.y - rect.minY) / rect.height * image.size.height
-    )
-  }
-
-  private func annotationIndex(at point: NSPoint) -> Int? {
-    let rect = imageRect
-    let canvasPoint = viewPoint(point, in: rect)
-    let hitTolerance = max(8, rect.width / max(image.size.width, 1) * 18)
-
-    for index in annotations.indices.reversed() {
-      let annotation = annotations[index]
-      let start = self.viewPoint(annotation.start, in: rect)
-      let end = self.viewPoint(annotation.end, in: rect)
-
-      switch annotation.tool {
-      case .rectangle, .oval:
-        let bounds = NSRect(
-          x: min(start.x, end.x) - hitTolerance,
-          y: min(start.y, end.y) - hitTolerance,
-          width: abs(end.x - start.x) + hitTolerance * 2,
-          height: abs(end.y - start.y) + hitTolerance * 2
-        )
-        if bounds.contains(canvasPoint) {
-          return index
-        }
-      case .arrow:
-        if distance(from: canvasPoint, toSegmentFrom: start, to: end) <= hitTolerance {
-          return index
-        }
-      case .text:
-        guard let text = annotation.text else { continue }
-        let attributes: [NSAttributedString.Key: Any] = [
-          .font: textFont(in: rect)
-        ]
-        let textSize = (text as NSString).size(withAttributes: attributes)
-        let textRect = NSRect(
-          x: start.x - hitTolerance,
-          y: start.y - hitTolerance,
-          width: textSize.width + hitTolerance * 2,
-          height: textSize.height + hitTolerance * 2
-        )
-        if textRect.contains(canvasPoint) {
-          return index
-        }
-      case .none:
-        continue
+  private func saveImage() {
+    commitTextEntry()
+    let panel = NSSavePanel()
+    activeSavePanel = panel
+    let level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
+    panel.level = level; panel.animationBehavior = .none
+    panel.allowedContentTypes = [.png]
+    panel.nameFieldStringValue = "FancyTool-\(Int(Date().timeIntervalSince1970)).png"
+    panel.canCreateDirectories = true
+    DispatchQueue.main.async { [weak panel] in
+      panel?.level = level; panel?.makeKeyAndOrderFront(nil); panel?.orderFrontRegardless()
+    }
+    guard panel.runModal() == .OK, let url = panel.url else { releaseSavePanel(); return }
+    guard let data = pngData() else {
+      releaseSavePanel(); showSaveError(String(localized: "Unable to create PNG data.")); return
+    }
+    do {
+      try data.write(to: url, options: .atomic)
+      DispatchQueue.main.asyncAfter(deadline: .now()+0.15) { [weak self] in
+        self?.activeSavePanel = nil; self?.hostWindow?.dismissWindow()
       }
-    }
-    return nil
+    } catch { releaseSavePanel(); showSaveError(error.localizedDescription) }
+  }
+  private func releaseSavePanel() { DispatchQueue.main.async { [weak self] in self?.activeSavePanel = nil } }
+  private func showSaveError(_ message: String) {
+    let alert = NSAlert(); alert.alertStyle = .warning
+    alert.messageText = String(localized: "Could not save image"); alert.informativeText = message
+    alert.window.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue+1)
+    alert.runModal()
+  }
+  private func copyImage() {
+    commitTextEntry()
+    guard let data = pngData() else { return }
+    let pasteboard = NSPasteboard.general
+    pasteboard.clearContents(); pasteboard.setData(data, forType: .png)
+    hostWindow?.dismissWindow()
   }
 
-  private func distance(from point: NSPoint, toSegmentFrom start: NSPoint, to end: NSPoint) -> CGFloat {
-    let deltaX = end.x - start.x
-    let deltaY = end.y - start.y
-    let lengthSquared = deltaX * deltaX + deltaY * deltaY
-    guard lengthSquared > 0 else {
-      return hypot(point.x - start.x, point.y - start.y)
-    }
-
-    let projection = max(0, min(1, ((point.x - start.x) * deltaX + (point.y - start.y) * deltaY) / lengthSquared))
-    let closest = NSPoint(
-      x: start.x + projection * deltaX,
-      y: start.y + projection * deltaY
-    )
-    return hypot(point.x - closest.x, point.y - closest.y)
-  }
-
-  private func draw(_ annotation: Annotation, in rect: NSRect) {
-    let start = viewPoint(annotation.start, in: rect)
-    let end = viewPoint(annotation.end, in: rect)
-    let path = NSBezierPath()
-    path.lineWidth = max(2, rect.width / max(image.size.width, 1) * 3)
-    NSColor.systemRed.setStroke()
-
-    switch annotation.tool {
-    case .rectangle:
-      path.appendRect(NSRect(
-        x: min(start.x, end.x),
-        y: min(start.y, end.y),
-        width: abs(end.x - start.x),
-        height: abs(end.y - start.y)
-      ))
-      path.stroke()
-    case .oval:
-      let ovalRect = NSRect(
-        x: min(start.x, end.x),
-        y: min(start.y, end.y),
-        width: abs(end.x - start.x),
-        height: abs(end.y - start.y)
-      )
-      NSBezierPath(ovalIn: ovalRect).stroke()
-    case .arrow:
-      path.move(to: start)
-      path.line(to: end)
-      path.stroke()
-
-      let angle = atan2(end.y - start.y, end.x - start.x)
-      let headLength = max(8, rect.width / max(image.size.width, 1) * 14)
-      let headAngle = CGFloat.pi / 7
-      let left = NSPoint(
-        x: end.x - cos(angle - headAngle) * headLength,
-        y: end.y - sin(angle - headAngle) * headLength
-      )
-      let right = NSPoint(
-        x: end.x - cos(angle + headAngle) * headLength,
-        y: end.y - sin(angle + headAngle) * headLength
-      )
-      let head = NSBezierPath()
-      head.move(to: left)
-      head.line(to: end)
-      head.line(to: right)
-      head.stroke()
-    case .text:
-      guard let text = annotation.text else { return }
-      let attributes: [NSAttributedString.Key: Any] = [
-        .font: textFont(in: rect),
-        .foregroundColor: NSColor.systemRed
-      ]
-      NSAttributedString(string: text, attributes: attributes).draw(at: start)
-    case .none:
-      break
-    }
-  }
-
-  private func viewPoint(_ point: NSPoint, in rect: NSRect) -> NSPoint {
-    NSPoint(
-      x: rect.minX + point.x / image.size.width * rect.width,
-      y: rect.minY + point.y / image.size.height * rect.height
-    )
-  }
-
-  private func textFont(in rect: NSRect) -> NSFont {
-    let scale = rect.width / max(image.size.width, 1)
-    return NSFont.systemFont(ofSize: max(12, 20 * scale), weight: .medium)
-  }
-
-  private func pngData() -> Data? {
+  func pngData() -> Data? {
     var proposedRect = NSRect(origin: .zero, size: image.size)
-    guard let sourceCGImage = sourceCGImage ?? image.cgImage(
-      forProposedRect: &proposedRect,
-      context: nil,
-      hints: nil
-    ) else {
-      return nil
-    }
-
-    let outputSize = NSSize(
-      width: max(1, sourceCGImage.width),
-      height: max(1, sourceCGImage.height)
-    )
-    guard let bitmap = NSBitmapImageRep(
-      bitmapDataPlanes: nil,
-      pixelsWide: Int(outputSize.width),
-      pixelsHigh: Int(outputSize.height),
-      bitsPerSample: 8,
-      samplesPerPixel: 4,
-      hasAlpha: true,
-      isPlanar: false,
-      colorSpaceName: .deviceRGB,
-      bitmapFormat: [],
-      bytesPerRow: 0,
-      bitsPerPixel: 0
-    ), let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
-      return nil
-    }
-
-    let outputRect = NSRect(origin: .zero, size: outputSize)
-    let sourceImage = NSImage(cgImage: sourceCGImage, size: outputSize)
-    NSGraphicsContext.saveGraphicsState()
-    NSGraphicsContext.current = context
-    NSGraphicsContext.current?.imageInterpolation = .high
-    NSColor.clear.setFill()
-    outputRect.fill()
-    sourceImage.draw(in: outputRect, from: .zero, operation: .copy, fraction: 1)
-    annotations.forEach { draw($0, in: outputRect) }
+    guard let source = sourceCGImage ?? image.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil),
+          let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: source.width, pixelsHigh: source.height,
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bitmapFormat: [], bytesPerRow: 0, bitsPerPixel: 0),
+          let context = NSGraphicsContext(bitmapImageRep: bitmap) else { return nil }
+    let rect = NSRect(x: 0, y: 0, width: source.width, height: source.height)
+    NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = context
+    context.imageInterpolation = .none
+    NSImage(cgImage: source, size: rect.size).draw(in: rect, from: .zero, operation: .copy, fraction: 1)
+    annotations.forEach { $0.draw(in: rect, imageSize: image.size) }
     NSGraphicsContext.restoreGraphicsState()
-
     return bitmap.representation(using: .png, properties: [:])
-  }
-}
-
-private final class OpacitySlider: NSSlider {
-
-  override func draw(_ dirtyRect: NSRect) {
-    let range = max(maxValue - minValue, Double.leastNonzeroMagnitude)
-    let progress = CGFloat((doubleValue - minValue) / range)
-    let width = bounds.width * min(max(progress, 0), 1)
-    guard width > 0 else { return }
-
-    let track = NSRect(x: 0, y: (bounds.height - 4) / 2, width: width, height: 4)
-    NSColor.controlAccentColor.setFill()
-    NSBezierPath(roundedRect: track, xRadius: 2, yRadius: 2).fill()
   }
 }

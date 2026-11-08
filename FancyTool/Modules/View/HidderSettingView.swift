@@ -16,8 +16,8 @@ struct HidderSettingView: View {
   
     var body: some View {
       
-      LabeledContent(String(localized: "Hidder size:")) {
-        HStack {
+      SettingsForm {
+        SettingsFormRow("Hidder size:") {
           Slider(
             value: Binding(
               get: { Double(state.hidderSize) },
@@ -27,7 +27,7 @@ struct HidderSettingView: View {
             step: 1
           ).frame(width: 150)
           
-          Text("\(state.hidderSize)").frame(width: 30)
+          Text("\(state.hidderSize)").frame(width: 24, alignment: .trailing)
         }
         .onChange(of: state.hidderSize) { oldValue, newValue in
           hidderSizeDebouncer?.cancel()

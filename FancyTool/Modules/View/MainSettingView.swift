@@ -15,10 +15,28 @@ struct MainSettingView: View {
 
   var body: some View {
     
-    VStack(alignment: .leading, spacing: 12) {
+    SettingsForm {
 
-      Toggle(
-        String(localized: "Launch on Startup"),
+      VStack(alignment: .leading, spacing: 6) {
+        SettingsFormRow("Appearance") {
+          Picker(String(localized: "Appearance"), selection: $state.appAppearance) {
+            ForEach(AppAppearance.allCases) { appearance in
+              Text(appearance.title).tag(appearance)
+            }
+          }
+          .labelsHidden()
+          .pickerStyle(.segmented)
+          .controlSize(.small)
+        }
+
+        Text("Automatic follows the system appearance.")
+          .font(.system(size: 11))
+          .foregroundStyle(.secondary)
+          .padding(.leading, 80)
+      }
+
+      SettingsToggle(
+        "Launch on Startup",
         isOn: Binding(
           get: { state.startUp },
           set: { newValue in
@@ -43,17 +61,12 @@ struct MainSettingView: View {
           }
         )
       )
-      .toggleStyle(SwitchToggleStyle())
-      .font(.system(size: 12))
       
       Button(String(localized: "Quit App")) {
         NSApplication.shared.terminate(nil)
       }
       .keyboardShortcut("q")
-      .frame(width: 100, height: 40)
-      .font(.body)
-      .cornerRadius(10)
+      .padding(.leading, 80)
     }
-    .frame(width: 260, alignment: .leading)
   }
 }

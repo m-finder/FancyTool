@@ -1,90 +1,64 @@
-//
-//  Hidder.swift
-//  FancyTool
-//
-//  Created by 吴雲放 on 2025/7/1.
-//
-
 import SwiftUI
-import SystemInfoKit
+import AppKit
 
 @MainActor
-class Monitor {
-  
-  public static let shared = Monitor()
-  private var item: NSStatusItem?
-  public let popover = NSPopover()
-  private var popoverView = MonitorPopoverView()
-  private var controller: NSViewController!
-  
-  @ObservedObject var state = AppState.shared
-  
-  // MARK: - 挂载
-  public func mount(){
-    
-    if item == nil {
-      item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    }
-    
-    guard let button = item?.button else { return }
-    
-    // 强制选中
-    button.state = .on
+final class Monitor {
+  static let shared = Monitor()
 
-    button.subviews.forEach { $0.removeFromSuperview() }
-    button.image = nil
-    button.title = ""
-    
-    
-    let hasActiveMonitor = state.showCpu || state.showNetWork || state.showStorage || state.showMemory || state.showBattery
-    
-    if hasActiveMonitor {
-      let _ = HostingView(
-        view: MonitorView().frame(height: 22).frame(minWidth: 40, maxWidth: .infinity).padding(.horizontal, 4),
-        button: button,
-        target: AppMenuActions.shared,
-        action: #selector(AppMenuActions.monitorPopover(_:))
-      )
-    }else{
-      button.image = NSImage(named: RunnerConfig.defaultIconName)?.resized(to: RunnerConfig.defaultIconSize)
-      button.target = AppMenuActions.shared
-      button.action = #selector(AppMenuActions.monitorPopover(_:))
-    }
-    
-  }
-  
-  // MARK: - 取消挂载
-  public func unmount(){
-    if let existingItem = self.item {
-      // 移除状态栏项
-      NSStatusBar.system.removeStatusItem(existingItem)
-      // 清空按钮内容
-      existingItem.button?.image = nil
-      existingItem.button?.title = ""
-    }
-    // 清空引用，避免野指针
-    self.item = nil
-  }
-  
-  // MARK: - 弹窗
-  public func show(_ sender: NSStatusBarButton){
-    if(controller == nil){
-      controller = NSHostingController(
-        rootView: popoverView.frame(
-          maxWidth: .infinity,
-          maxHeight: .infinity
-        ).padding()
-      )
-    }
-    popover.contentSize = .init(width: 220, height: 430)
-    popover.contentViewController = controller
-    popover.behavior = .transient
-    popover.animates = true
-    
-    self.popover.show(
-      relativeTo: sender.bounds,
-      of: sender,
-      preferredEdge: .minY
+  private var panel: StatusItemPanel?
+  private var item: NSStatusItem?
+  private var hosting: HostingView?
+
+  func mount() {
+    guard item == nil else { return }
+    let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    self.item = item
+    hosting = HostingView(
+      view: MonitorStatusView().frame(height: 22).padding(.horizontal, 4),
+      item: item,
+      target: AppMenuActions.shared,
+      action: #selector(AppMenuActions.monitorPopover(_:))
     )
+  }
+
+  func unmount() {
+    panel?.close()
+    panel = nil
+    hosting?.unmount()
+    hosting = nil
+    if let item { NSStatusBar.system.removeStatusItem(item) }
+    item = nil
+  }
+
+  func togglePanel(_ sender: NSStatusBarButton) {
+    if panel?.isShown == true {
+      panel?.close()
+      return
+    }
+    let panel = StatusItemPanel(size: MonitorPopoverView.panelSize, content: MonitorPopoverView())
+    // Discard the hidden chart tree; history belongs to SystemMetrics and is
+    // ready when the panel is opened again.
+    panel.onClose = { [weak self] in self?.panel = nil }
+    self.panel = panel
+    panel.show(relativeTo: sender)
+  }
+}
+
+private struct MonitorStatusView: View {
+  @ObservedObject private var state = AppState.shared
+
+  private var hasMetrics: Bool {
+    state.showCpu || state.showNetWork || state.showStorage || state.showMemory || state.showBattery
+  }
+
+  var body: some View {
+    if hasMetrics {
+      MonitorView()
+    } else {
+      Image(RunnerConfig.defaultIconName)
+        .resizable()
+        .scaledToFit()
+        .frame(width: RunnerConfig.defaultIconSize)
+    }
   }
 }

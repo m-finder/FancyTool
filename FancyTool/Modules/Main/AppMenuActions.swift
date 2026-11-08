@@ -86,16 +86,7 @@ class AppMenuActions: NSObject {
   
   // MARK: - 炫彩签名点击事件，弹出操作窗口
   @IBAction func textPopover(_ sender: NSStatusBarButton){
-    if Texter.shared.popover.isShown {
-      // The status item is also the popover's anchor. Bringing its window to
-      // front before closing can cause a visible jump after repeated clicks.
-      // Close synchronously so a new show request cannot race the close
-      // animation.
-      Texter.shared.popover.close()
-      return
-    }
-
-    Texter.shared.show(sender)
+    Texter.shared.togglePanel(sender)
   }
   
   // MARK: - 停启用剪贴板
@@ -154,16 +145,7 @@ class AppMenuActions: NSObject {
   }
   
   @IBAction func monitorPopover(_ sender: NSStatusBarButton){
-    if Monitor.shared.popover.isShown{
-      if let window = Monitor.shared.popover.contentViewController?.view.window {
-        window.orderFrontRegardless()
-      }
-
-      Monitor.shared.popover.performClose(sender)
-      return
-    }
-
-    Monitor.shared.show(sender)
+    Monitor.shared.togglePanel(sender)
   }
 
   // MARK: - 停启用 Shotter

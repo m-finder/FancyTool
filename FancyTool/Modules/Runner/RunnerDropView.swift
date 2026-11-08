@@ -17,7 +17,7 @@ struct RunnerDropView: View {
       Image(systemName: "plus.circle.fill").font(.title).foregroundColor(Color.gray)
       Text(String(localized: "Drag and drop GIF here.")).font(.caption).foregroundColor(Color.gray)
     }
-    .frame(width: 90,height: 90)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
     .cornerRadius(8)
     .clipShape(RoundedRectangle(
       cornerRadius: 5,
@@ -28,7 +28,6 @@ struct RunnerDropView: View {
     })
     .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Color.gray, lineWidth: 1))
     .background(Color.secondary.colorInvert())
-    .scaledToFit()
     
   }
 }

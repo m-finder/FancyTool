@@ -1,160 +1,364 @@
-//
-//  Runner.swift
-//  FancyTool
-//
-//  Created by 吴雲放 on 2025/8/25.
-//
-
 import AppKit
 import Combine
 
 @MainActor
-final class Runner {
+final class Runner: NSObject, CAAnimationDelegate {
+  static let shared = Runner()
 
-  public static let shared = Runner()
-
-  private var item: NSStatusItem
-
-  // MARK: - 速度属性
-  private var fps: Double {
-    let usage = AppState.shared.bundle?.cpuInfo?.percentage.value ?? 0
-    return RunnerConfig.minFPS + (RunnerConfig.maxFPS - RunnerConfig.minFPS) * (usage / 100)
-  }
-
+  private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
   private var cancellables = Set<AnyCancellable>()
+  private weak var observedWindow: NSWindow?
+  private var windowObservation: AnyCancellable?
+  private var renderedScale: CGFloat = 0
+  private var cpuUsage = 0.0
+  private var smoothedCPU = 0.0
+  private var isCharging = false
+  private var displaySleeping = false
+  private var lowPowerEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
+  private var reduceMotionEnabled = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+  private var companionBehavior = RunnerCompanionBehavior()
+  private var renderedState: RunnerCompanionState?
+  private var activityClock: AnyCancellable?
+  private var activityInterval: TimeInterval?
+  private var companionTime: TimeInterval = 0
+  private var lastCompanionTick = ProcessInfo.processInfo.systemUptime
+  private var companionRate = 1.0
+  private var renderedSince: TimeInterval = 0
+  private var transitionSprites: [RunnerCompanionArt.Sprite] = []
+  private var companionAnimationGeneration: UInt64 = 0
 
-  init(){
-    self.item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-  }
-
-  // MARK: - 计算属性
   private var currentScale: CGFloat {
     item.button?.window?.screen?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
   }
 
-  // MARK: - 挂载
-  public func mount() {
+  private var shouldPause: Bool {
+    displaySleeping || lowPowerEnabled || reduceMotionEnabled
+  }
 
+  private var companionPaused: Bool {
+    displaySleeping || reduceMotionEnabled
+  }
+
+  private var targetCompanionRate: Double {
+    RunnerCompanionPlayback.rate(cpu: smoothedCPU, lowPower: lowPowerEnabled)
+  }
+
+  func mount() {
     guard let button = item.button else { return }
-
-    // 挂载动画层
     RunnerLayer.shared.mount(button: button, scale: currentScale)
-
-    // 添加屏幕和窗口监听
     observe()
-
-    // 刷新挂载的图片
     reload()
-
-    // 挂载菜单
-    item.menu = AppMenu.shared.getMenus()
   }
 
-  // MARK: - 刷新挂载的图片
-  private func reload() {
-
-    if RunnerFrame.shared.runner != nil {
-      // 加载图片帧
-      _ = RunnerFrame.shared.refresh(for: currentScale)
-
-      // 取到第一张图
-      guard let first = RunnerFrame.shared.refresh(for: currentScale).first else {
-          item.length = RunnerConfig.baseSize
-          return
-      }
-
-      // 计算宽度并应用
-      let width = RunnerConfig.baseSize * CGFloat(first.width) / CGFloat(first.height)
-      item.length = width
-      item.button?.frame.size.width = width
-      RunnerLayer.shared.layer?.frame = item.button?.bounds ?? .zero
-      animation()
-      return
-    }
-
-    // 卸载动画 layer
-    RunnerLayer.shared.unmount()
-    // 刷新为默认图标和尺寸
-    item.length = RunnerConfig.defaultIconSize
-    item.button?.image = NSImage(named: RunnerConfig.defaultIconName)?.resized(to: RunnerConfig.defaultIconSize)
-  }
-
-  // MARK: - 刷新选中的runner
-  public func change() {
-
-    if RunnerFrame.shared.runner == nil {
-      RunnerLayer.shared.layer?.contents = nil
-    }
-
+  func change() {
     RunnerFrame.shared.cache.removeAll()
     RunnerModel.clearImageCache()
     reload()
   }
 
+  private func reload() {
+    companionAnimationGeneration &+= 1
+    renderedScale = currentScale
+    observeStatusWindow()
+    renderedState = nil
+    transitionSprites = []
+    companionBehavior = RunnerCompanionBehavior()
+    companionTime = 0
+    lastCompanionTick = ProcessInfo.processInfo.systemUptime
+    companionRate = companionPaused ? 0 : targetCompanionRate
+    synchronizeActivityClock()
+    if AppState.shared.runnerCompanion {
+      item.menu = nil
+      item.button?.target = self
+      item.button?.action = #selector(companionClicked)
+      item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+      setWidth(RunnerCompanionArt.size.width - 4)
+      refreshBehavior()
+      return
+    }
 
-  // MARK: - 动画处理
-  private func animation() {
-    guard let layer = RunnerLayer.shared.layer else { return }
-
-    let scale = layer.contentsScale
-    let frames = RunnerFrame.shared.refresh(for: scale)
-    guard !frames.isEmpty else { return }
-
-    item.button?.image = nil
-    layer.isHidden = false
-
-    // 把 frame 跟按钮当前 bounds 对齐，防止图片宽度不撑开
-    layer.frame = item.button?.bounds ?? .zero
-
-    layer.contents = frames.first
-
-    layer.removeAnimation(forKey: "runner")
-    layer.add(makeAnimation(values: frames, fps: fps), forKey: "runner")
+    item.button?.target = nil
+    item.button?.action = nil
+    item.menu = AppMenu.shared.getMenus()
+    item.button?.toolTip = nil
+    let frames = RunnerFrame.shared.refresh(for: currentScale)
+    guard let first = frames.first else {
+      RunnerLayer.shared.unmount()
+      setWidth(RunnerConfig.defaultIconSize)
+      item.button?.image = NSImage(named: RunnerConfig.defaultIconName)?.resized(to: RunnerConfig.defaultIconSize)
+      return
+    }
+    setWidth(RunnerConfig.baseSize * CGFloat(first.width) / CGFloat(first.height))
+    installAnimation(frames: frames, frameDuration: 1 / RunnerConfig.minFPS)
+    refreshBehavior()
   }
 
-  private func makeAnimation(values: [Any], fps: Double) -> CAKeyframeAnimation {
+  private func setWidth(_ width: CGFloat) {
+    item.length = width
+    item.button?.frame.size.width = width
+    let bounds = item.button?.bounds ?? .zero
+    RunnerLayer.shared.layer?.frame = AppState.shared.runnerCompanion
+      ? bounds.insetBy(dx: (bounds.width - RunnerCompanionArt.size.width) / 2, dy: 0)
+      : bounds
+  }
+
+  private func installAnimation(frames: [CGImage], frameDuration: TimeInterval) {
+    guard let layer = RunnerLayer.shared.layer, let first = frames.first else { return }
+    item.button?.image = nil
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    layer.removeAllAnimations()
+    layer.speed = 1
+    layer.timeOffset = 0
+    layer.beginTime = 0
+    layer.contentsScale = currentScale
+    layer.magnificationFilter = .linear
+    layer.minificationFilter = .linear
+    layer.contents = first
+    layer.isHidden = false
+    layer.frame = item.button?.bounds ?? .zero
     let animation = CAKeyframeAnimation(keyPath: "contents")
-    animation.values = values
-    animation.keyTimes = (0..<values.count).map {
-      NSNumber(value: Double($0) / Double(values.count))
-    }
-    animation.duration = Double(values.count) / fps
+    animation.values = frames
+    animation.keyTimes = frames.indices.map { NSNumber(value: Double($0) / Double(frames.count)) }
+    animation.duration = Double(frames.count) * frameDuration
     animation.repeatCount = .infinity
     animation.calculationMode = .discrete
-    animation.isRemovedOnCompletion = false
-    return animation
+    layer.add(animation, forKey: "runner")
+    CATransaction.commit()
   }
 
-  // MARK: - 屏幕变化监听
-  private func observe() {
-    cancellables.removeAll()
-
-    NotificationCenter.default
-      .publisher(for: NSApplication.didChangeScreenParametersNotification)
-      .receive(on: DispatchQueue.main)
-      .sink { [weak self] _ in
-        self?.handleScreenChanged()
+  private func refreshBehavior() {
+    if AppState.shared.runnerCompanion {
+      let now = ProcessInfo.processInfo.systemUptime
+      let elapsed = max(0, now - lastCompanionTick)
+      companionTime += elapsed * companionRate
+      lastCompanionTick = now
+      if companionPaused {
+        companionRate = 0
+      } else if companionRate == 0 {
+        companionRate = targetCompanionRate
+      } else {
+        companionRate = RunnerCompanionPlayback.smoothedRate(
+          current: companionRate, target: targetCompanionRate, elapsed: elapsed)
       }
-      .store(in: &cancellables)
-
-    if let window = item.button?.window {
-      NotificationCenter.default
-        .publisher(for: NSWindow.didChangeScreenNotification, object: window)
-        .receive(on: DispatchQueue.main)
-        .sink { [weak self] _ in
-          self?.handleScreenChanged()
+      let state = companionBehavior.update(
+        at: companionTime,
+        cpu: cpuUsage,
+        isCharging: isCharging,
+        idleSeconds: CGEventSource.secondsSinceLastEventType(
+          .combinedSessionState, eventType: CGEventType(rawValue: UInt32.max)!
+        ),
+        displaySleeping: displaySleeping
+      )
+      if renderedState != state {
+        installCompanionAnimation(state)
+        synchronizeActivityClock()
+        item.button?.toolTip = String(localized: "Status pup") + " · " + state.title + "\n" +
+          String(localized: "Click to spin · Right-click for menu")
       }
-      .store(in: &cancellables)
+      setPlaybackSpeed(Float(companionRate))
+    } else if RunnerFrame.shared.runner != nil {
+      let fps = RunnerConfig.minFPS + (RunnerConfig.maxFPS - RunnerConfig.minFPS) * smoothedCPU / 100
+      setPlaybackSpeed(shouldPause ? 0 : Float(fps / RunnerConfig.minFPS))
     }
   }
 
-  private func handleScreenChanged() {
-    let newScale = currentScale
+  private func currentCompanionSprite() -> RunnerCompanionArt.Sprite? {
+    guard let state = renderedState else { return nil }
+    let elapsed = max(0, companionTime - renderedSince)
+    if !transitionSprites.isEmpty, elapsed < RunnerCompanionState.transitionDuration {
+      let frame = min(transitionSprites.count - 1,
+                      Int(elapsed / RunnerCompanionState.transitionDuration * Double(transitionSprites.count)))
+      return transitionSprites[frame]
+    }
+    return RunnerCompanionArt.sprite(state: state,
+      elapsed: elapsed - (transitionSprites.isEmpty ? 0 : RunnerCompanionState.transitionDuration))
+  }
 
-    RunnerFrame.shared.cache.removeValue(forKey: newScale)
-    _ = RunnerFrame.shared.refresh(for: newScale)
+  private func installCompanionAnimation(_ state: RunnerCompanionState) {
+    guard let layer = RunnerLayer.shared.layer else { return }
+    let source = companionPaused ? nil : currentCompanionSprite()
+    let frames = RunnerCompanionArt.frames(for: state, scale: currentScale)
+    guard let first = frames.first else { return }
+    let sprites = source.map { RunnerCompanionArt.transitionSprites(from: $0, to: state) } ?? []
+    let transition = RunnerCompanionArt.frames(for: sprites, scale: currentScale)
+    let delay = transition.isEmpty ? 0 : RunnerCompanionState.transitionDuration
+    companionAnimationGeneration &+= 1
 
-    RunnerLayer.shared.layer?.contentsScale = newScale
-    animation()
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    layer.removeAllAnimations()
+    layer.speed = 1
+    layer.timeOffset = 0
+    layer.beginTime = 0
+    layer.contentsScale = currentScale
+    layer.magnificationFilter = .nearest
+    layer.minificationFilter = .nearest
+    layer.contents = first
+    layer.isHidden = false
+    let bounds = item.button?.bounds ?? .zero
+    layer.frame = bounds.insetBy(dx: (bounds.width - RunnerCompanionArt.size.width) / 2, dy: 0)
+    item.button?.image = nil
+    let start = layer.convertTime(CACurrentMediaTime(), from: nil)
+
+    func animation(_ images: [CGImage], duration: TimeInterval) -> CAKeyframeAnimation {
+      let animation = CAKeyframeAnimation(keyPath: "contents")
+      animation.values = images
+      animation.keyTimes = images.indices.map { NSNumber(value: Double($0) / Double(images.count)) }
+      animation.calculationMode = .discrete
+      animation.duration = duration
+      return animation
+    }
+    // A sleeping pose has one frame and needs no repeating animation.
+    if frames.count > 1 {
+      let action = animation(frames, duration: state.cycleDuration)
+      action.beginTime = start + delay
+      action.repeatCount = state.loops ? .infinity : 1
+      action.fillMode = .forwards
+      action.isRemovedOnCompletion = false
+      if state == .happy {
+        action.delegate = self
+        action.setValue(NSNumber(value: companionAnimationGeneration), forKey: "companionGeneration")
+      }
+      layer.add(action, forKey: "runner")
+    }
+    if !transition.isEmpty {
+      let entry = animation(transition, duration: delay)
+      entry.beginTime = start
+      layer.add(entry, forKey: "companionTransition")
+    }
+    CATransaction.commit()
+    transitionSprites = sprites
+    renderedSince = companionTime
+    renderedState = state
+  }
+
+  nonisolated func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
+    guard flag, let generation = (anim.value(forKey: "companionGeneration") as? NSNumber)?.uint64Value else { return }
+    Task { @MainActor [weak self] in
+      guard let self, AppState.shared.runnerCompanion, !self.companionPaused,
+            self.renderedState == .happy, self.companionAnimationGeneration == generation else { return }
+      // Finish on the animation's clock instead of waiting for the activity timer.
+      self.companionTime = max(self.companionTime,
+        (self.renderedSince + RunnerCompanionState.happy.cycleDuration).nextUp)
+      self.lastCompanionTick = ProcessInfo.processInfo.systemUptime
+      self.refreshBehavior()
+    }
+  }
+
+  private func synchronizeActivityClock() {
+    guard AppState.shared.runnerCompanion, !companionPaused else {
+      activityClock?.cancel()
+      activityClock = nil
+      activityInterval = nil
+      return
+    }
+    let interval: TimeInterval = renderedState == .idle || renderedState == .busy || renderedState == .sleeping ? 1 : 0.25
+    guard activityClock == nil || activityInterval != interval else { return }
+    activityClock?.cancel()
+    activityInterval = interval
+    // Core Animation draws frames independently; resting needs fewer behavior checks.
+    activityClock = Timer.publish(every: interval, tolerance: interval * 0.2, on: .main, in: .common)
+      .autoconnect()
+      .sink { [weak self] _ in self?.refreshBehavior() }
+  }
+
+  // Preserve the current frame/time when the CPU sample changes or playback pauses.
+  private func setPlaybackSpeed(_ speed: Float) {
+    guard let layer = RunnerLayer.shared.layer, layer.speed != speed else { return }
+    let now = CACurrentMediaTime()
+    let localTime = layer.convertTime(now, from: nil)
+    let parentTime = layer.superlayer?.convertTime(now, from: nil) ?? now
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    layer.speed = speed
+    layer.timeOffset = localTime
+    layer.beginTime = parentTime
+    CATransaction.commit()
+  }
+
+  @objc private func companionClicked() {
+    if let event = NSApp.currentEvent, event.type == .rightMouseUp {
+      guard let button = item.button else { return }
+      NSMenu.popUpContextMenu(AppMenu.shared.getMenus(), with: event, for: button)
+      return
+    }
+    greet()
+  }
+
+  func greet() {
+    guard AppState.shared.runnerCompanion else { return }
+    companionBehavior.requestGreeting()
+    refreshBehavior()
+  }
+
+  private func observe() {
+    cancellables.removeAll()
+    SystemMetrics.shared.$bundle
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] bundle in
+        guard let self else { return }
+        let cpu = bundle?.cpuInfo?.percentage.value ?? 0
+        self.cpuUsage = cpu.isFinite ? min(100, max(0, cpu)) : 0
+        self.smoothedCPU = self.smoothedCPU * 0.6 + self.cpuUsage * 0.4
+        self.isCharging = bundle?.batteryInfo?.isCharging ?? false
+        // The companion's existing clock consumes the new sample. GIF mode
+        // has no activity timer and updates its playback rate here.
+        if !AppState.shared.runnerCompanion { self.refreshBehavior() }
+      }
+      .store(in: &cancellables)
+
+    NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in self?.screenChanged() }
+      .store(in: &cancellables)
+    observeStatusWindow()
+    let workspace = NSWorkspace.shared.notificationCenter
+    workspace.publisher(for: NSWorkspace.screensDidSleepNotification)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        self?.displaySleeping = true
+        self?.synchronizeActivityClock()
+        self?.refreshBehavior()
+      }
+      .store(in: &cancellables)
+    workspace.publisher(for: NSWorkspace.screensDidWakeNotification)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        self?.displaySleeping = false
+        self?.synchronizeActivityClock()
+        self?.refreshBehavior()
+      }
+      .store(in: &cancellables)
+    NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)
+      .merge(with: workspace.publisher(for: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification))
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        guard let self else { return }
+        self.lowPowerEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
+        self.reduceMotionEnabled = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        self.synchronizeActivityClock()
+        self.refreshBehavior()
+      }
+      .store(in: &cancellables)
+  }
+
+  private func screenChanged() {
+    observeStatusWindow()
+    guard renderedScale != currentScale else { return }
+    reload()
+  }
+
+  private func observeStatusWindow() {
+    let window = item.button?.window
+    guard observedWindow !== window || window == nil else { return }
+    windowObservation?.cancel()
+    windowObservation = nil
+    observedWindow = window
+    guard let window else { return }
+    windowObservation = NotificationCenter.default.publisher(for: NSWindow.didChangeScreenNotification, object: window)
+      .merge(with: NotificationCenter.default.publisher(for: NSWindow.didChangeBackingPropertiesNotification, object: window))
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in self?.screenChanged() }
   }
 }

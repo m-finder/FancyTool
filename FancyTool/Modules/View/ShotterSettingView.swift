@@ -11,8 +11,8 @@ struct ShotterSettingView: View {
   @ObservedObject var state = AppState.shared
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      Toggle(String(localized: "Shotter"), isOn: state.$showShotter)
+    SettingsForm {
+      SettingsToggle("Shotter", isOn: state.$showShotter)
         .onChange(of: state.showShotter) { _, newValue in
           if newValue {
             Shotter.shared.mount()
@@ -20,14 +20,11 @@ struct ShotterSettingView: View {
             Shotter.shared.unmount()
           }
         }
-        .toggleStyle(SwitchToggleStyle())
 
-      KeyboardShortcuts.Recorder(
-        String(localized: "Shortcut:"),
-        name: .shotter
-      )
+      SettingsFormRow("Shortcut:") {
+        KeyboardShortcuts.Recorder(for: .shotter)
+      }
     }
-    .font(.system(size: 12))
   }
 }
 
