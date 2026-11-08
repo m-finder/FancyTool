@@ -13,6 +13,9 @@ struct PasterView: View {
   @ObservedObject var paster = Paster.shared
   @State private var currentPage: Int = 0
   @State private var eventMonitor: Any?
+  @State private var searchText = ""
+  @State private var filteredHistory: [PasterModel] = []
+  @FocusState private var isSearching: Bool
   
   // 常量
   private enum constant {
@@ -24,7 +27,7 @@ struct PasterView: View {
 
   // 屏幕宽度
   private var screenWidth: CGFloat {
-    NSScreen.main?.frame.width ?? 1920
+    paster.window?.screen?.frame.width ?? NSScreen.main?.frame.width ?? 1920
   }
   
   // 可用内容宽度
@@ -40,19 +43,28 @@ struct PasterView: View {
   
   // 计算总页数
   private var totalPage: Int {
-    (paster.history.count + constant.limit - 1) / constant.limit
+    (filteredHistory.count + constant.limit - 1) / constant.limit
+  }
+
+  private func refreshResults(_ history: [PasterModel]) {
+    let query = PasterSearch.Query(searchText)
+    filteredHistory = query.isEmpty ? history : history.filter {
+      query.matches(content: $0.content, sourceAppPath: $0.icon)
+    }
+    currentPage = min(currentPage, max(0, totalPage - 1))
   }
   
   // MARK: - 取出当前页数据
   private func rows(_ page: Int) -> [PasterModel] {
-    let start = page * constant.limit
-    let end = min(start + constant.limit, paster.history.count)
-    return Array(paster.history[start..<end])
+    let records = filteredHistory
+    return Array(records[PasterSearch.pageRange(page: page, count: records.count, pageSize: constant.limit)])
   }
   
   // MARK: - 快捷键监听
   private func onAppear(){
     currentPage = 0
+    isSearching = true
+    guard eventMonitor == nil else { return }
     // 快捷键监听
     eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {  (event: NSEvent) -> NSEvent? in
       
@@ -63,8 +75,14 @@ struct PasterView: View {
       }
       
       // tab 键监听
-      if event.keyCode == 48 {
-        currentPage = (currentPage + 1) % totalPage
+      if event.keyCode == 48, totalPage > 0 {
+        let direction = event.modifierFlags.contains(.shift) ? -1 : 1
+        currentPage = (currentPage + direction + totalPage) % totalPage
+        return nil
+      }
+
+      if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "f" {
+        isSearching = true
         return nil
       }
       
@@ -98,18 +116,22 @@ struct PasterView: View {
 
   // MARK: - 空页面
   private func emptyView() -> some View {
-    return Text(String(localized: "No paste history available.")).frame(height: constant.height)
+    Text(paster.history.isEmpty
+      ? String(localized: "No paste history available.")
+      : String(localized: "No matching clipboard items."))
+      .foregroundStyle(.secondary)
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
   
   // MARK: - 内容页面
   private func contentView() -> some View {
-    return VStack(spacing: 15) {
+    return VStack(spacing: 10) {
       
       ScrollViewReader { proxy in
         
         ScrollView(.horizontal, showsIndicators: false) {
           
-          HStack(spacing: 0) {
+          LazyHStack(spacing: 0) {
             
             ForEach(0..<totalPage, id: \.self) { pageIndex in
               HStack(spacing: constant.spacing) {
@@ -134,26 +156,73 @@ struct PasterView: View {
             proxy.scrollTo(currentPage, anchor: .leading)
           }
         }
+        .onChange(of: searchText) {
+          proxy.scrollTo(0, anchor: .leading)
+        }
       }
       
       // 自定义分页指示器
       PageIndicator(total: totalPage, current: $currentPage)
     }
-    .padding(.horizontal, constant.padding)
-    .padding(.vertical, 25)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .onAppear(perform: onAppear)
-    .onDisappear(perform: onDisappear)
   }
   
   var body: some View {
     
-    if paster.history.isEmpty {
-      emptyView()
-    } else {
-      contentView()
+    VStack(spacing: 12) {
+      HStack(spacing: 8) {
+        Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+        TextField("Search text or app…", text: $searchText)
+          .textFieldStyle(.plain)
+          .focused($isSearching)
+          .accessibilityLabel(String(localized: "Search text or app…"))
+        if !searchText.isEmpty {
+          Button {
+            searchText = ""
+            isSearching = true
+          } label: {
+            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+          }
+          .buttonStyle(.plain)
+          .help(String(localized: "Clear search"))
+        }
+        Text("\(filteredHistory.count)")
+          .monospacedDigit()
+          .foregroundStyle(.secondary)
+      }
+      .padding(.horizontal, 12)
+      .padding(.vertical, 8)
+      .modifier(PasterToolbarSurface())
+
+      if filteredHistory.isEmpty {
+        emptyView()
+      } else {
+        contentView()
+      }
     }
+    .padding(.horizontal, constant.padding)
+    .padding(.vertical, 16)
+    .onChange(of: searchText) {
+      currentPage = 0
+      refreshResults(paster.history)
+    }
+    .onReceive(paster.$history) { refreshResults($0) }
+    .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { notification in
+      if notification.object is PasterHistoryWindow { onDisappear() }
+    }
+    .onAppear(perform: onAppear)
+    .onDisappear(perform: onDisappear)
   }
 }
 
+private struct PasterToolbarSurface: ViewModifier {
+  @ViewBuilder
+  func body(content: Content) -> some View {
+    if #available(macOS 26.0, *) {
+      content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8))
+    } else {
+      content.background(.background.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
+    }
+  }
+}
 

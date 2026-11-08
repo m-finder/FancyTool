@@ -14,13 +14,7 @@ struct RunnerSettingView: View {
   @ObservedObject var state = AppState.shared
   @StateObject private var runnerHandler = RunnerHandler.shared
   
-  /* 每行 4 个 */
-  private let columns = [
-    GridItem(.fixed(90), spacing: 10),
-    GridItem(.fixed(90), spacing: 10),
-    GridItem(.fixed(90), spacing: 10),
-    GridItem(.fixed(90), spacing: 10)
-  ]
+  private let columns = Array(repeating: GridItem(.flexible(minimum: 0), spacing: 10), count: 4)
   
   private var runners: [RunnerModel] {
     runnerHandler.cachedRunners.sorted { a, b in
@@ -39,11 +33,42 @@ struct RunnerSettingView: View {
   var body: some View {
     VStack(alignment: .center, spacing: 0) {
       ScrollView {
+        VStack(alignment: .leading, spacing: 10) {
+          Toggle("Status pup", isOn: state.$runnerCompanion)
+            .toggleStyle(.switch)
+            .onChange(of: state.runnerCompanion) { Runner.shared.change() }
+          Text("A little dog that rests, plays and keeps you company.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          HStack(spacing: 8) {
+            ForEach([RunnerCompanionState.idle, .busy, .charging, .sleeping], id: \.self) { mood in
+              VStack(spacing: 4) {
+                if let image = RunnerCompanionArt.frame(state: mood, index: RunnerCompanionArt.previewIndex(for: mood), scale: 2) {
+                  Image(decorative: image, scale: 2)
+                    .interpolation(.none)
+                    .frame(height: 26)
+                }
+                Text(mood.title).font(.system(size: 10))
+              }
+              .frame(maxWidth: .infinity)
+            }
+          }
+          if state.runnerCompanion {
+            Text("Click to spin · Right-click for menu")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+          }
+          Divider()
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 12)
         /* 关键：用 LazyVGrid 代替 FlowStack */
         LazyVGrid(columns: columns, spacing: 10) {
           
           /* 拖放入口始终放在第一个格子 */
-          RunnerDropView().frame(width: 90, height: 90)
+          RunnerDropView()
+            .frame(maxWidth: 90, maxHeight: 90)
+            .aspectRatio(1, contentMode: .fit)
           
           /* 后面跟着所有 runner */
           ForEach(runners) { runner in
@@ -52,9 +77,9 @@ struct RunnerSettingView: View {
                 RunnerView(
                   runner: runner,
                   factor: state.runnerId == runner.id.uuidString ? 0.5 : 1,
-                  isRunning: state.runnerId == runner.id.uuidString
+                  isRunning: !state.runnerCompanion && state.runnerId == runner.id.uuidString
                 )
-                .frame(width: 90, height: 90)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .cornerRadius(8)
                 .scaledToFit()
               }
@@ -63,7 +88,7 @@ struct RunnerSettingView: View {
               .overlay(
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                   .stroke(
-                    state.runnerId == runner.id.uuidString ? Color.accentColor : Color.clear,
+                    !state.runnerCompanion && state.runnerId == runner.id.uuidString ? Color.accentColor : Color.clear,
                     lineWidth: 1
                   )
               )
@@ -72,10 +97,13 @@ struct RunnerSettingView: View {
                 RunnerRemoveView(id: runner.id)
               }
             }
-            .frame(width: 90, height: 90)
+            .frame(maxWidth: 90, maxHeight: 90)
+            .aspectRatio(1, contentMode: .fit)
             .contentShape(RoundedRectangle(cornerRadius: 5))
             .onTapGesture {
-              state.runnerId = state.runnerId == runner.id.uuidString ? "" : runner.id.uuidString
+              let wasCompanion = state.runnerCompanion
+              state.runnerCompanion = false
+              state.runnerId = !wasCompanion && state.runnerId == runner.id.uuidString ? "" : runner.id.uuidString
               Runner.shared.change()
             }
             .id(runner.id.uuidString)
@@ -83,7 +111,9 @@ struct RunnerSettingView: View {
         }
         .padding(.horizontal, 10)
       }
-      .frame(maxHeight: 400)
+      // Keep the fourth column clear of a permanently visible scrollbar.
+      .contentMargins(.trailing, 18, for: .scrollContent)
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
   }
 }

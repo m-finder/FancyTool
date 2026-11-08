@@ -32,6 +32,7 @@ class Hidder {
 
   public var length: CGFloat = 10000
   private var items: [NSStatusItem] = []
+  private var mountRetryTask: Task<Void, Never>?
 
   public var size: Int {
     AppState.shared.hidderSize
@@ -55,14 +56,20 @@ class Hidder {
 
     // 验证状态栏可用性
     let testItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    guard testItem.button != nil else {
+    let statusBarAvailable = testItem.button != nil
+    NSStatusBar.system.removeStatusItem(testItem)
+    guard statusBarAvailable else {
       print("StatusBar is not available, retry mounting later")
-      DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-        self?.mount(toggleAfterMount: toggleAfterMount)
+      mountRetryTask = Task { [weak self] in
+        do {
+          try await Task.sleep(nanoseconds: 1_000_000_000)
+        } catch { return }
+        guard !Task.isCancelled, let self else { return }
+        self.mountRetryTask = nil
+        self.mount(toggleAfterMount: toggleAfterMount)
       }
       return
     }
-    NSStatusBar.system.removeStatusItem(testItem)
     for _ in 0..<2 {
 
       let item: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -87,6 +94,8 @@ class Hidder {
 
   // MARK: - 取消挂载
   public func unmount(){
+    mountRetryTask?.cancel()
+    mountRetryTask = nil
 
     for item in items {
       if let button = item.button {

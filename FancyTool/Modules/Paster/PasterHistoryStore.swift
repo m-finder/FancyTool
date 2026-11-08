@@ -116,6 +116,10 @@ enum PasterHistoryStore {
   }
 
   private static func persistImageIfNeeded(for item: PasterModel, in directory: URL) throws -> String? {
+    if let fileName = item.imageFileName,
+       FileManager.default.fileExists(atPath: directory.appendingPathComponent(fileName).path) {
+      return fileName
+    }
     guard let image = item.image else { return nil }
 
     let fileName = item.imageFileName ?? "\(item.id.uuidString).image"
@@ -128,6 +132,10 @@ enum PasterHistoryStore {
   }
 
   private static func persistThumbnailIfNeeded(for item: PasterModel, in directory: URL) throws -> String? {
+    if let fileName = item.thumbnailFileName,
+       FileManager.default.fileExists(atPath: directory.appendingPathComponent(fileName).path) {
+      return fileName
+    }
     guard let thumbnail = item.thumbnail else { return nil }
 
     let fileName = item.thumbnailFileName ?? "\(item.id.uuidString).thumbnail"

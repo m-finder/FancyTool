@@ -6,20 +6,49 @@
 //
 
 import SwiftUI
-import SystemInfoKit
+
+enum AppAppearance: String, CaseIterable, Identifiable {
+  case light
+  case dark
+  case automatic
+
+  var id: Self { self }
+
+  var title: String {
+    switch self {
+    case .light: String(localized: "Light")
+    case .dark: String(localized: "Dark")
+    case .automatic: String(localized: "Automatic")
+    }
+  }
+
+  var nsAppearance: NSAppearance? {
+    switch self {
+    case .light: NSAppearance(named: .aqua)
+    case .dark: NSAppearance(named: .darkAqua)
+    case .automatic: nil
+    }
+  }
+}
 
 @MainActor
-class AppState : ObservableObject{
+final class AppState: ObservableObject {
   
   static let shared = AppState()
   
   // 主程序配置
   @AppStorage("startUp") var startUp: Bool = false
+  @AppStorage("appAppearance") var appAppearance: AppAppearance = .automatic {
+    didSet { applyAppearance() }
+  }
+
+  func applyAppearance() {
+    NSApp.appearance = appAppearance.nsAppearance
+  }
   
   // Runner
-  @AppStorage("runnerSpeed") var runnerSpeed = 0.5
-  @AppStorage("speedProportional") var speedProportional = true
   @AppStorage("runnerId") var runnerId: String = ""
+  @AppStorage("runnerCompanion") var runnerCompanion: Bool = false
   
   // Hidder
   @AppStorage("showHidder") var showHidder: Bool = false
@@ -32,6 +61,7 @@ class AppState : ObservableObject{
   @AppStorage("rainbowShimmer") var rainbowShimmer: Bool = false
   @AppStorage("colorIndex") var colorIndex: Int = 0
   @AppStorage("fontSize") var fontSize: Int = 14
+  @AppStorage("texterFontFamily") var texterFontFamily: String = ""
   @AppStorage("text") var text: String = String(localized: "Keep happy.")
   
   
@@ -53,6 +83,7 @@ class AppState : ObservableObject{
   @AppStorage("showStorage") var showStorage: Bool = false
   @AppStorage("showMemory") var showMemory: Bool = false
   @AppStorage("showBattery") var showBattery: Bool = false
+  @AppStorage("monitorColoredIcons") var monitorColoredIcons: Bool = true
 
   // Shotter
   @AppStorage("showShotter") var showShotter: Bool = false
@@ -65,21 +96,4 @@ class AppState : ObservableObject{
     }
   }
   
-  // 最新的系统快照
-  @Published var bundle: SystemInfoBundle?
-  
-  private var observer = SystemInfoObserver.shared
-  
-  // 开始系统监控
-  public func start() {
-    observer.startMonitoring(monitorInterval: 5)
-    Task {
-      for await b in observer.systemInfoStream() {
-        await MainActor.run { bundle = b }
-      }
-    }
-  }
-  
-  // 停止系统监控
-  public func stop() { observer.stopMonitoring() }
 }

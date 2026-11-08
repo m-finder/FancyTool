@@ -1,72 +1,60 @@
-//
-//  Texter.swift
-//  FancyTool
-//
-//  Created by 吴雲放 on 2025/7/1.
-//
-
 import SwiftUI
 import AppKit
 
 @MainActor
-class Texter {
-  
+final class Texter {
   static let shared = Texter()
-  public let popover = NSPopover()
-  private var popoverView = TexterPopoverView()
-  private var controller: NSViewController!
+
+  private var panel: StatusItemPanel?
   private var item: NSStatusItem?
-  
-  // MARK: - 挂载
-  public func mount(){
-    
-    self.item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    
-    guard let button = self.item?.button else { return }
- 
-    // 设置图标视图&&绑定到按钮
-    let _ = HostingView(
-      view: TexterView().frame(height: 22).frame(minWidth: 40, maxWidth: .infinity).padding(.horizontal, 4),
-      button: button,
+  private var hosting: HostingView?
+
+  func mount() {
+    guard item == nil else { return }
+    let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    self.item = item
+    hosting = HostingView(
+      view: TexterView().frame(height: 22).frame(minWidth: 40).padding(.horizontal, 4),
+      item: item,
       target: AppMenuActions.shared,
       action: #selector(AppMenuActions.textPopover(_:))
     )
   }
-  
-  // MARK: - 取消挂载
-  public func unmount(){
-    popover.close()
-    if let item {
-      item.button?.image = nil
-      item.button?.subviews.forEach { $0.removeFromSuperview() }
-      NSStatusBar.system.removeStatusItem(item)
-    }
+
+  func unmount() {
+    panel?.close()
+    panel = nil
+    hosting?.unmount()
+    hosting = nil
+    if let item { NSStatusBar.system.removeStatusItem(item) }
     item = nil
   }
-  
-  // MARK: - 弹窗
-  func show(_ sender: NSStatusBarButton){
-    if(controller == nil){
-      controller = NSHostingController(
-        rootView: popoverView.frame(
-          maxWidth: .infinity,
-          maxHeight: .infinity
-        ).padding()
-      )
-    }
-    popover.contentSize = .init(width: 350, height: 320)
-    popover.contentViewController = controller
-    popover.behavior = .transient
-    // Avoid overlapping AppKit popover animations when the status item is
-    // clicked repeatedly. The popover remains responsive but does not
-    // visibly jump between intermediate frames.
-    popover.animates = false
 
-    self.popover.show(
-      relativeTo: sender.bounds,
-      of: sender,
-      preferredEdge: .minY
-    )
+  func togglePanel(_ sender: NSStatusBarButton) {
+    if panel == nil {
+      panel = StatusItemPanel(
+        size: TexterPopoverView.panelSize,
+        content: TexterPopoverView(onSubmit: { [weak self] in self?.panel?.close() })
+      )
+      panel?.onShow = Self.focusInputAtEnd
+    }
+    panel?.toggle(relativeTo: sender)
   }
-  
+
+  private static func focusInputAtEnd(in window: NSWindow) {
+    func input(in view: NSView) -> NSTextField? {
+      if let field = view as? NSTextField, field.isEditable { return field }
+      return view.subviews.lazy.compactMap { input(in: $0) }.first
+    }
+    guard let content = window.contentView, let field = input(in: content) else { return }
+    // Showing the panel may already have activated the field editor.
+    // Avoid reactivating the input context when the field is already editing.
+    if field.currentEditor() == nil {
+      guard window.makeFirstResponder(field) else { return }
+    }
+    guard let editor = field.currentEditor() as? NSTextView else { return }
+    let caret = NSRange(location: (editor.string as NSString).length, length: 0)
+    editor.setSelectedRange(caret)
+    editor.scrollRangeToVisible(caret)
+  }
 }

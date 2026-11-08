@@ -14,8 +14,8 @@ struct RounderSettingView: View {
   @State private var radiusDebouncer: AnyCancellable?
   
     var body: some View {
-      LabeledContent(String(localized: "Radius size:")) {
-        HStack {
+      SettingsForm {
+        SettingsFormRow("Radius size:") {
           Slider(
             value: Binding(
               get: { Double(state.radius) },
@@ -26,7 +26,7 @@ struct RounderSettingView: View {
           )
           .frame(width: 150)
           
-          Text("\(state.radius)").frame(width: 30)
+          Text("\(state.radius)").frame(width: 24, alignment: .trailing)
         }
         .onChange(of: state.radius) { oldValue, newValue in
           radiusDebouncer?.cancel()

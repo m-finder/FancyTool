@@ -10,7 +10,6 @@ import SwiftUI
 struct TexterView: View {
   
   @ObservedObject var state = AppState.shared
-  @State private var gradientColors: [Color] = []
   @State private var isVisible: Bool = false
   
   var body: some View {
@@ -21,23 +20,19 @@ struct TexterView: View {
         rainbow: state.rainbowShimmer
       )
       .foregroundStyle(textGradient)
-      .font(.system(size: CGFloat(state.fontSize)))
+      .font(Font(TexterFont.resolve(family: state.texterFontFamily, size: CGFloat(state.fontSize))))
       .onAppear {
         isVisible = true
-        gradientColors = ColorUtil().getColor(index: state.colorIndex)
       }
       .onDisappear {
         isVisible = false
-      }
-      .onChange(of: state.colorIndex) {
-        gradientColors = ColorUtil.shared.getColor(index: state.colorIndex)
       }
   }
   
   // 文字颜色渐变
   private var textGradient: LinearGradient {
     LinearGradient(
-      colors: gradientColors,
+      colors: ColorUtil.shared.getColor(index: state.colorIndex),
       startPoint: .topLeading,
       endPoint: .bottomTrailing
     )

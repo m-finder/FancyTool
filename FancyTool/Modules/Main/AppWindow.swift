@@ -44,7 +44,12 @@ class AppWindow {
       window?.center()
       window?.title = title
       window?.isReleasedWhenClosed = false
-      window?.contentView = NSHostingView(rootView: rootView)
+      let hostingView = NSHostingView(rootView: rootView)
+      if isResizable {
+        // Keep the user's window size when switching between settings pages.
+        hostingView.sizingOptions = []
+      }
+      window?.contentView = hostingView
       window?.minSize = minimumSize ?? size
     }
   }

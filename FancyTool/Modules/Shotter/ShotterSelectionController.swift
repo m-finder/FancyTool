@@ -10,8 +10,9 @@ final class ShotterSelectionController {
 
   private var overlayWindows: [ShotterSelectionWindow] = []
   private var candidate: WindowCandidate?
-  private var dragStart: NSPoint?
+  private var drag: ShotterSelectionGeometry.Drag?
   private var dragRect: NSRect?
+  private var isMovingSelection = false
   private var mousePoint: NSPoint?
   private var isFinishing = false
   private var eventMonitor: Any?
@@ -32,8 +33,9 @@ final class ShotterSelectionController {
 
     isFinishing = false
     candidate = nil
-    dragStart = nil
+    drag = nil
     dragRect = nil
+    isMovingSelection = false
     mousePoint = nil
     lastWindowProbeUptime = 0
     cachedWindowEntries = []
@@ -68,7 +70,7 @@ final class ShotterSelectionController {
 
     installInputMonitoring()
     makeOverlayKey(at: NSEvent.mouseLocation)
-    NSCursor.crosshair.set()
+    selectionCursor.set()
     handleMouseMoved(to: NSEvent.mouseLocation)
     return !overlayWindows.isEmpty
   }
@@ -88,31 +90,37 @@ final class ShotterSelectionController {
   func handleMouseDown(at point: NSPoint) {
     guard !isFinishing else { return }
     makeOverlayKey(at: point)
-    dragStart = point
+    drag = ShotterSelectionGeometry.Drag(at: point)
     dragRect = nil
+    isMovingSelection = false
     mousePoint = point
     // Resolve an actual CGWindowID only for a potential click-to-capture.
     // Hovering uses Accessibility first and avoids repeatedly enumerating all
     // windows on every mouse movement.
-    candidate = captureCandidate(at: point) ?? windowCandidate(at: point)
+    candidate = captureCandidate(at: point)
     redraw()
   }
 
   func handleMouseDragged(to point: NSPoint) {
-    guard let dragStart, !isFinishing else { return }
+    guard var drag, !isFinishing else { return }
     mousePoint = point
-    let rect = selectionRect(from: dragStart, to: point)
-    if rect.width > 4 || rect.height > 4 {
+    drag.update(to: point, square: NSEvent.modifierFlags.contains(.shift), moving: isMovingSelection)
+    self.drag = drag
+    let rect = drag.rect
+    // Once dragging has replaced the hovered window, keep the preview in
+    // sync even when the pointer returns to a tiny or empty selection.
+    if dragRect != nil || rect.width > 4 || rect.height > 4 {
       candidate = nil
       dragRect = rect
     }
+    selectionCursor.set()
     redraw()
   }
 
   func handleMouseUp(at point: NSPoint) {
-    guard let dragStart, !isFinishing else { return }
-    mousePoint = point
-    let rect = selectionRect(from: dragStart, to: point)
+    guard drag != nil, !isFinishing else { return }
+    handleMouseDragged(to: point)
+    guard let rect = drag?.rect else { return }
     let selection: ShotterCaptureSelection?
 
     if rect.width > 4 && rect.height > 4 {
@@ -124,8 +132,9 @@ final class ShotterSelectionController {
     }
 
     guard let selection else {
-      self.dragStart = nil
+      drag = nil
       dragRect = nil
+      isMovingSelection = false
       refreshWindowCandidate(at: point, immediately: true)
       redraw()
       return
@@ -134,12 +143,16 @@ final class ShotterSelectionController {
   }
 
   func handleMouseMoved(to point: NSPoint) {
-    guard dragStart == nil, !isFinishing, mousePoint != point else { return }
+    guard drag == nil, !isFinishing, mousePoint != point else { return }
+    let previousPoint = mousePoint
     mousePoint = point
-    NSCursor.crosshair.set()
-    // Keep the crosshair perfectly event-driven. Window lookup is separately
-    // coalesced, because CGWindowListCopyWindowInfo is comparatively costly.
-    redraw()
+    selectionCursor.set()
+    // Only the old/new pointer displays need their hint and size badge redrawn.
+    // A changed window candidate separately invalidates its selection outline.
+    for window in overlayWindows where window.frame.contains(point)
+      || previousPoint.map({ window.frame.contains($0) }) == true {
+      window.contentView?.needsDisplay = true
+    }
     refreshWindowCandidate(at: point)
   }
 
@@ -155,11 +168,13 @@ final class ShotterSelectionController {
     return rects.compactMap { rect in
       let portion = rect.intersection(frame)
       guard !portion.isNull, !portion.isEmpty else { return nil }
+      // Draw the full global outline, letting each view clip it. A selection
+      // spanning displays must not acquire false corners at a display seam.
       return NSRect(
-        x: portion.minX - frame.minX,
-        y: portion.minY - frame.minY,
-        width: portion.width,
-        height: portion.height
+        x: rect.minX - frame.minX,
+        y: rect.minY - frame.minY,
+        width: rect.width,
+        height: rect.height
       )
     }
   }
@@ -169,9 +184,66 @@ final class ShotterSelectionController {
     return NSPoint(x: mousePoint.x - frame.minX, y: mousePoint.y - frame.minY)
   }
 
+  var selectionCursor: NSCursor {
+    isMovingSelection ? .closedHand : .crosshair
+  }
+
+  var selectionHint: String {
+    if isMovingSelection { return String(localized: "Move selection · Release Space to resize") }
+    if dragRect != nil { return String(localized: "Release to capture") }
+    if candidate != nil { return String(localized: "Click window or drag a region") }
+    return String(localized: "Drag to select a region")
+  }
+
+  var selectedPixelSize: CGSize? {
+    guard let rect = dragRect ?? candidate?.rect, !rect.isEmpty else { return nil }
+    let screens: [NSScreen]
+    if dragRect == nil, let screen = ShotterCoordinateSpace.screen(for: rect) {
+      // A single-window capture follows its host display's native scale.
+      screens = [screen]
+    } else {
+      screens = NSScreen.screens
+    }
+    return ShotterSelectionGeometry.pixelSize(for: rect, screens: screens.map {
+      .init(frame: $0.frame, scale: $0.backingScaleFactor)
+    })
+  }
+
+  @discardableResult
+  func handleKeyDown(_ event: NSEvent) -> Bool {
+    guard !isFinishing else { return false }
+    switch event.keyCode {
+    case 53:
+      cancel()
+      return true
+    case 36, 76:
+      guard let screen = ShotterCoordinateSpace.screen(containing: NSEvent.mouseLocation) else { return true }
+      finish(with: ShotterCaptureSelection(rect: screen.frame, windowID: nil))
+      return true
+    case 49:
+      if dragRect != nil, !isMovingSelection {
+        handleMouseDragged(to: NSEvent.mouseLocation)
+        isMovingSelection = true
+        selectionCursor.set()
+        redraw()
+      }
+      return true
+    default:
+      return false
+    }
+  }
+
+  private func handleSpaceReleased() {
+    guard isMovingSelection else { return }
+    handleMouseDragged(to: NSEvent.mouseLocation)
+    isMovingSelection = false
+    selectionCursor.set()
+    redraw()
+  }
+
   private func installInputMonitoring() {
     eventMonitor = NSEvent.addLocalMonitorForEvents(
-      matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp, .mouseMoved, .keyDown]
+      matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp, .mouseMoved, .keyDown, .keyUp, .flagsChanged]
     ) { [weak self] event in
       guard let self, !self.isFinishing else { return event }
 
@@ -188,9 +260,14 @@ final class ShotterSelectionController {
       case .mouseMoved:
         self.handleMouseMoved(to: NSEvent.mouseLocation)
         return nil
-      case .keyDown where event.keyCode == 53:
-        self.cancel()
+      case .keyDown where self.handleKeyDown(event):
         return nil
+      case .keyUp where event.keyCode == 49:
+        self.handleSpaceReleased()
+        return nil
+      case .flagsChanged:
+        if self.drag != nil { self.handleMouseDragged(to: NSEvent.mouseLocation) }
+        return event
       default:
         return event
       }
@@ -205,22 +282,13 @@ final class ShotterSelectionController {
       DispatchQueue.main.async { [weak self] in
         guard let self, !self.isFinishing else { return }
         let point = NSEvent.mouseLocation
-        if self.dragStart == nil {
+        if self.drag == nil {
           self.handleMouseMoved(to: point)
         } else {
           self.handleMouseDragged(to: point)
         }
       }
     }
-  }
-
-  private func selectionRect(from start: NSPoint, to end: NSPoint) -> NSRect {
-    NSRect(
-      x: min(start.x, end.x),
-      y: min(start.y, end.y),
-      width: abs(end.x - start.x),
-      height: abs(end.y - start.y)
-    ).integral
   }
 
   private func finish(with selection: ShotterCaptureSelection) {
@@ -267,7 +335,7 @@ final class ShotterSelectionController {
   }
 
   private func refreshWindowCandidate(at point: NSPoint, immediately: Bool = false) {
-    guard dragStart == nil, !isFinishing else { return }
+    guard drag == nil, !isFinishing else { return }
 
     let now = ProcessInfo.processInfo.systemUptime
     let interval = AXIsProcessTrusted() ? accessibilityWindowProbeInterval : windowListProbeInterval
@@ -283,7 +351,7 @@ final class ShotterSelectionController {
     guard pendingWindowProbe == nil else { return }
     let delay = max(0, interval - elapsed)
     let work = DispatchWorkItem { [weak self] in
-      guard let self, !self.isFinishing, self.dragStart == nil, let point = self.mousePoint else { return }
+      guard let self, !self.isFinishing, self.drag == nil, let point = self.mousePoint else { return }
       self.pendingWindowProbe = nil
       self.refreshWindowCandidate(at: point, immediately: true)
     }
@@ -308,11 +376,6 @@ final class ShotterSelectionController {
   private struct WindowListEntry {
     let id: CGWindowID
     let quartzRect: CGRect
-    let layer: Int
-    let ownerPID: Int
-    let ownerName: String?
-    let title: String?
-    let order: Int
   }
 
   private func windowCandidate(at point: NSPoint) -> WindowCandidate? {
@@ -333,6 +396,8 @@ final class ShotterSelectionController {
   private func accessibilityWindowCandidate(at quartzPoint: CGPoint) -> WindowCandidate? {
     guard AXIsProcessTrusted() else { return nil }
 
+    // Our accessibility hit may be the selection overlay. Resolve our own
+    // windows through the window-list fallback, which excludes only overlays.
     let systemWide = AXUIElementCreateSystemWide()
     var element: AXUIElement?
     guard AXUIElementCopyElementAtPosition(systemWide, Float(quartzPoint.x), Float(quartzPoint.y), &element) == .success,
@@ -427,10 +492,9 @@ final class ShotterSelectionController {
 
   private func windowListCandidate(at quartzPoint: CGPoint, refreshCache: Bool = false) -> WindowCandidate? {
     let entries = windowEntries(refreshCache: refreshCache)
-    guard let entry = entries
-      .filter({ $0.quartzRect.contains(quartzPoint) })
-      .sorted(by: betterWindowCandidate)
-      .first else { return nil }
+    // The window list is ordered front to back. Metadata must not promote a
+    // covered window over the visible window under the pointer.
+    guard let entry = entries.first(where: { $0.quartzRect.contains(quartzPoint) }) else { return nil }
     let rects = ShotterCoordinateSpace.appKitRects(fromQuartz: entry.quartzRect)
     return WindowCandidate(
       id: entry.id,
@@ -451,49 +515,24 @@ final class ShotterSelectionController {
       return cachedWindowEntries
     }
 
-    let ownProcessID = ProcessInfo.processInfo.processIdentifier
-    cachedWindowEntries = infos.enumerated().compactMap { index, info in
+    let overlayWindowIDs = Set(overlayWindows.map { CGWindowID($0.windowNumber) })
+    cachedWindowEntries = infos.compactMap { info in
       guard let layer = info[kCGWindowLayer as String] as? Int,
             layer == 0,
-            let ownerPID = info[kCGWindowOwnerPID as String] as? Int,
-            ownerPID != ownProcessID,
             let bounds = info[kCGWindowBounds as String] as? NSDictionary,
             let quartzRect = CGRect(dictionaryRepresentation: bounds),
             isUsableWindowListRect(quartzRect),
-            let windowID = info[kCGWindowNumber as String] as? CGWindowID else {
+            let windowID = info[kCGWindowNumber as String] as? CGWindowID,
+            !overlayWindowIDs.contains(windowID) else {
         return nil
       }
       let alpha = info[kCGWindowAlpha as String] as? CGFloat ?? 1
       guard alpha > 0.01 else { return nil }
 
-      return WindowListEntry(
-        id: windowID,
-        quartzRect: quartzRect,
-        layer: layer,
-        ownerPID: ownerPID,
-        ownerName: info[kCGWindowOwnerName as String] as? String,
-        title: info[kCGWindowName as String] as? String,
-        order: index
-      )
+      return WindowListEntry(id: windowID, quartzRect: quartzRect)
     }
     windowCacheUptime = now
     return cachedWindowEntries
-  }
-
-  private func betterWindowCandidate(_ lhs: WindowListEntry, _ rhs: WindowListEntry) -> Bool {
-    let lhsScreenSized = isScreenSizedQuartzRect(lhs.quartzRect)
-    let rhsScreenSized = isScreenSizedQuartzRect(rhs.quartzRect)
-    if lhsScreenSized != rhsScreenSized {
-      return !lhsScreenSized
-    }
-
-    let lhsHasTitle = lhs.title?.isEmpty == false
-    let rhsHasTitle = rhs.title?.isEmpty == false
-    if lhsHasTitle != rhsHasTitle {
-      return lhsHasTitle
-    }
-
-    return lhs.order < rhs.order
   }
 
   private func isUsableWindowListRect(_ rect: CGRect) -> Bool {
@@ -559,36 +598,140 @@ private final class ShotterSelectionView: NSView {
   }
 
   override func resetCursorRects() {
-    addCursorRect(bounds, cursor: .crosshair)
+    addCursorRect(bounds, cursor: controller?.selectionCursor ?? .crosshair)
   }
 
   override func draw(_ dirtyRect: NSRect) {
-    NSColor.black.withAlphaComponent(0.12).setFill()
+    NSColor.black.withAlphaComponent(0.20).setFill()
     bounds.fill()
 
     controller?.selectionRects(for: self).forEach { rect in
       NSColor.clear.setFill()
       rect.fill(using: .copy)
-      NSColor.controlAccentColor.withAlphaComponent(0.95).setStroke()
-      let path = NSBezierPath(rect: rect)
-      path.lineWidth = 2
-      path.stroke()
+      drawSelectionOutline(rect)
     }
 
     if let point = controller?.cursorPoint(for: self), bounds.contains(point) {
-      drawCrosshair(at: point)
+      let hintFrame = drawHints()
+      if let size = controller?.selectedPixelSize {
+        drawSizeBadge(size, near: point, avoiding: hintFrame)
+      }
     }
   }
 
-  private func drawCrosshair(at point: NSPoint) {
+  private func drawSelectionOutline(_ rect: NSRect) {
+    let outline = NSBezierPath(rect: rect)
+    NSColor.black.withAlphaComponent(0.32).setStroke()
+    outline.lineWidth = 3
+    outline.stroke()
+    NSColor.controlAccentColor.withAlphaComponent(0.95).setStroke()
+    outline.lineWidth = 1
+    outline.stroke()
+
+    let length = min(13, min(rect.width, rect.height) / 3)
+    guard length > 1 else { return }
     let path = NSBezierPath()
-    path.move(to: NSPoint(x: 0, y: point.y))
-    path.line(to: NSPoint(x: bounds.width, y: point.y))
-    path.move(to: NSPoint(x: point.x, y: 0))
-    path.line(to: NSPoint(x: point.x, y: bounds.height))
-    NSColor.controlAccentColor.withAlphaComponent(0.72).setStroke()
-    path.lineWidth = 1
+    for (x, directionX) in [(rect.minX, CGFloat(1)), (rect.maxX, CGFloat(-1))] {
+      for (y, directionY) in [(rect.minY, CGFloat(1)), (rect.maxY, CGFloat(-1))] {
+        path.move(to: NSPoint(x: x + length * directionX, y: y))
+        path.line(to: NSPoint(x: x, y: y))
+        path.line(to: NSPoint(x: x, y: y + length * directionY))
+      }
+    }
+    path.lineCapStyle = .round
+    path.lineJoinStyle = .round
+    path.lineWidth = 2
+    NSColor.white.setStroke()
     path.stroke()
+  }
+
+  @discardableResult
+  private func drawHints() -> NSRect {
+    let title = controller?.selectionHint ?? String(localized: "Drag to select a region")
+    let titleAttributes: [NSAttributedString.Key: Any] = [
+      .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+      .foregroundColor: NSColor.white
+    ]
+    let labelAttributes: [NSAttributedString.Key: Any] = [
+      .font: NSFont.systemFont(ofSize: 10),
+      .foregroundColor: NSColor.white.withAlphaComponent(0.78)
+    ]
+    let keyAttributes: [NSAttributedString.Key: Any] = [
+      .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .medium),
+      .foregroundColor: NSColor.white
+    ]
+    let shortcuts = [
+      ("⇧", String(localized: "Square")),
+      ("Space", String(localized: "Move")),
+      ("↩", String(localized: "Capture this screen")),
+      ("Esc", String(localized: "Cancel"))
+    ]
+    let itemSizes = shortcuts.map { key, label -> (CGFloat, CGFloat) in
+      (max(18, (key as NSString).size(withAttributes: keyAttributes).width + 10),
+       (label as NSString).size(withAttributes: labelAttributes).width)
+    }
+    let rowWidth = itemSizes.reduce(CGFloat(0)) { $0 + $1.0 + 5 + $1.1 } + 14 * CGFloat(shortcuts.count - 1)
+    let titleSize = (title as NSString).size(withAttributes: titleAttributes)
+    let width = min(bounds.width - 24, max(rowWidth, titleSize.width) + 28)
+    let frame = NSRect(x: bounds.midX - width / 2, y: bounds.minY + 22, width: width, height: 58)
+    drawPlate(frame, cornerRadius: 13)
+    (title as NSString).draw(at: NSPoint(x: frame.midX - titleSize.width / 2, y: frame.minY + 34), withAttributes: titleAttributes)
+
+    // Keep the shortcut row legible on small displays as well as wide monitors.
+    let scale = min(1, (width - 28) / max(1, rowWidth))
+    NSGraphicsContext.saveGraphicsState()
+    let transform = NSAffineTransform()
+    transform.translateX(by: frame.midX - rowWidth * scale / 2, yBy: frame.minY + 10)
+    transform.scale(by: scale)
+    transform.concat()
+    var x: CGFloat = 0
+    for (index, shortcut) in shortcuts.enumerated() {
+      let (keyWidth, labelWidth) = itemSizes[index]
+      let keyFrame = NSRect(x: x, y: 0, width: keyWidth, height: 18)
+      NSColor.white.withAlphaComponent(0.12).setFill()
+      NSBezierPath(roundedRect: keyFrame, xRadius: 4, yRadius: 4).fill()
+      let keySize = (shortcut.0 as NSString).size(withAttributes: keyAttributes)
+      (shortcut.0 as NSString).draw(at: NSPoint(x: keyFrame.midX - keySize.width / 2, y: 3), withAttributes: keyAttributes)
+      (shortcut.1 as NSString).draw(at: NSPoint(x: keyFrame.maxX + 5, y: 3), withAttributes: labelAttributes)
+      x += keyWidth + 5 + labelWidth + 14
+    }
+    NSGraphicsContext.restoreGraphicsState()
+    return frame
+  }
+
+  private func drawSizeBadge(_ size: CGSize, near point: NSPoint, avoiding hintFrame: NSRect) {
+    let text = "\(Int(size.width)) × \(Int(size.height)) px"
+    let attributes: [NSAttributedString.Key: Any] = [
+      .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold),
+      .foregroundColor: NSColor.white
+    ]
+    let textSize = (text as NSString).size(withAttributes: attributes)
+    let width = textSize.width + 22
+    let height: CGFloat = 27
+    var frame = NSRect(x: min(max(bounds.minX + 12, point.x + 16), bounds.maxX - width - 12),
+                       y: min(max(bounds.minY + 12, point.y - 42), bounds.maxY - height - 12),
+                       width: width, height: height)
+    if frame.intersects(hintFrame.insetBy(dx: -6, dy: -6)) {
+      frame.origin.y = hintFrame.maxY + 9
+    }
+    drawPlate(frame, cornerRadius: 8)
+    (text as NSString).draw(at: NSPoint(x: frame.minX + 11, y: frame.minY + 7), withAttributes: attributes)
+  }
+
+  private func drawPlate(_ frame: NSRect, cornerRadius: CGFloat) {
+    NSGraphicsContext.saveGraphicsState()
+    let shadow = NSShadow()
+    shadow.shadowColor = NSColor.black.withAlphaComponent(0.25)
+    shadow.shadowBlurRadius = 14
+    shadow.shadowOffset = NSSize(width: 0, height: -3)
+    shadow.set()
+    NSColor(calibratedWhite: 0.08, alpha: 0.94).setFill()
+    let plate = NSBezierPath(roundedRect: frame, xRadius: cornerRadius, yRadius: cornerRadius)
+    plate.fill()
+    NSGraphicsContext.restoreGraphicsState()
+    NSColor.white.withAlphaComponent(0.14).setStroke()
+    plate.lineWidth = 0.5
+    plate.stroke()
   }
 
   override func mouseDown(with event: NSEvent) {
@@ -608,20 +751,17 @@ private final class ShotterSelectionView: NSView {
   }
 
   override func cursorUpdate(with event: NSEvent) {
-    NSCursor.crosshair.set()
+    controller?.selectionCursor.set()
     controller?.handleMouseMoved(to: NSEvent.mouseLocation)
   }
 
   override func mouseEntered(with event: NSEvent) {
-    NSCursor.crosshair.set()
+    controller?.selectionCursor.set()
     controller?.handleMouseMoved(to: NSEvent.mouseLocation)
   }
 
   override func keyDown(with event: NSEvent) {
-    if event.keyCode == 53 {
-      controller?.cancel()
-      return
-    }
+    if controller?.handleKeyDown(event) == true { return }
     super.keyDown(with: event)
   }
 }

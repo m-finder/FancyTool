@@ -6,20 +6,30 @@
 //
 
 import SwiftUI
-import Combine
+import CoreText
 
 struct TexterSettingView: View {
   
   @ObservedObject var state = AppState.shared
-  @State private var radiusDebouncer: AnyCancellable?
-  @State private var fontSizeDebouncer: AnyCancellable?
+  @State private var fontFamilies: [TexterFont.Family] = []
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      HStack {
-        Text(String(localized: "Font size:"))
-          .frame(width: 72, alignment: .leading)
+    SettingsForm {
+      SettingsFormRow("Font:") {
+        Picker("Font:", selection: selectedFontFamily) {
+          Text("System Default").tag("")
+          Divider()
+          ForEach(fontFamilies) { family in
+            Text(verbatim: family.displayName).tag(family.id)
+          }
+        }
+        .labelsHidden()
+        .pickerStyle(.menu)
+        .frame(maxWidth: .infinity)
+        .accessibilityIdentifier("texter.fontFamily")
+      }
 
+      SettingsFormRow("Font size:") {
         Slider(
           value: Binding(
             get: { Double(state.fontSize) },
@@ -33,33 +43,32 @@ struct TexterSettingView: View {
         Text("\(state.fontSize)")
           .frame(width: 24, alignment: .trailing)
       }
-      .onChange(of: state.fontSize) { oldValue, newValue in
-        fontSizeDebouncer?.cancel()
-        fontSizeDebouncer = Just(newValue)
-          .delay(for: .milliseconds(50), scheduler: RunLoop.main)
-          .sink { _ in }
-      }
 
-      Toggle(String(localized: "Texter Shimmer"), isOn: state.$showShimmer)
+      SettingsToggle("Texter Shimmer", isOn: state.$showShimmer)
         .onChange(of: state.showShimmer) { _, newValue in
           if newValue {
             state.rainbowShimmer = false
           }
-          state.showShimmer = newValue
         }
-        .toggleStyle(SwitchToggleStyle())
 
-      Toggle(String(localized: "Rainbow Shimmer"), isOn: state.$rainbowShimmer)
+      SettingsToggle("Rainbow Shimmer", isOn: state.$rainbowShimmer)
         .onChange(of: state.rainbowShimmer) { _, newValue in
           if newValue {
             state.showShimmer = false
           }
-          state.rainbowShimmer = newValue
         }
-        .toggleStyle(SwitchToggleStyle())
     }
-    .font(.system(size: 12))
-    .frame(width: 270, alignment: .leading)
+    .onAppear { fontFamilies = TexterFont.installedFamilies() }
+    .onReceive(DistributedNotificationCenter.default().publisher(
+      for: Notification.Name(kCTFontManagerRegisteredFontsChangedNotification as String))) { _ in
+      fontFamilies = TexterFont.installedFamilies()
+    }
+  }
+
+  private var selectedFontFamily: Binding<String> {
+    Binding {
+      fontFamilies.contains { $0.id == state.texterFontFamily } ? state.texterFontFamily : ""
+    } set: { state.texterFontFamily = $0 }
   }
 }
 

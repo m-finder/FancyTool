@@ -58,6 +58,7 @@ struct SettingsView: View {
     HStack(spacing: 0) {
       List(Section.visibleCases, selection: $selection) { section in
         Label(section.title, systemImage: section.symbol)
+          .fontWeight(selection == section ? .semibold : .regular)
           .tag(section)
       }
       .listStyle(.sidebar)
@@ -102,7 +103,7 @@ struct SettingsView: View {
         ShotterSettingView()
       }
     case .runner:
-      SettingsDetailView {
+      SettingsDetailView(expandsContent: true) {
         RunnerSettingView()
       }
     }
@@ -111,12 +112,13 @@ struct SettingsView: View {
 
 private struct SettingsDetailView<Content: View>: View {
 
+  var expandsContent = false
   @ViewBuilder let content: Content
 
   var body: some View {
     VStack(spacing: 0) {
       content
-        .frame(maxWidth: 420, alignment: .leading)
+        .frame(maxWidth: expandsContent ? .infinity : 420, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.top, 22)

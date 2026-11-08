@@ -14,9 +14,9 @@ struct PasterSettingView: View {
   
   var body: some View {
     
-    VStack(alignment: .center, spacing: 4) {
+    SettingsForm {
 
-        LabeledContent(String(localized: "Number of records:")){
+        SettingsFormRow("Number of records:") {
           TextField(
             "",
             value: $state.historyCount,
@@ -29,12 +29,12 @@ struct PasterSettingView: View {
           .frame(width: 150)
           .textFieldStyle(.roundedBorder)
         }
-        .padding(.vertical, 8)
 
-        KeyboardShortcuts.Recorder("Shortcut:", name: .paster)
-          .padding(.vertical, 8)
+        SettingsFormRow("Shortcut:") {
+          KeyboardShortcuts.Recorder(for: .paster)
+        }
 
-        Toggle("Auto Paste", isOn: $state.autoPaste)
+        SettingsToggle("Auto Paste", isOn: $state.autoPaste)
           .onChange(of: state.autoPaste) { _, newValue in
             if newValue {
               let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
@@ -48,9 +48,7 @@ struct PasterSettingView: View {
               }
             }
           }
-          .padding(.vertical, 8)
     }
-    .font(.system(size: 12))
   }
 }
 

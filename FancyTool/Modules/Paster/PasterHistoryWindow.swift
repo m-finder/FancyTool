@@ -27,7 +27,7 @@ class PasterHistoryWindow: NSWindow, NSWindowDelegate{
     
     let screenFrame = currentScreen.frame
     
-    let windowHeight: CGFloat = 300
+    let windowHeight: CGFloat = 360
     let windowX: CGFloat = screenFrame.minX
     let windowY: CGFloat = screenFrame.minY
   
@@ -42,17 +42,20 @@ class PasterHistoryWindow: NSWindow, NSWindowDelegate{
     level = .popUpMenu
     hidesOnDeactivate = true
     
-    // 使用 NSHostingView 包装 SwiftUI View
-    let hostingView = NSHostingView(
-      rootView: contentView.frame(
-        width: screenFrame.width,
-        height: windowHeight
-      )
-    )
-    hostingView.autoresizingMask = [.width, .height]
-    
-    // 设置内容视图
-    self.contentView = hostingView
+    let sizedContent = contentView.frame(width: screenFrame.width, height: windowHeight)
+    if #available(macOS 26.0, *) {
+      backgroundColor = .clear
+      let container = NSView(frame: NSRect(origin: .zero, size: windowFrame.size))
+      container.wantsLayer = true
+      container.layer?.backgroundColor = NSColor.clear.cgColor
+      container.addSubview(PopupGlassSurface.make(content: sizedContent,
+                                                  frame: container.bounds, cornerRadius: 16))
+      self.contentView = container
+    } else {
+      let hostingView = NSHostingView(rootView: sizedContent)
+      hostingView.autoresizingMask = [.width, .height]
+      self.contentView = hostingView
+    }
     self.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
   }
   

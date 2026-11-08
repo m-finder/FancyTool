@@ -39,10 +39,6 @@ enum ShotterCoordinateSpace {
     CGPoint(x: point.x, y: primaryDisplayTop - point.y)
   }
 
-  static func appKitPoint(fromQuartz point: CGPoint) -> NSPoint {
-    NSPoint(x: point.x, y: primaryDisplayTop - point.y)
-  }
-
   static func quartzRect(fromAppKit rect: NSRect) -> CGRect {
     CGRect(
       x: rect.minX,
@@ -95,14 +91,6 @@ enum ShotterCoordinateSpace {
     return CGDirectDisplayID(number.uint32Value)
   }
 
-  static func backingScale(for screen: NSScreen) -> CGFloat {
-    guard let displayID = displayID(for: screen), screen.frame.width > 0, screen.frame.height > 0 else {
-      return screen.backingScaleFactor
-    }
-    let displayBounds = CGDisplayBounds(displayID)
-    return max(displayBounds.width / screen.frame.width, displayBounds.height / screen.frame.height)
-  }
-
   private static func intersectionArea(_ lhs: CGRect, _ rhs: CGRect) -> CGFloat {
     let intersection = lhs.intersection(rhs)
     guard !intersection.isNull, !intersection.isEmpty else { return 0 }
@@ -121,12 +109,14 @@ final class Shotter {
   // Holds windows closed by unmount until AppKit's deferred cleanup finishes.
   private var retiringImageWindows: [ShotterImageWindowHandle] = []
   private var selectionController: ShotterSelectionController?
-  private var isCapturing = false
+  private var captureTask: Task<Void, Never>?
+  private var isMounted = false
   private var shortcutHandlerInstalled = false
 
   private init() {}
 
   public func mount() {
+    isMounted = true
     if shortcutHandlerInstalled {
       KeyboardShortcuts.enable(.shotter)
     } else {
@@ -140,28 +130,27 @@ final class Shotter {
   }
 
   public func unmount() {
+    isMounted = false
     KeyboardShortcuts.disable(.shotter)
     cancelSelection()
     closeImageWindows()
   }
 
   public func startSelection() {
-    guard !isCapturing else { return }
+    guard isMounted, selectionController == nil, captureTask == nil else { return }
     guard ensureScreenCapturePermission() else { return }
 
     let controller = ShotterSelectionController()
-    controller.onComplete = { [weak self] selection in
-      self?.capture(selection: selection)
+    controller.onComplete = { [weak self, weak controller] selection in
+      guard let self, let controller, self.selectionController === controller else { return }
+      self.capture(selection: selection)
     }
-    controller.onCancel = { [weak self] in
-      self?.finishSelection()
+    controller.onCancel = { [weak self, weak controller] in
+      guard let self, let controller, self.selectionController === controller else { return }
+      self.selectionController = nil
     }
-    guard controller.start() else {
-      finishSelection()
-      return
-    }
+    guard controller.start() else { return }
     selectionController = controller
-    isCapturing = true
   }
 
   private func ensureScreenCapturePermission() -> Bool {
@@ -188,31 +177,34 @@ final class Shotter {
   }
 
   public func cancelSelection() {
-    guard isCapturing else { return }
+    captureTask?.cancel()
+    captureTask = nil
     let controller = selectionController
-    finishSelection()
+    selectionController = nil
     controller?.cancel()
   }
 
   private func capture(selection: ShotterCaptureSelection) {
-    finishSelection()
+    selectionController = nil
 
     // The selection overlay is above every application. Capture on the next
     // run-loop turn so it has been removed from the window server first.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
-      guard let self else { return }
-
-      Task { [weak self] in
-        guard let self else { return }
-        let image = await self.captureImage(for: selection)
-        guard let image, image.width > 0, image.height > 0 else {
-          print("[Shotter] unable to capture selected area")
-          return
-        }
-
-        let imageSize = selection.rect.size
-        self.showImage(NSImage(cgImage: image, size: imageSize), sourceCGImage: image, at: selection.rect)
+    captureTask = Task { [weak self] in
+      do {
+        try await Task.sleep(nanoseconds: 80_000_000)
+      } catch { return }
+      guard !Task.isCancelled, let self else { return }
+      let image = await self.captureImage(for: selection)
+      guard !Task.isCancelled else { return }
+      self.captureTask = nil
+      guard let image, image.width > 0, image.height > 0 else {
+        print("[Shotter] unable to capture selected area")
+        self.showCaptureError()
+        return
       }
+
+      let imageSize = selection.rect.size
+      self.showImage(NSImage(cgImage: image, size: imageSize), sourceCGImage: image, at: selection.rect)
     }
   }
 
@@ -225,11 +217,14 @@ final class Shotter {
         false,
         onScreenWindowsOnly: true
       )
+      try Task.checkCancellation()
 
       if let windowID = selection.windowID {
         return try await captureWindow(windowID: windowID, from: content)
       }
       return try await captureSelection(in: selection.rect, from: content)
+    } catch is CancellationError {
+      return nil
     } catch {
       print("[Shotter] ScreenCaptureKit capture failed: \(error.localizedDescription)")
       return nil
@@ -307,6 +302,7 @@ final class Shotter {
 
     context.interpolationQuality = .high
     for portion in portions {
+      try Task.checkCancellation()
       guard let sourceRect = ShotterCoordinateSpace.displayLocalScreenCaptureRect(
         fromAppKit: portion.rect,
         on: portion.screen
@@ -326,6 +322,7 @@ final class Shotter {
         contentFilter: filter,
         configuration: configuration
       )
+      try Task.checkCancellation()
       // Align every edge to an integral output pixel. A fractional destination
       // makes Core Graphics resample even when source and destination have the
       // same native scale, which is visible as a soft 1px blur on Retina text.
@@ -349,9 +346,15 @@ final class Shotter {
     return context.makeImage()
   }
 
-  private func finishSelection() {
-    selectionController = nil
-    isCapturing = false
+  private func showCaptureError() {
+    let alert = NSAlert()
+    alert.alertStyle = .warning
+    alert.messageText = String(localized: "Could not capture this area")
+    alert.informativeText = String(localized: "The window may have closed or screen recording access may have changed. Try selecting the area again.")
+    alert.addButton(withTitle: String(localized: "Try Again"))
+    alert.addButton(withTitle: String(localized: "Cancel"))
+    NSApp.activate(ignoringOtherApps: true)
+    if alert.runModal() == .alertFirstButtonReturn { startSelection() }
   }
 
   private func closeImageWindows() {
@@ -373,7 +376,7 @@ final class Shotter {
   }
 
   private func showImage(_ image: NSImage, sourceCGImage: CGImage? = nil, at selectionRect: NSRect?) {
-    let window = ShotterImageWindow(image: image, selectionRect: selectionRect)
+    let window = ShotterImageWindow(image: image, sourceCGImage: sourceCGImage, selectionRect: selectionRect)
     let handle = ShotterImageWindowHandle(window: window)
     imageWindows.append(handle)
     window.onClose = { [weak self, weak handle] in

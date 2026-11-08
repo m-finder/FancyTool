@@ -12,48 +12,15 @@ struct MonitorSettingView: View {
   
   @ObservedObject var state = AppState.shared
   
-  // 抽取重复的 Toggle 配置为自定义组件
-  private func MonitorToggle(
-    title: LocalizedStringKey,
-    isOn: Binding<Bool>
-  ) -> some View {
-
-    Toggle(title, isOn: isOn)
-      .onChange(of: isOn.wrappedValue) {
-        Monitor.shared.popover.close()
-        if(AppState.shared.showMonitor){
-          Monitor.shared.mount()
-        }
-      }
-      .toggleStyle(SwitchToggleStyle())
-      .font(.system(size: 12))
-      .padding(.vertical, 8)
-      .padding(.horizontal, 6)
-    
-  }
-  
   var body: some View {
-    VStack(alignment: .center, spacing: 4) {
-      
-      // cpu 和 网络开关
-      HStack {
-        MonitorToggle(title: "CPU", isOn: state.$showCpu)
-        MonitorToggle(title: "Network", isOn: state.$showNetWork)
-      }
-      
-      // 存储和内存开关
-      HStack {
-        MonitorToggle(title: "Storage", isOn: state.$showStorage)
-        MonitorToggle(title: "Memory", isOn: state.$showMemory)
-      }
-      
-      // 电池开关
-      HStack {
-        MonitorToggle(title: "Battery", isOn: state.$showBattery)
-      }
-      
+    SettingsForm {
+      SettingsToggle("CPU", isOn: state.$showCpu)
+      SettingsToggle("Network", isOn: state.$showNetWork)
+      SettingsToggle("Storage", isOn: state.$showStorage)
+      SettingsToggle("Memory", isOn: state.$showMemory)
+      SettingsToggle("Battery", isOn: state.$showBattery)
+      SettingsToggle("Colorful icons", isOn: state.$monitorColoredIcons)
     }
-    .font(.system(size: 12))
   }
 }
 
