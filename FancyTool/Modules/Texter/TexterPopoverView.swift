@@ -48,26 +48,7 @@ struct TexterPopoverView: View {
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(signatureGradient.opacity(0.22)))
         .accessibilityHidden(true)
 
-      Text("Texter")
-        .font(.system(size: 19, weight: .semibold, design: .rounded))
-
-      Spacer(minLength: 12)
-
-      Text(state.text.isEmpty ? String(localized: "Keep happy.") : state.text)
-        .font(Font(TexterFont.resolve(family: state.fontFamily, size: 12, systemWeight: .medium)))
-        .foregroundStyle(signatureGradient)
-        .shimmering(active: state.showShimmer || state.rainbowShimmer, rainbow: state.rainbowShimmer)
-        .lineLimit(1)
-        .truncationMode(.tail)
-        .padding(.horizontal, state.normalBorder || state.rainbowBorder ? TexterBorderStyle.horizontalPadding : 0)
-        .frame(height: 20)
-        .texterBorder(colors: TexterPalette.colors(index: state.colorIndex, customData: state.customColorsData),
-                      borderColors: TexterPalette.borderColors(customData: state.customBorderColorsData,
-                                                              useCustom: state.useCustomBorderColors),
-                      plain: state.normalBorder, rainbow: state.rainbowBorder,
-                      gradientBackground: state.gradientBackground, clockwise: state.borderClockwise)
-        .frame(maxWidth: 128, alignment: .trailing)
-        .accessibilityHidden(true)
+      Text("Texter").font(.system(size: 19, weight: .semibold, design: .rounded))
     }
     .frame(height: 34)
   }

@@ -13,6 +13,7 @@ final class Duo {
     DuoMetrics.shared.start()
     DuoInputSources.shared.start()
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    item.autosaveName = "FancyTool.Duo"
     self.item = item
     hosting = HostingView(
       view: DuoStatusView().frame(height: 22), item: item,
@@ -53,6 +54,7 @@ struct DuoStatusView: View {
   var body: some View {
     DuoStatusGlyph(batteryLevel: metrics.battery.map { Double($0.percentage) / 100 },
                    charging: metrics.battery?.charging == true,
+                   pluggedIn: metrics.battery?.pluggedIn == true,
                    connected: metrics.wifiConnected,
                    volume: metrics.audio.volume, muted: metrics.audio.muted,
                    inputBadge: input.shortName)
@@ -77,6 +79,7 @@ struct DuoStatusView: View {
 struct DuoStatusGlyph: View {
   let batteryLevel: Double?
   let charging: Bool
+  var pluggedIn = false
   let connected: Bool
   let volume: Double?
   let muted: Bool
@@ -84,7 +87,7 @@ struct DuoStatusGlyph: View {
   static let size = NSSize(width: 26, height: 22)
 
   var body: some View {
-    DuoStatusEmblem(batteryLevel: batteryLevel, charging: charging, connected: connected,
+    DuoStatusEmblem(batteryLevel: batteryLevel, charging: charging, pluggedIn: pluggedIn, connected: connected,
                     volume: volume, muted: muted, inputBadge: inputBadge)
       .foregroundStyle(.primary)
       .frame(width: Self.size.width, height: Self.size.height)
@@ -95,12 +98,17 @@ struct DuoStatusGlyph: View {
 struct DuoStatusEmblem: View {
   let batteryLevel: Double?
   let charging: Bool
+  var pluggedIn = false
   let connected: Bool
   let volume: Double?
   let muted: Bool
   let inputBadge: String
 
   private var charge: Double { batteryLevel.flatMap { $0.isFinite ? min(1, max(0, $0)) : nil } ?? 1 }
+  private var batteryColor: Color {
+    guard batteryLevel?.isFinite == true else { return .secondary }
+    return charging || pluggedIn ? .green : .yellow
+  }
   private var level: Double { muted ? 0 : (volume.flatMap { $0.isFinite ? min(1, max(0, $0)) : nil } ?? 0) }
   private var filledSoundBars: Int {
     guard volume != nil, !muted, level > 0 else { return 0 }
@@ -115,7 +123,7 @@ struct DuoStatusEmblem: View {
         DuoBatteryArc().trim(from: 0, to: charge)
           .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
       }
-      .foregroundStyle(charging ? Color.green : Color.primary)
+      .foregroundStyle(batteryColor)
       .mask {
         Rectangle().overlay {
           if charging {

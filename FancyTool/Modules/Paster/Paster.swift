@@ -13,6 +13,8 @@ import KeyboardShortcuts
 @MainActor
 class Paster: ObservableObject{
 
+  private let store = PasterHistoryStore()
+  private var capturePending = false
   private var timer: Timer?
   private var isMounted = false
   private var shortcutRegistered = false
@@ -107,31 +109,23 @@ class Paster: ObservableObject{
 
   // MARK: - 剪贴板监听
   func pollClipboard(){
+    guard !capturePending else { return }
     let currentChangeCount = pasteboard.changeCount
     guard currentChangeCount != changeCount else { return }
     changeCount = currentChangeCount
-
-    let sourceApp = NSWorkspace.shared.frontmostApplication
-    let appIcon = sourceApp?.bundleURL?.path ?? "Unknown"
-
-    if let copiedText = pasteboard.string(forType: .string) {
-      let trimmedText = copiedText.trimmingCharacters(in: .whitespacesAndNewlines)
-
-      if !trimmedText.isEmpty {
-        append(PasterModel(content: copiedText, icon: appIcon))
-      }
-    }
-    else if let images = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
-            let image = images.first {
-      // TIFF、bitmap rep 和 PNG 会同时存在一段时间；剪贴板图片较大时，
-      // 用局部 autorelease pool 避免这些临时对象堆积到主线程的事件循环末尾。
-      autoreleasepool {
-        if let imageData = image.tiffRepresentation,
-           let bitmapImage = NSBitmapImageRep(data: imageData),
-           let data = bitmapImage.representation(using: .png, properties: [:]) {
-          append(PasterModel(image: data, icon: appIcon))
-        }
-      }
+    let icon = NSWorkspace.shared.frontmostApplication?.bundleURL?.path ?? "Unknown"
+    let capture: PasterHistoryStore.Capture
+    if let text = pasteboard.string(forType: .string),
+       !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      capture = .text(text)
+    } else if let data = pasteboard.data(forType: .png) ?? pasteboard.data(forType: .tiff) {
+      // Transfer encoded bytes; all decoding and PNG/thumbnail work stays off the UI thread.
+      capture = .image(data)
+    } else { return }
+    capturePending = true
+    store.capture(capture, icon: icon, limit: state.historyCount) { [weak self] result in
+      self?.capturePending = false
+      self?.receive(result)
     }
   }
 
@@ -170,50 +164,24 @@ class Paster: ObservableObject{
     window?.close()
   }
 
-  // MARK: - 追加内容
-  public func append(_ record: PasterModel){
-    if let existingIndex = history.firstIndex(of: record) {
-      // 重复剪贴板内容只移动已有对象，避免历史列表和磁盘文件重复增长。
-      let existing = history.remove(at: existingIndex)
-      existing.createdAt = Date()
-      history.append(existing)
-      sortHistory()
-      save()
-      return
-    }
-
-    history.append(record)
-    sortHistory()
-    trimHistory()
-    save()
-  }
-
   // MARK: - 删除数据
   public func remove(_ record: PasterModel) {
-    guard let index = history.firstIndex(of: record) else { return }
-    _ = history.remove(at: index)
-    save()
+    store.remove(id: record.id, limit: state.historyCount) { [weak self] in self?.receive($0) }
   }
 
   // MARK: - 选中数据
   public func tap(_ item: PasterModel) {
-    let success = self.copyToClipboard(item)
-    guard success else { return }
-
-    // 目标应用在快捷键触发时已捕获到 self.targetApp；
-    // 此时 Paster 窗口已成为 key（NSApp.activate），再读 frontmostApplication
-    // 会拿到 FancyTool 自己，导致激活目标 app 时其实是激活自己，窗口不会切换。
-    guard let targetApp = self.targetApp else { return }
-    self.hide()
-
+    let application = targetApp
     pasteTask?.cancel()
     pasteTask = Task { @MainActor [weak self] in
-      do { try await Task.sleep(nanoseconds: 300_000_000) } catch { return }
-      guard let self, !Task.isCancelled else { return }
+      guard let self, await self.copyToClipboard(item), !Task.isCancelled else { return }
+      self.hide()
+      guard let application else { return }
+      do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
       if self.state.autoPaste, self.hasAccessibilityPermission() {
-        await self.simulatePaste(to: targetApp)
+        await self.simulatePaste(to: application)
       } else {
-        targetApp.activate(options: [.activateAllWindows])
+        application.activate(options: [.activateAllWindows])
       }
     }
   }
@@ -225,33 +193,26 @@ class Paster: ObservableObject{
   }
 
   // MARK: - 复制到剪切板
-  public func copyToClipboard(_ item: PasterModel) -> Bool {
+  public func copyToClipboard(_ item: PasterModel) async -> Bool {
+    let image: Data?
+    if let name = item.imageFileName { image = await store.media(named: name) }
+    else { image = nil }
+    guard !Task.isCancelled else { return false }
+    guard item.content != nil || image != nil else { return false }
     pasteboard.clearContents()
+    let success: Bool
+    if let text = item.content {
+      success = pasteboard.setString(text, forType: .string)
+    } else if let image {
+      success = pasteboard.setData(image, forType: .png)
+    } else { return false }
+    if success { changeCount = pasteboard.changeCount }
+    return success
+  }
 
-    // 文本复制
-    if let textContent = item.content, !textContent.isEmpty {
-      let success = pasteboard.setString(textContent, forType: .string)
-      if success, let copiedText = pasteboard.string(forType: .string), copiedText == item.content {
-        // 这是 Paster 自己写入剪贴板的内容，避免下一次轮询把它再次记入历史。
-        changeCount = pasteboard.changeCount
-        return true
-      } else {
-        return false
-      }
-    }
-
-    // 图片复制
-    else if let imageData = item.image, let image = NSImage(data: imageData) {
-      let success = pasteboard.writeObjects([image])
-      if success, let pastedImages = pasteboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage],
-         !pastedImages.isEmpty {
-        changeCount = pasteboard.changeCount
-        return true
-      }
-      return false
-    }
-
-    return false
+  func thumbnail(for item: PasterModel) async -> Data? {
+    guard let name = item.thumbnailFileName else { return nil }
+    return await store.media(named: name)
   }
 
   // MARK: - 模拟粘贴
@@ -310,53 +271,21 @@ class Paster: ObservableObject{
 
   // MARK: - 持久化
   private func loadHistory() {
-    let limit = max(1, AppState.shared.historyCount)
-    history = Array(PasterHistoryStore.load().prefix(limit))
-    sortHistory()
-  }
-
-  private func trimHistory() {
-    let limit = max(1, AppState.shared.historyCount)
-    while history.count > limit {
-      // history 已按置顶和创建时间排序，队尾是最旧的普通项；只有全部
-      // 都置顶时才会淘汰最早置顶的记录。
-      history.removeLast()
-    }
+    store.load(limit: state.historyCount) { [weak self] in self?.receive($0) }
   }
 
   public func togglePin(_ record: PasterModel) {
-    guard history.contains(record) else { return }
-
-    record.isPinned.toggle()
-    sortHistory()
-    trimHistory()
-    save()
-  }
-
-  private func sortHistory() {
-    history.sort {
-      if $0.isPinned != $1.isPinned {
-        return $0.isPinned
-      }
-      return $0.createdAt > $1.createdAt
-    }
+    store.togglePin(id: record.id, limit: state.historyCount) { [weak self] in self?.receive($0) }
   }
 
   public func trimToLimit() {
-    guard history.count > max(1, AppState.shared.historyCount) else { return }
-    trimHistory()
-    save()
+    store.load(limit: state.historyCount) { [weak self] in self?.receive($0) }
   }
 
-  private func save() {
-    do {
-      try PasterHistoryStore.save(history)
-    } catch {
-      // File I/O errors are normal Swift errors rather than uncatchable
-      // Core Data exceptions. Keep the current in-memory history usable and
-      // retry on the next mutation instead of terminating the menu-bar app.
-      print("Failed to save paste history: \(error)")
+  private func receive(_ result: Result<[PasterModel], Error>) {
+    switch result {
+    case .success(let records): history = records
+    case .failure(let error): print("Failed to update paste history: \(error)")
     }
   }
-
 }

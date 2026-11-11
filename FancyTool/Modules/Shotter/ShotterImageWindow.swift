@@ -710,7 +710,9 @@ final class ShotterEditorView: NSView {
     commitTextEntry()
     guard let data = pngData() else { return }
     let pasteboard = NSPasteboard.general
-    pasteboard.clearContents(); pasteboard.setData(data, forType: .png)
+    pasteboard.clearContents()
+    guard pasteboard.setData(data, forType: .png) else { return }
+    InteractionFeedback.events.send(.screenshotCopied)
     hostWindow?.dismissWindow()
   }
 

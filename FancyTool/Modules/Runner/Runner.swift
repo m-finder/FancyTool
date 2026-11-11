@@ -5,7 +5,11 @@ import Combine
 final class Runner: NSObject, CAAnimationDelegate {
   static let shared = Runner()
 
-  private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+  private let item: NSStatusItem = {
+    let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    item.autosaveName = "FancyTool.Runner"
+    return item
+  }()
   var statusButton: NSStatusBarButton? { item.button }
   private var cancellables = Set<AnyCancellable>()
   private weak var observedWindow: NSWindow?
@@ -28,6 +32,7 @@ final class Runner: NSObject, CAAnimationDelegate {
   private var renderedSince: TimeInterval = 0
   private var transitionSprites: [RunnerCompanionArt.Sprite] = []
   private var companionAnimationGeneration: UInt64 = 0
+  private var reactionGate = CompanionReactionGate()
 
   private var currentScale: CGFloat {
     item.button?.window?.screen?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
@@ -59,7 +64,6 @@ final class Runner: NSObject, CAAnimationDelegate {
 
   func change() {
     RunnerFrame.shared.cache.removeAll()
-    RunnerModel.clearImageCache()
     reload()
   }
 
@@ -304,8 +308,19 @@ final class Runner: NSObject, CAAnimationDelegate {
     refreshBehavior()
   }
 
+  private func reactToInteraction() {
+    guard AppState.shared.runnerCompanion, !companionPaused, !lowPowerEnabled,
+          renderedState != .happy, renderedState != .sleeping,
+          item.button?.window?.isVisible == true,
+          reactionGate.accept(at: ProcessInfo.processInfo.systemUptime) else { return }
+    greet()
+  }
+
   private func observe() {
     cancellables.removeAll()
+    InteractionFeedback.events
+      .sink { [weak self] _ in self?.reactToInteraction() }
+      .store(in: &cancellables)
     SystemMetrics.shared.$bundle
       .sink { [weak self] bundle in
         guard let self else { return }

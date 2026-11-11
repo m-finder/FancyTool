@@ -14,6 +14,7 @@ final class Monitor {
   func mount() {
     guard item == nil else { return }
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    item.autosaveName = "FancyTool.Monitor"
     self.item = item
     hosting = HostingView(
       view: MonitorStatusView()

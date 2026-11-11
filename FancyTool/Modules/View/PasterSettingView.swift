@@ -30,6 +30,10 @@ struct PasterSettingView: View {
           .textFieldStyle(.roundedBorder)
         }
 
+        Text("History is limited to 256 MB.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+
         SettingsFormRow("Shortcut:") {
           KeyboardShortcuts.Recorder(for: .paster)
         }

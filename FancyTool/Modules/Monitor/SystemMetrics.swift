@@ -54,6 +54,7 @@ final class SystemMetrics: ObservableObject {
     for (name, sleeping) in [(NSWorkspace.screensDidSleepNotification, true),
                              (NSWorkspace.screensDidWakeNotification, false)] {
       workspace.publisher(for: name)
+        .receive(on: DispatchQueue.main)
         .sink { [weak self] _ in
           self?.displaySleeping = sleeping
           self?.updateDemand()
@@ -62,6 +63,9 @@ final class SystemMetrics: ObservableObject {
     }
     workspace.publisher(for: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification)
       .merge(with: NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange))
+      // Power-state notifications arrive on a system worker queue. Deliver
+      // them on main before entering this MainActor-isolated subscriber.
+      .receive(on: DispatchQueue.main)
       .sink { [weak self] _ in self?.updateDemand() }
       .store(in: &subscriptions)
     updateDemand()

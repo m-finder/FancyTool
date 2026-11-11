@@ -18,9 +18,6 @@ struct RunnerRemoveView: View {
         action: {
           DispatchQueue.main.async {
             runnerHandler.removeRunner(id: id)
-            if state.runnerId == id.uuidString {
-              state.runnerId = ""
-            }
           }
         },
         label: {

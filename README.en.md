@@ -61,11 +61,11 @@ The interface varies with your macOS version and appearance settings. Hidder is 
 | Module | Features |
 | --- | --- |
 | **Texter** | Edit menu bar text, choose fonts and gradient colors, and add shimmer, rounded or rainbow borders, custom border colors, and a gradient background. |
-| **Paster** | Keep text and image clipboard history, pin items, set a history limit, search by content or source application, and optionally paste automatically. |
+| **Paster** | Keep text and image clipboard history, pin items, limit both item count and total size to 256 MB, search by content or source application, and optionally paste automatically. |
 | **Monitor** | Show CPU, memory, storage, battery, and network speed as needed, with a compact menu bar layout and a panel of live values and charts. |
 | **Duo** | See battery, Wi-Fi, and sound status in one menu bar item. Control Bluetooth, volume, and display appearance; choose Wi-Fi networks, paired devices, and input sources. |
 | **Shotter** | Capture a region, window, or screen with pixel dimensions shown during selection. Add shapes, arrows, freehand strokes, highlights, text, numbers, and opaque redactions. Adjust colors, line widths, and font sizes; move or delete annotations; undo, redo, pin, copy, or save a full-resolution PNG. |
-| **Runner** | Drop in custom GIFs and adjust playback speed with CPU usage. Enable the status dog to react to system load, charging, and inactivity, with smooth changes in animation speed. |
+| **Runner** | Drop in custom GIFs, resized for display on import with file size and frame count limits, and adjust playback speed with CPU usage. The status dog reacts to system load, charging, inactivity, screenshot copies, and signature changes. |
 | **Rounder** | Add adjustable rounded corners to the screen. |
 | **Hidder** | Collapse or expand menu bar icons using a dot marker. Available on macOS versions earlier than 27. |
 

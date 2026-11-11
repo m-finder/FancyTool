@@ -24,13 +24,8 @@ struct PasterFooterView: View {
   }
 
   private var imageSize: CGSize {
-    guard let imageData = item.thumbnail ?? item.image, !imageData.isEmpty else {
-      return .zero
-    }
-    if let width = item.imageWidth, let height = item.imageHeight {
-      return CGSize(width: width, height: height)
-    }
-    return NSImage(data: imageData)?.size ?? .zero
+    guard let width = item.imageWidth, let height = item.imageHeight else { return .zero }
+    return CGSize(width: width, height: height)
   }
   
   var body: some View {

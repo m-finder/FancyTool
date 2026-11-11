@@ -54,7 +54,8 @@ struct RunnerView: View {
       // Static thumbnails do not need a clock; SwiftUI cancels playback when
       // the preview disappears or a different runner is selected.
       guard isRunning, isWindowVisible, factor.isFinite, factor > 0,
-            let count = runner?.frameNumber, count > 1 else { return }
+            let frameNumber = runner?.frameNumber, frameNumber > 1 else { return }
+      let count = min(frameNumber, RunnerGIFProcessor.maximumFrames)
       while !Task.isCancelled {
         do { try await Task.sleep(for: .seconds(Double(factor))) }
         catch { return }

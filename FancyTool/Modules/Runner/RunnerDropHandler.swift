@@ -9,9 +9,9 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct RunnerDropHandler: DropDelegate {
-  private let onComplete: (Data) -> Void
+  private let onComplete: @MainActor @Sendable (URL) -> Void
 
-  init(onComplete: @escaping (Data) -> Void) {
+  init(onComplete: @escaping @MainActor @Sendable (URL) -> Void) {
     self.onComplete = onComplete
   }
 
@@ -24,14 +24,8 @@ struct RunnerDropHandler: DropDelegate {
         
         // 验证是否为GIF文件
         if url.pathExtension.lowercased() == "gif" {
-          do {
-            let data = try Data(contentsOf: url)
-            DispatchQueue.main.async {
-              self.onComplete(data)
-            }
-          } catch {
-            print("Error reading GIF file: \(error.localizedDescription)")
-          }
+          let onComplete = self.onComplete
+          DispatchQueue.main.async { onComplete(url) }
         }
       }
     }

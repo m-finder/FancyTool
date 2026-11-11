@@ -1921,42 +1921,42 @@
         }
       }
     },
-    "Check for Updates…" : {
+    "Check for Updates" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nach Updates suchen…"
+            "value" : "Nach Updates suchen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Check for Updates…"
+            "value" : "Check for Updates"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rechercher des mises à jour…"
+            "value" : "Rechercher des mises à jour"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "アップデートを確認…"
+            "value" : "アップデートを確認"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "업데이트 확인…"
+            "value" : "업데이트 확인"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "检查更新…"
+            "value" : "检查更新"
           }
         }
       }
@@ -2891,6 +2891,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法截取此区域"
+          }
+        }
+      }
+    },
+    "Could not import GIF" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GIF konnte nicht importiert werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not import GIF"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’importer le GIF"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GIFを読み込めませんでした"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GIF를 가져올 수 없습니다"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法导入 GIF"
           }
         }
       }
@@ -4034,6 +4074,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "荧光笔 (H)"
+          }
+        }
+      }
+    },
+    "History is limited to 256 MB." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Verlauf ist auf 256 MB begrenzt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History is limited to 256 MB."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’historique est limité à 256 Mo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "履歴の上限は256 MBです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기록은 최대 256 MB까지 저장됩니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "历史记录最多占用 256 MB。"
           }
         }
       }
@@ -8867,6 +8947,46 @@
         }
       }
     },
+    "This GIF could not be read." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese GIF-Datei konnte nicht gelesen werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This GIF could not be read."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce fichier GIF est illisible."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このGIFファイルを読み取れません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 GIF 파일을 읽을 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取这个 GIF 文件。"
+          }
+        }
+      }
+    },
     "Time" : {
       "localizations" : {
         "de" : {
@@ -9937,6 +10057,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用率"
+          }
+        }
+      }
+    },
+    "Use a GIF under 20 MB and 4096 × 4096 pixels." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwende ein GIF mit höchstens 20 MB und 4096 × 4096 Pixeln."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use a GIF under 20 MB and 4096 × 4096 pixels."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilisez un GIF de 20 Mo et 4096 × 4096 pixels maximum."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 MB以下、4096 × 4096ピクセル以下のGIFを選んでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 MB 및 4096 × 4096픽셀 이하의 GIF를 선택하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选择不超过 20 MB、4096 × 4096 像素的 GIF。"
+          }
+        }
+      }
+    },
+    "Use a GIF with 240 frames or fewer." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwende ein GIF mit höchstens 240 Bildern."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use a GIF with 240 frames or fewer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilisez un GIF de 240 images maximum."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "240フレーム以下のGIFを選んでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "240프레임 이하의 GIF를 선택하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选择不超过 240 帧的 GIF。"
           }
         }
       }

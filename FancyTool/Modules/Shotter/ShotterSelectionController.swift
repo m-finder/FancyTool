@@ -19,13 +19,11 @@ final class ShotterSelectionController {
   private var globalMouseMonitor: Any?
 
   private var lastWindowProbeUptime: TimeInterval = 0
-  private var pendingWindowProbe: DispatchWorkItem?
+  private var windowProbeInFlight = false
+  private var windowProbeGeneration: UInt64 = 0
   private var cachedWindowEntries: [WindowListEntry] = []
-  private var windowCacheUptime: TimeInterval = 0
 
-  private let accessibilityWindowProbeInterval: TimeInterval = 1 / 30
-  private let windowListProbeInterval: TimeInterval = 1 / 15
-  private let windowListCacheLifetime: TimeInterval = 1 / 12
+  private let windowListProbeInterval: TimeInterval = 1 / 5
 
   @discardableResult
   func start() -> Bool {
@@ -39,7 +37,8 @@ final class ShotterSelectionController {
     mousePoint = nil
     lastWindowProbeUptime = 0
     cachedWindowEntries = []
-    windowCacheUptime = 0
+    windowProbeGeneration &+= 1
+    windowProbeInFlight = false
     NSApp.activate(ignoringOtherApps: true)
 
     overlayWindows = NSScreen.screens.map { screen in
@@ -94,10 +93,8 @@ final class ShotterSelectionController {
     dragRect = nil
     isMovingSelection = false
     mousePoint = point
-    // Resolve an actual CGWindowID only for a potential click-to-capture.
-    // Hovering uses Accessibility first and avoids repeatedly enumerating all
-    // windows on every mouse movement.
-    candidate = captureCandidate(at: point)
+    // Use the last completed background window snapshot. A window server or
+    // accessibility request must never hold the main thread during selection.
     redraw()
   }
 
@@ -311,8 +308,8 @@ final class ShotterSelectionController {
       NSEvent.removeMonitor(globalMouseMonitor)
       self.globalMouseMonitor = nil
     }
-    pendingWindowProbe?.cancel()
-    pendingWindowProbe = nil
+    windowProbeGeneration &+= 1
+    windowProbeInFlight = false
     let windows = overlayWindows
     overlayWindows.removeAll()
     windows.forEach { $0.orderOut(nil) }
@@ -336,34 +333,28 @@ final class ShotterSelectionController {
 
   private func refreshWindowCandidate(at point: NSPoint, immediately: Bool = false) {
     guard drag == nil, !isFinishing else { return }
-
     let now = ProcessInfo.processInfo.systemUptime
-    let interval = AXIsProcessTrusted() ? accessibilityWindowProbeInterval : windowListProbeInterval
-    let elapsed = now - lastWindowProbeUptime
-    if immediately || elapsed >= interval {
-      pendingWindowProbe?.cancel()
-      pendingWindowProbe = nil
-      lastWindowProbeUptime = now
-      updateWindowCandidate(at: point)
-      return
-    }
+    guard !windowProbeInFlight,
+          immediately || now - lastWindowProbeUptime >= windowListProbeInterval else { return }
 
-    guard pendingWindowProbe == nil else { return }
-    let delay = max(0, interval - elapsed)
-    let work = DispatchWorkItem { [weak self] in
-      guard let self, !self.isFinishing, self.drag == nil, let point = self.mousePoint else { return }
-      self.pendingWindowProbe = nil
-      self.refreshWindowCandidate(at: point, immediately: true)
-    }
-    pendingWindowProbe = work
-    DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
-  }
-
-  private func updateWindowCandidate(at point: NSPoint) {
-    let newCandidate = windowCandidate(at: point)
-    if newCandidate?.id != candidate?.id || newCandidate?.rect != candidate?.rect {
-      candidate = newCandidate
-      redraw()
+    lastWindowProbeUptime = now
+    windowProbeInFlight = true
+    let generation = windowProbeGeneration
+    let overlayIDs = Set(overlayWindows.map { CGWindowID($0.windowNumber) })
+    let ownPID = ProcessInfo.processInfo.processIdentifier
+    DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+      let entries = Self.queryWindowEntries(excluding: overlayIDs, ownPID: ownPID)
+      DispatchQueue.main.async { [weak self] in
+        guard let self, !self.isFinishing, self.windowProbeGeneration == generation else { return }
+        self.windowProbeInFlight = false
+        self.cachedWindowEntries = entries
+        guard self.drag == nil, let point = self.mousePoint else { return }
+        let newCandidate = self.windowListCandidate(at: ShotterCoordinateSpace.quartzPoint(fromAppKit: point))
+        if newCandidate?.id != self.candidate?.id || newCandidate?.rect != self.candidate?.rect {
+          self.candidate = newCandidate
+          self.redraw()
+        }
+      }
     }
   }
 
@@ -373,180 +364,37 @@ final class ShotterSelectionController {
     let rects: [NSRect]
   }
 
-  private struct WindowListEntry {
+  private struct WindowListEntry: Sendable {
     let id: CGWindowID
     let quartzRect: CGRect
   }
 
-  private func windowCandidate(at point: NSPoint) -> WindowCandidate? {
-    let quartzPoint = ShotterCoordinateSpace.quartzPoint(fromAppKit: point)
-    if let accessibilityCandidate = accessibilityWindowCandidate(at: quartzPoint) {
-      return accessibilityCandidate
-    }
-    return windowListCandidate(at: quartzPoint)
-  }
-
-  private func captureCandidate(at point: NSPoint) -> WindowCandidate? {
-    // CGWindowList provides the window ID needed for a high-quality single
-    // window capture. It is only queried on a click, not continuously.
-    let quartzPoint = ShotterCoordinateSpace.quartzPoint(fromAppKit: point)
-    return windowListCandidate(at: quartzPoint, refreshCache: true) ?? accessibilityWindowCandidate(at: quartzPoint)
-  }
-
-  private func accessibilityWindowCandidate(at quartzPoint: CGPoint) -> WindowCandidate? {
-    guard AXIsProcessTrusted() else { return nil }
-
-    // Our accessibility hit may be the selection overlay. Resolve our own
-    // windows through the window-list fallback, which excludes only overlays.
-    let systemWide = AXUIElementCreateSystemWide()
-    var element: AXUIElement?
-    guard AXUIElementCopyElementAtPosition(systemWide, Float(quartzPoint.x), Float(quartzPoint.y), &element) == .success,
-          let element,
-          let window = accessibilityWindow(for: element),
-          !isOwnAccessibilityElement(window),
-          let quartzRect = accessibilityFrame(for: window),
-          quartzRect.width > 2,
-          quartzRect.height > 2,
-          !isScreenSizedQuartzRect(quartzRect) else {
-      return nil
-    }
-
-    let rects = ShotterCoordinateSpace.appKitRects(fromQuartz: quartzRect)
-    return WindowCandidate(
-      id: nil,
-      rect: ShotterCoordinateSpace.boundingAppKitRect(fromQuartz: quartzRect),
-      rects: rects
-    )
-  }
-
-  private func accessibilityWindow(for element: AXUIElement) -> AXUIElement? {
-    var current: AXUIElement? = element
-    for _ in 0..<8 {
-      guard let currentElement = current else { return nil }
-      if accessibilityStringAttribute(kAXRoleAttribute, from: currentElement) == (kAXWindowRole as String) {
-        return currentElement
-      }
-      if let window = accessibilityElementAttribute(kAXWindowAttribute, from: currentElement) {
-        return window
-      }
-      current = accessibilityElementAttribute(kAXParentAttribute, from: currentElement)
-    }
-    return nil
-  }
-
-  private func isOwnAccessibilityElement(_ element: AXUIElement) -> Bool {
-    var pid = pid_t(0)
-    guard AXUIElementGetPid(element, &pid) == .success else { return false }
-    return pid == ProcessInfo.processInfo.processIdentifier
-  }
-
-  private func accessibilityFrame(for element: AXUIElement) -> CGRect? {
-    guard let position = accessibilityPointAttribute(kAXPositionAttribute, from: element),
-          let size = accessibilitySizeAttribute(kAXSizeAttribute, from: element) else {
-      return nil
-    }
-    return CGRect(origin: position, size: size)
-  }
-
-  private func accessibilityPointAttribute(_ attribute: String, from element: AXUIElement) -> CGPoint? {
-    guard let value = accessibilityAXValueAttribute(attribute, from: element), AXValueGetType(value) == .cgPoint else {
-      return nil
-    }
-    var point = CGPoint.zero
-    return AXValueGetValue(value, .cgPoint, &point) ? point : nil
-  }
-
-  private func accessibilitySizeAttribute(_ attribute: String, from element: AXUIElement) -> CGSize? {
-    guard let value = accessibilityAXValueAttribute(attribute, from: element), AXValueGetType(value) == .cgSize else {
-      return nil
-    }
-    var size = CGSize.zero
-    return AXValueGetValue(value, .cgSize, &size) ? size : nil
-  }
-
-  private func accessibilityAXValueAttribute(_ attribute: String, from element: AXUIElement) -> AXValue? {
-    var value: CFTypeRef?
-    guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
-          let value,
-          CFGetTypeID(value) == AXValueGetTypeID() else {
-      return nil
-    }
-    return unsafeDowncast(value, to: AXValue.self)
-  }
-
-  private func accessibilityStringAttribute(_ attribute: String, from element: AXUIElement) -> String? {
-    var value: CFTypeRef?
-    guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else { return nil }
-    return value as? String
-  }
-
-  private func accessibilityElementAttribute(_ attribute: String, from element: AXUIElement) -> AXUIElement? {
-    var value: CFTypeRef?
-    guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
-          let value,
-          CFGetTypeID(value) == AXUIElementGetTypeID() else {
-      return nil
-    }
-    return unsafeDowncast(value, to: AXUIElement.self)
-  }
-
-  private func windowListCandidate(at quartzPoint: CGPoint, refreshCache: Bool = false) -> WindowCandidate? {
-    let entries = windowEntries(refreshCache: refreshCache)
-    // The window list is ordered front to back. Metadata must not promote a
-    // covered window over the visible window under the pointer.
-    guard let entry = entries.first(where: { $0.quartzRect.contains(quartzPoint) }) else { return nil }
+  private func windowListCandidate(at quartzPoint: CGPoint) -> WindowCandidate? {
+    // The snapshot is already ordered front to back. It is never refreshed
+    // synchronously from a mouse or keyboard event.
+    guard let entry = cachedWindowEntries.first(where: { $0.quartzRect.contains(quartzPoint) }) else { return nil }
     let rects = ShotterCoordinateSpace.appKitRects(fromQuartz: entry.quartzRect)
-    return WindowCandidate(
-      id: entry.id,
-      rect: ShotterCoordinateSpace.boundingAppKitRect(fromQuartz: entry.quartzRect),
-      rects: rects
-    )
+    return WindowCandidate(id: entry.id,
+      rect: ShotterCoordinateSpace.boundingAppKitRect(fromQuartz: entry.quartzRect), rects: rects)
   }
 
-  private func windowEntries(refreshCache: Bool) -> [WindowListEntry] {
-    let now = ProcessInfo.processInfo.systemUptime
-    if !refreshCache, now - windowCacheUptime < windowListCacheLifetime {
-      return cachedWindowEntries
-    }
+  nonisolated private static func queryWindowEntries(excluding overlayIDs: Set<CGWindowID>,
+                                                     ownPID: pid_t) -> [WindowListEntry] {
     guard let infos = CGWindowListCopyWindowInfo(
-      [.optionOnScreenOnly, .excludeDesktopElements],
-      kCGNullWindowID
-    ) as? [[String: Any]] else {
-      return cachedWindowEntries
-    }
-
-    let overlayWindowIDs = Set(overlayWindows.map { CGWindowID($0.windowNumber) })
-    cachedWindowEntries = infos.compactMap { info in
-      guard let layer = info[kCGWindowLayer as String] as? Int,
-            layer == 0,
+      [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID
+    ) as? [[String: Any]] else { return [] }
+    return infos.compactMap { info in
+      guard let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
+            let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t, ownerPID != ownPID,
             let bounds = info[kCGWindowBounds as String] as? NSDictionary,
-            let quartzRect = CGRect(dictionaryRepresentation: bounds),
-            isUsableWindowListRect(quartzRect),
-            let windowID = info[kCGWindowNumber as String] as? CGWindowID,
-            !overlayWindowIDs.contains(windowID) else {
-        return nil
-      }
-      let alpha = info[kCGWindowAlpha as String] as? CGFloat ?? 1
-      guard alpha > 0.01 else { return nil }
-
-      return WindowListEntry(id: windowID, quartzRect: quartzRect)
-    }
-    windowCacheUptime = now
-    return cachedWindowEntries
-  }
-
-  private func isUsableWindowListRect(_ rect: CGRect) -> Bool {
-    rect.width > 24 && rect.height > 24
-  }
-
-  private func isScreenSizedQuartzRect(_ rect: CGRect) -> Bool {
-    NSScreen.screens.contains { screen in
-      let screenRect = ShotterCoordinateSpace.quartzRect(fromAppKit: screen.frame)
-      let widthDelta = abs(rect.width - screenRect.width)
-      let heightDelta = abs(rect.height - screenRect.height)
-      return widthDelta <= 2 && heightDelta <= 2 && rect.intersects(screenRect)
+            let rect = CGRect(dictionaryRepresentation: bounds), rect.width > 24, rect.height > 24,
+            let id = info[kCGWindowNumber as String] as? CGWindowID,
+            !overlayIDs.contains(id),
+            (info[kCGWindowAlpha as String] as? CGFloat ?? 1) > 0.01 else { return nil }
+      return WindowListEntry(id: id, quartzRect: rect)
     }
   }
+
 
 }
 

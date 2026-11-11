@@ -97,7 +97,7 @@ struct AppMenuItem {
         key: "a"
       ),
       AppMenuItem(
-        title: String(localized: "Check for Updates…"),
+        title: String(localized: "Check for Updates"),
         action: #selector(AppMenuActions.checkForUpdates(_:))
       ),
       // 退出软件

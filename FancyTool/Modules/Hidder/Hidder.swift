@@ -70,9 +70,10 @@ class Hidder {
       }
       return
     }
-    for _ in 0..<2 {
+    for index in 0..<2 {
 
       let item: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+      item.autosaveName = "FancyTool.Hidder.\(index)"
 
       if let button = item.button, let image = NSImage(named: NSImage.Name("Circle")) {
         image.size = NSSize(width: size, height: size)

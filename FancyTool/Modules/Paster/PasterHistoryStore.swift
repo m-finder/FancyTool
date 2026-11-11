@@ -1,178 +1,205 @@
-//
-//  PasterHistoryStore.swift
-//  FancyTool
-//
-
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
+import CryptoKit
 
-/// File-backed persistence for paste history.
-///
-/// SwiftData/Core Data uses Objective-C exceptions for some SQLite failures;
-/// those exceptions bypass Swift's `do/catch` and can terminate the process.
-/// Paster only needs a small ordered list, so a versioned JSON manifest plus
-/// separate image files is both lighter and failure-safe.
-enum PasterHistoryStore {
-  private static let manifestFileName = "history.json"
-  private static let mediaDirectoryName = "Media"
+/// Every read, image conversion, mutation and write runs on this one queue.
+/// Only value snapshots leave it; AppKit pasteboard access remains on the main actor.
+final class PasterHistoryStore: @unchecked Sendable {
+  static let maximumBytes = 256 * 1024 * 1024
+  static let cacheBytes = 32 * 1024 * 1024
+  typealias Completion = @MainActor @Sendable (Result<[PasterModel], Error>) -> Void
 
+  enum Capture: Sendable {
+    case text(String)
+    case image(Data)
+  }
   private struct Manifest: Codable {
-    var version: Int
-    var records: [Record]
+    var version = 1
+    var records: [PasterModel]
+  }
+  private let queue = DispatchQueue(label: "FancyTool.Paster.storage", qos: .utility)
+  private let directory: URL?
+  private var history: [PasterModel] = []
+  private var loaded = false
+  private var cache = PasterDataCache(capacity: cacheBytes)
+
+  init(directory: URL? = nil) { self.directory = directory }
+
+  func load(limit: Int, byteLimit: Int = maximumBytes, completion: @escaping Completion) {
+    perform(limit: limit, byteLimit: byteLimit, completion: completion) { _ in }
   }
 
-  private struct Record: Codable {
-    var id: UUID
-    var content: String?
-    var imageFileName: String?
-    var thumbnailFileName: String?
-    var imageWidth: Double?
-    var imageHeight: Double?
-    var icon: String
-    var createdAt: Date
-    var isPinned: Bool
-  }
-
-  static func load() -> [PasterModel] {
-    do {
-      let manifestURL = try manifestURL()
-      guard FileManager.default.fileExists(atPath: manifestURL.path) else { return [] }
-
-      let data = try Data(contentsOf: manifestURL)
-      let manifest = try JSONDecoder().decode(Manifest.self, from: data)
-      guard manifest.version == 1 else {
-        print("Unsupported paste history format: \(manifest.version)")
-        return []
+  func capture(_ capture: Capture, icon: String, limit: Int,
+               byteLimit: Int = maximumBytes, completion: @escaping Completion) {
+    perform(limit: limit, byteLimit: byteLimit, completion: completion) { store in
+      var item = PasterModel(icon: icon)
+      switch capture {
+      case .text(let text):
+        guard text.utf8.count <= byteLimit else { return }
+        item.content = text
+        item.storedBytes = text.utf8.count
+      case .image(let data):
+        guard data.count <= byteLimit else { return }
+        let image = try Self.prepareImage(data)
+        let size = image.original.count + image.thumbnail.count
+        // An oversized capture must not evict the user's existing history.
+        guard size <= byteLimit else { return }
+        item.imageDigest = SHA256.hash(data: image.original).map { String(format: "%02x", $0) }.joined()
+        item.imageWidth = Double(image.width)
+        item.imageHeight = Double(image.height)
+        item.storedBytes = size
+        if let index = store.history.firstIndex(where: { $0.imageDigest == item.imageDigest }) {
+          store.history[index].createdAt = item.createdAt
+          return
+        }
+        item.imageFileName = "\(item.id).image"
+        item.thumbnailFileName = "\(item.id).thumbnail"
+        try FancyToolFileStore.writeAtomically(image.original, to: store.mediaURL(item.imageFileName!))
+        try FancyToolFileStore.writeAtomically(image.thumbnail, to: store.mediaURL(item.thumbnailFileName!))
       }
-
-      return manifest.records.map {
-        PasterModel(
-          id: $0.id,
-          content: $0.content,
-          imageFileName: $0.imageFileName,
-          thumbnailFileName: $0.thumbnailFileName,
-          imageWidth: $0.imageWidth,
-          imageHeight: $0.imageHeight,
-          icon: $0.icon,
-          createdAt: $0.createdAt,
-          isPinned: $0.isPinned
-        )
+      if let text = item.content, let index = store.history.firstIndex(where: { $0.content == text }) {
+        store.history[index].createdAt = item.createdAt
+      } else {
+        store.history.append(item)
       }
-    } catch {
-      // A malformed or interrupted manifest must not stop clipboard capture.
-      // Keep the file in place for manual recovery and start with an empty
-      // in-memory list instead of deleting user data automatically.
-      print("Failed to load paste history: \(error)")
-      return []
     }
   }
 
-  static func save(_ history: [PasterModel]) throws {
-    let mediaURL = try mediaDirectoryURL()
-    var records: [Record] = []
-    var referencedFiles = Set<String>()
-
-    for item in history {
-      let imageFileName = try persistImageIfNeeded(for: item, in: mediaURL)
-      let thumbnailFileName = try persistThumbnailIfNeeded(for: item, in: mediaURL)
-
-      if let imageFileName { referencedFiles.insert(imageFileName) }
-      if let thumbnailFileName { referencedFiles.insert(thumbnailFileName) }
-
-      records.append(
-        Record(
-          id: item.id,
-          content: item.content,
-          imageFileName: imageFileName,
-          thumbnailFileName: thumbnailFileName,
-          imageWidth: item.imageWidth,
-          imageHeight: item.imageHeight,
-          icon: item.icon,
-          createdAt: item.createdAt,
-          isPinned: item.isPinned
-        )
-      )
-    }
-
-    let manifest = Manifest(version: 1, records: records)
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.sortedKeys]
-    let data = try encoder.encode(manifest)
-    try FancyToolFileStore.writeAtomically(data, to: try manifestURL())
-
-    // Only delete obsolete media after the new manifest is safely in place.
-    // Any cleanup failure merely leaves an orphan file; it never loses a
-    // history record or prevents the next clipboard operation.
-    cleanupUnreferencedMedia(in: mediaURL, referencedFiles: referencedFiles)
+  func remove(id: UUID, limit: Int, completion: @escaping Completion) {
+    perform(limit: limit, completion: completion) { $0.history.removeAll { $0.id == id } }
   }
 
-  static func loadMedia(named fileName: String) -> Data? {
-    do {
-      let url = try mediaDirectoryURL().appendingPathComponent(fileName)
-      return try Data(contentsOf: url, options: [.mappedIfSafe])
-    } catch {
-      print("Failed to load paste media \(fileName): \(error)")
-      return nil
+  func togglePin(id: UUID, limit: Int, completion: @escaping Completion) {
+    perform(limit: limit, completion: completion) { store in
+      if let index = store.history.firstIndex(where: { $0.id == id }) { store.history[index].isPinned.toggle() }
     }
   }
 
-  private static func persistImageIfNeeded(for item: PasterModel, in directory: URL) throws -> String? {
-    if let fileName = item.imageFileName,
-       FileManager.default.fileExists(atPath: directory.appendingPathComponent(fileName).path) {
-      return fileName
+  func media(named name: String) async -> Data? {
+    await withCheckedContinuation { continuation in
+      queue.async {
+        if let cached = self.cache.value(for: name) { continuation.resume(returning: cached); return }
+        let data = try? Data(contentsOf: self.mediaURL(name))
+        if let data { self.cache.insert(data, for: name) }
+        continuation.resume(returning: data)
+      }
     }
-    guard let image = item.image else { return nil }
-
-    let fileName = item.imageFileName ?? "\(item.id.uuidString).image"
-    let url = directory.appendingPathComponent(fileName)
-    if !FileManager.default.fileExists(atPath: url.path) {
-      try FancyToolFileStore.writeAtomically(image, to: url)
-    }
-    item.imageFileName = fileName
-    return fileName
   }
 
-  private static func persistThumbnailIfNeeded(for item: PasterModel, in directory: URL) throws -> String? {
-    if let fileName = item.thumbnailFileName,
-       FileManager.default.fileExists(atPath: directory.appendingPathComponent(fileName).path) {
-      return fileName
+  private func perform(limit: Int, byteLimit: Int = maximumBytes, completion: @escaping Completion,
+                       mutation: @escaping @Sendable (PasterHistoryStore) throws -> Void) {
+    queue.async {
+      let result: Result<[PasterModel], Error> = autoreleasepool {
+        do {
+          try self.loadIfNeeded()
+          let previous = self.history
+          do {
+            try mutation(self)
+            self.history = Self.trimmed(self.history, limit: limit, byteLimit: byteLimit)
+            let data = try JSONEncoder().encode(Manifest(records: self.history))
+            try FancyToolFileStore.writeAtomically(data, to: self.rootURL().appendingPathComponent("history.json"))
+          } catch {
+            self.history = previous
+            throw error
+          }
+          self.cleanup()
+          return .success(self.history)
+        } catch { return .failure(error) }
+      }
+      DispatchQueue.main.async { completion(result) }
     }
-    guard let thumbnail = item.thumbnail else { return nil }
-
-    let fileName = item.thumbnailFileName ?? "\(item.id.uuidString).thumbnail"
-    let url = directory.appendingPathComponent(fileName)
-    if !FileManager.default.fileExists(atPath: url.path) {
-      try FancyToolFileStore.writeAtomically(thumbnail, to: url)
-    }
-    item.thumbnailFileName = fileName
-    return fileName
   }
 
-  private static func manifestURL() throws -> URL {
-    try FancyToolFileStore.directory(named: "Paster")
-      .appendingPathComponent(manifestFileName)
+  static func trimmed(_ records: [PasterModel], limit: Int, byteLimit: Int) -> [PasterModel] {
+    var result = records.sorted {
+      if $0.isPinned != $1.isPinned { return $0.isPinned }
+      return $0.createdAt > $1.createdAt
+    }
+    var bytes = result.reduce(0) { $0 + max(0, $1.storedBytes ?? 0) }
+    while result.count > max(1, limit) || bytes > max(0, byteLimit) {
+      guard let removed = result.popLast() else { break }
+      bytes -= max(0, removed.storedBytes ?? 0)
+    }
+    return result
   }
 
-  private static func mediaDirectoryURL() throws -> URL {
-    let directory = try FancyToolFileStore.directory(named: "Paster")
-      .appendingPathComponent(mediaDirectoryName, isDirectory: true)
-    try FileManager.default.createDirectory(
-      at: directory,
-      withIntermediateDirectories: true,
-      attributes: nil
-    )
-    return directory
+  private func loadIfNeeded() throws {
+    guard !loaded else { return }
+    let url = try rootURL().appendingPathComponent("history.json")
+    if FileManager.default.fileExists(atPath: url.path) {
+      let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: url))
+      guard manifest.version == 1 else { throw CocoaError(.fileReadCorruptFile) }
+      history = manifest.records
+      // Compute actual sizes for old manifests without decoding full images.
+      for index in history.indices {
+        let item = history[index]
+        var bytes = item.content?.utf8.count ?? 0
+        for name in [item.imageFileName, item.thumbnailFileName].compactMap({ $0 }) {
+          bytes += (try? mediaURL(name).resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        }
+        history[index].storedBytes = bytes
+        if item.imageDigest == nil, let name = item.imageFileName,
+           let data = try? Data(contentsOf: mediaURL(name)) {
+          history[index].imageDigest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        }
+      }
+    }
+    loaded = true
   }
 
-  private static func cleanupUnreferencedMedia(in directory: URL, referencedFiles: Set<String>) {
-    guard let files = try? FileManager.default.contentsOfDirectory(
-      at: directory,
-      includingPropertiesForKeys: nil
-    ) else {
-      return
-    }
+  private func rootURL() throws -> URL {
+    let url = try directory ?? FancyToolFileStore.directory(named: "Paster")
+    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    return url
+  }
 
-    for file in files where !referencedFiles.contains(file.lastPathComponent) {
-      FancyToolFileStore.removeIfExists(file)
+  private func mediaURL(_ name: String) throws -> URL {
+    guard !name.isEmpty, name == (name as NSString).lastPathComponent, name != ".." else {
+      throw CocoaError(.fileReadInvalidFileName)
     }
+    let url = try rootURL().appendingPathComponent("Media", isDirectory: true)
+    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    return url.appendingPathComponent(name)
+  }
+
+  private func cleanup() {
+    let names = Set(history.flatMap { [$0.imageFileName, $0.thumbnailFileName].compactMap { $0 } })
+    cache.retain(keys: names)
+    guard let directory = try? rootURL().appendingPathComponent("Media"),
+          let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
+    for file in files where !names.contains(file.lastPathComponent) { FancyToolFileStore.removeIfExists(file) }
+  }
+
+  private static func prepareImage(_ data: Data) throws -> (original: Data, thumbnail: Data, width: Int, height: Int) {
+    guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+          let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+          let width = properties[kCGImagePropertyPixelWidth] as? Int,
+          let height = properties[kCGImagePropertyPixelHeight] as? Int,
+          width > 0, height > 0, width <= 32_768, height <= 32_768,
+          Double(width) * Double(height) <= 100_000_000 else { throw CocoaError(.fileReadCorruptFile) }
+    let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceThumbnailMaxPixelSize: 320]
+    guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+      throw CocoaError(.fileReadCorruptFile)
+    }
+    let original: Data
+    if CGImageSourceGetType(source) == UTType.png.identifier as CFString {
+      original = data
+    } else {
+      guard let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { throw CocoaError(.fileReadCorruptFile) }
+      original = try png(image)
+    }
+    return (original, try png(thumbnail), width, height)
+  }
+
+  private static func png(_ image: CGImage) throws -> Data {
+    let output = NSMutableData()
+    guard let destination = CGImageDestinationCreateWithData(output, UTType.png.identifier as CFString, 1, nil) else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    CGImageDestinationAddImage(destination, image, nil)
+    guard CGImageDestinationFinalize(destination) else { throw CocoaError(.fileWriteUnknown) }
+    return output as Data
   }
 }

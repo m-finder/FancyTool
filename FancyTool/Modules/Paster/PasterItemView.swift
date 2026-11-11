@@ -14,6 +14,7 @@ struct PasterItemView: View {
   let shortcutNumber: Int
   @ObservedObject var state = AppState.shared
   @State private var isHovering = false
+  @State private var thumbnail: NSImage?
 
   private var accentGradient: LinearGradient {
     LinearGradient(colors: ColorUtil.shared.getColor(index: state.colorIndex),
@@ -33,8 +34,7 @@ struct PasterItemView: View {
           Text(textContent).lineSpacing(5).fontWeight(.light)
         }
         
-        if let imageData = item.thumbnail ?? item.image, !imageData.isEmpty {
-          if let nsImage = NSImage(data: imageData) {
+        if let nsImage = thumbnail {
             
             HStack {
               Spacer()
@@ -42,8 +42,6 @@ struct PasterItemView: View {
               Spacer()
             }
             .padding(.vertical, 4)
-            
-          }
         }
         
       }
@@ -72,6 +70,10 @@ struct PasterItemView: View {
     .onHover { isHovering = $0 }
     .onTapGesture {
       Paster.shared.tap(item)
+    }
+    .task(id: item.id) {
+      guard let data = await Paster.shared.thumbnail(for: item), !Task.isCancelled else { return }
+      thumbnail = NSImage(data: data)
     }
     .id(item.id)
   }

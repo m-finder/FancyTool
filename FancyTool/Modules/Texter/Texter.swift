@@ -8,6 +8,7 @@ final class Texter {
   private var panel: StatusItemPanel?
   private var item: NSStatusItem?
   private var hosting: HostingView?
+  private var textWhenOpened: String?
 
   func mount() {
     guard item == nil else { return }
@@ -36,7 +37,17 @@ final class Texter {
         size: TexterPopoverView.panelSize,
         content: TexterPopoverView(onSubmit: { [weak self] in self?.panel?.close() })
       )
-      panel?.onShow = Self.focusInputAtEnd
+      panel?.onShow = { [weak self] window in
+        self?.textWhenOpened = AppState.shared.text
+        Self.focusInputAtEnd(in: window)
+      }
+      panel?.onClose = { [weak self] in
+        guard let self, let previous = self.textWhenOpened else { return }
+        self.textWhenOpened = nil
+        if previous != AppState.shared.text {
+          InteractionFeedback.events.send(.signatureChanged)
+        }
+      }
     }
     panel?.toggle(relativeTo: sender)
   }
