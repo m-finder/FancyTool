@@ -13,18 +13,19 @@ struct PasterItemView: View {
   let item: PasterModel
   let shortcutNumber: Int
   @ObservedObject var state = AppState.shared
-  @State private var isHovering: UUID?
+  @State private var isHovering = false
+
+  private var accentGradient: LinearGradient {
+    LinearGradient(colors: ColorUtil.shared.getColor(index: state.colorIndex),
+                   startPoint: .topLeading, endPoint: .bottomTrailing)
+  }
   
   var body: some View {
     
     VStack(spacing: 0){
       
       PasterHeaderView(item: item)
-        .background(LinearGradient(
-          colors: ColorUtil.shared.getColor(index: state.colorIndex),
-          startPoint: .topLeading,
-          endPoint: .bottomTrailing
-        ))
+        .background(accentGradient)
       
       VStack(alignment: .leading, spacing: 0){
         
@@ -49,33 +50,26 @@ struct PasterItemView: View {
       .padding(10)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       
-      DashedDivider().padding(.horizontal, 0)
+      DashedDivider()
       
       PasterFooterView(item: item, number: shortcutNumber)
       
     }
     .background(Color(.controlBackgroundColor).opacity(0.2))
     .clipShape(RoundedRectangle(cornerRadius: 15))
-    .cornerRadius(15)
     .overlay(
       RoundedRectangle(cornerRadius: 15).stroke(
-        LinearGradient(
-          colors: ColorUtil.shared.getColor(index: state.colorIndex),
-          startPoint: .topLeading,
-          endPoint: .bottomTrailing
-        ),
+        accentGradient,
         lineWidth: 2
       )
     )
     .overlay(
       RoundedRectangle(cornerRadius: 15).stroke(
-        isHovering == item.id ? Color.blue : Color.clear,
+        isHovering ? Color.blue : Color.clear,
         lineWidth: 2
       )
     )
-    .onHover { hovering in
-      isHovering = hovering ?  item.id : nil
-    }
+    .onHover { isHovering = $0 }
     .onTapGesture {
       Paster.shared.tap(item)
     }

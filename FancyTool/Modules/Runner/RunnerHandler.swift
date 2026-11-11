@@ -13,14 +13,10 @@ class RunnerHandler: ObservableObject {
   static let shared = RunnerHandler()
   @Published private(set) var cachedRunners: [RunnerModel] = []
 
-  private let defaultRunners: [String: (String, String)] = [
-    "1": ("10001b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "2": ("10002b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "3": ("10003b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "4": ("10004b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "5": ("10005b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "6": ("10006b46-eb35-4625-bb4a-bc0a25c3310b", "default"),
-    "7": ("10007b46-eb35-4625-bb4a-bc0a25c3310b", "default")
+  private let defaultRunners: [String: String] = [
+    "1": "10001b46-eb35-4625-bb4a-bc0a25c3310b",
+    "2": "10002b46-eb35-4625-bb4a-bc0a25c3310b",
+    "3": "10003b46-eb35-4625-bb4a-bc0a25c3310b"
   ]
 
   private init() {
@@ -36,8 +32,8 @@ class RunnerHandler: ObservableObject {
     var updated = cachedRunners
     for url in urls {
       let name = url.deletingPathExtension().lastPathComponent
-      guard let conf = defaultRunners[name],
-            let id = UUID(uuidString: conf.0),
+      guard let idString = defaultRunners[name],
+            let id = UUID(uuidString: idString),
             !updated.contains(where: { $0.id == id }),
             let data = try? Data(contentsOf: url) else {
         continue

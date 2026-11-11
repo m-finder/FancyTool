@@ -186,7 +186,7 @@ struct PasterView: View {
           .buttonStyle(.plain)
           .help(String(localized: "Clear search"))
         }
-        Text("\(filteredHistory.count)")
+        Text(verbatim: "\(filteredHistory.count)")
           .monospacedDigit()
           .foregroundStyle(.secondary)
       }

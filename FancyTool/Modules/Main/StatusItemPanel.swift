@@ -37,7 +37,11 @@ final class StatusItemPanel: NSObject {
   }()
 
   private let panel: MenuBarPanel
-  private let contentSize: NSSize
+  private var contentSize: NSSize
+  private let resizesContent: Bool
+  private var presentationAnchor: NSRect?
+  private var presentationVisibleFrame: NSRect?
+  private var resizeWork: DispatchWorkItem?
   private weak var anchor: NSStatusBarButton?
   private var localMouseMonitor: Any?
   private var globalMouseMonitor: Any?
@@ -48,8 +52,9 @@ final class StatusItemPanel: NSObject {
 
   var isShown: Bool { panel.isVisible }
 
-  init(size: NSSize, content: some View) {
+  init(size: NSSize, content: some View, contentPadding: CGFloat = 16, resizesContent: Bool = false) {
     contentSize = size
+    self.resizesContent = resizesContent
     panel = MenuBarPanel(
       contentRect: NSRect(origin: .zero, size: size),
       styleMask: [.borderless, .nonactivatingPanel],
@@ -74,9 +79,9 @@ final class StatusItemPanel: NSObject {
     container.wantsLayer = true
     container.layer?.backgroundColor = NSColor.clear.cgColor
 
-    let sizedContent = content
-      .padding(16)
-      .frame(width: size.width, height: size.height, alignment: .topLeading)
+    let sizedContent = resizesContent
+      ? AnyView(content.padding(contentPadding).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading))
+      : AnyView(content.padding(contentPadding).frame(width: size.width, height: size.height, alignment: .topLeading))
     let surface: NSView
     if #available(macOS 26.0, *) {
       panel.hasShadow = false
@@ -93,6 +98,7 @@ final class StatusItemPanel: NSObject {
         frame: clippedGlass.bounds.insetBy(dx: -edgeInset, dy: -edgeInset),
         cornerRadius: Self.cornerRadius + edgeInset
       )
+      if resizesContent { glass.autoresizingMask = [.width, .height] }
       clippedGlass.addSubview(glass)
       surface = clippedGlass
     } else {
@@ -125,6 +131,26 @@ final class StatusItemPanel: NSObject {
     if isShown { close() } else { show(relativeTo: button) }
   }
 
+  /// Opt-in resizing preserves the original menu-bar anchor and grows downward.
+  func setContentSize(_ size: NSSize) {
+    guard resizesContent, size.width.isFinite, size.height.isFinite,
+          size.width > 0, size.height > 0, size != contentSize else { return }
+    contentSize = size
+    guard isShown, resizeWork == nil else { return }
+    // SwiftUI can request a size from onChange while updating its view graph.
+    // Finish that update before AppKit resizes the host; coalesce to the latest size.
+    let work = DispatchWorkItem { [weak self] in
+      guard let self else { return }
+      self.resizeWork = nil
+      guard self.isShown, let anchor = self.presentationAnchor,
+            let visibleFrame = self.presentationVisibleFrame else { return }
+      let frame = StatusItemPanelPlacement.frame(size: self.contentSize, anchor: anchor, visibleFrame: visibleFrame)
+      if self.panel.frame != frame { self.panel.setFrame(frame, display: true) }
+    }
+    resizeWork = work
+    DispatchQueue.main.async(execute: work)
+  }
+
   func show(relativeTo button: NSStatusBarButton) {
     guard !isShown, let window = button.window, let screen = window.screen else { return }
     Self.activePanel?.close()
@@ -132,6 +158,8 @@ final class StatusItemPanel: NSObject {
     anchor = button
 
     let anchorFrame = window.convertToScreen(button.convert(button.bounds, to: nil))
+    presentationAnchor = anchorFrame
+    presentationVisibleFrame = screen.visibleFrame
     panel.setFrame(StatusItemPanelPlacement.frame(size: contentSize, anchor: anchorFrame, visibleFrame: screen.visibleFrame), display: false)
     button.highlight(true)
     installDismissalHandlers()
@@ -144,10 +172,14 @@ final class StatusItemPanel: NSObject {
 
   func close() {
     let wasShown = isShown
+    resizeWork?.cancel()
+    resizeWork = nil
     removeDismissalHandlers()
     panel.orderOut(nil)
     anchor?.highlight(false)
     anchor = nil
+    presentationAnchor = nil
+    presentationVisibleFrame = nil
     if Self.activePanel === self { Self.activePanel = nil }
     if wasShown { onClose?() }
   }

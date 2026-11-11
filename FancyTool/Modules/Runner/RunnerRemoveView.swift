@@ -10,7 +10,6 @@ struct RunnerRemoveView: View {
   
   var id: UUID?
   @ObservedObject var state = AppState.shared
-  @State private var hoveredRunnerId: UUID? = nil
   @StateObject private var runnerHandler = RunnerHandler.shared
   
   var body: some View {

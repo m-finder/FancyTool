@@ -99,25 +99,13 @@ extension RunnerModel {
 
   // 按帧获取图像
   func getImage(_ index: Int) -> CGImage {
-    var safeIndex = index
-
-    if RunnerModel.imgCache[self] == nil {
-      RunnerModel.imgCache[self] = [:]
+    let safeIndex = (0..<frameNumber).contains(index) ? index : 0
+    if let cached = Self.imgCache[self]?[safeIndex] { return cached }
+    guard let source = getCGImageSource(data),
+          let image = CGImageSourceCreateImageAtIndex(source, safeIndex, getImageOptions() as CFDictionary) else {
+      return Self.defaultImage
     }
-
-    let cacheList = RunnerModel.imgCache[self]!
-    if cacheList[index] == nil {
-      if index >= self.frameNumber || index < 0 {
-        safeIndex = 0
-      }
-
-      guard let img = getCGImageSource(data),
-            let cgImage = CGImageSourceCreateImageAtIndex(img, safeIndex, getImageOptions() as CFDictionary) else {
-        return Self.defaultImage
-      }
-      RunnerModel.imgCache[self]![index] = cgImage
-    }
-
-    return RunnerModel.imgCache[self]![index]!
+    Self.imgCache[self, default: [:]][safeIndex] = image
+    return image
   }
 }

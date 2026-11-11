@@ -8,7 +8,6 @@ import SwiftUI
 
 struct RunnerDropView: View {
 
-  @State private var isDragging = false
   @StateObject private var runnerHandler = RunnerHandler.shared
   
   var body: some View {
@@ -23,7 +22,7 @@ struct RunnerDropView: View {
       cornerRadius: 5,
       style: .continuous
     ))
-    .onDrop(of: [.fileURL], delegate: RunnerDropHandler(isDragging: $isDragging) { data in
+    .onDrop(of: [.fileURL], delegate: RunnerDropHandler { data in
       runnerHandler.addRunner(gifData: data)
     })
     .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Color.gray, lineWidth: 1))

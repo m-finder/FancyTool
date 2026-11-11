@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct TexterPopoverView: View {
-  static let panelSize = NSSize(width: 350, height: 350)
+  static let panelSize = NSSize(width: 350, height: 460)
 
   @ObservedObject var state = AppState.shared
   @FocusState private var isEditing: Bool
   var onSubmit: () -> Void = {}
 
   private var signatureGradient: LinearGradient {
-    LinearGradient(colors: ColorUtil.shared.getColor(index: state.colorIndex),
+    LinearGradient(colors: TexterPalette.colors(index: state.colorIndex, customData: state.customColorsData),
                    startPoint: .topLeading, endPoint: .bottomTrailing)
   }
 
@@ -24,7 +24,15 @@ struct TexterPopoverView: View {
           .accessibilityIdentifier("texter.rainbow")
       }
 
-      palette
+      HStack(spacing: 8) {
+        animationToggle("Rounded Border", isOn: borderBinding(rainbow: false), tint: .accentColor)
+          .accessibilityIdentifier("texter.border")
+        animationToggle("Rainbow Border", isOn: borderBinding(rainbow: true), tint: .purple)
+          .accessibilityIdentifier("texter.rainbowBorder")
+      }
+
+      TexterBorderControls(beforeEditing: onSubmit)
+      TexterPaletteView(beforeEditing: onSubmit)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
   }
@@ -46,11 +54,18 @@ struct TexterPopoverView: View {
       Spacer(minLength: 12)
 
       Text(state.text.isEmpty ? String(localized: "Keep happy.") : state.text)
-        .font(Font(TexterFont.resolve(family: state.texterFontFamily, size: 12, systemWeight: .medium)))
+        .font(Font(TexterFont.resolve(family: state.fontFamily, size: 12, systemWeight: .medium)))
         .foregroundStyle(signatureGradient)
         .shimmering(active: state.showShimmer || state.rainbowShimmer, rainbow: state.rainbowShimmer)
         .lineLimit(1)
         .truncationMode(.tail)
+        .padding(.horizontal, state.normalBorder || state.rainbowBorder ? TexterBorderStyle.horizontalPadding : 0)
+        .frame(height: 20)
+        .texterBorder(colors: TexterPalette.colors(index: state.colorIndex, customData: state.customColorsData),
+                      borderColors: TexterPalette.borderColors(customData: state.customBorderColorsData,
+                                                              useCustom: state.useCustomBorderColors),
+                      plain: state.normalBorder, rainbow: state.rainbowBorder,
+                      gradientBackground: state.gradientBackground, clockwise: state.borderClockwise)
         .frame(maxWidth: 128, alignment: .trailing)
         .accessibilityHidden(true)
     }
@@ -69,7 +84,7 @@ struct TexterPopoverView: View {
       .foregroundStyle(.secondary)
 
       TextField(String(localized: "Input something"), text: state.$text)
-        .font(Font(TexterFont.resolve(family: state.texterFontFamily, size: 13)))
+        .font(Font(TexterFont.resolve(family: state.fontFamily, size: 13)))
         .textFieldStyle(.plain)
         .focused($isEditing)
         .onSubmit(onSubmit)
@@ -119,40 +134,16 @@ struct TexterPopoverView: View {
       .strokeBorder(isOn.wrappedValue ? tint.opacity(0.22) : .primary.opacity(0.06)))
   }
 
-  private var palette: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      Text("Colorful")
-        .font(.system(size: 10, weight: .medium))
-        .foregroundStyle(.secondary)
-
-      LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 26), spacing: 6), count: 10), spacing: 2) {
-        ForEach(0..<ColorUtil.shared.getColors().count, id: \.self) { index in
-          let selected = state.colorIndex == index
-          Button {
-            state.colorIndex = index
-          } label: {
-            Circle()
-              .fill(LinearGradient(colors: ColorUtil.shared.getColor(index: index),
-                                   startPoint: .topLeading, endPoint: .bottomTrailing))
-              .overlay(Circle().strokeBorder(.white.opacity(0.2), lineWidth: 0.5))
-              .overlay {
-                if selected {
-                  Image(systemName: "checkmark")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 1, y: 1)
-                }
-              }
-              .frame(width: 20, height: 20)
-              .frame(width: 26, height: 26)
-              .overlay(Circle().strokeBorder(.primary.opacity(selected ? 0.6 : 0), lineWidth: 1))
-              .contentShape(Circle())
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel(Text("Colorful") + Text(verbatim: " \(index + 1)"))
-          .accessibilityAddTraits(selected ? .isSelected : [])
-          .accessibilityIdentifier("texter.color.\(index)")
-        }
+  private func borderBinding(rainbow: Bool) -> Binding<Bool> {
+    Binding {
+      rainbow ? state.rainbowBorder : state.normalBorder
+    } set: { enabled in
+      if rainbow {
+        if enabled { state.normalBorder = false }
+        state.rainbowBorder = enabled
+      } else {
+        if enabled { state.rainbowBorder = false }
+        state.normalBorder = enabled
       }
     }
   }

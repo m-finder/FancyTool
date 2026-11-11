@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import Combine
 
 @MainActor
 final class Monitor {
@@ -8,22 +9,35 @@ final class Monitor {
   private var panel: StatusItemPanel?
   private var item: NSStatusItem?
   private var hosting: HostingView?
+  private var stateSubscription: AnyCancellable?
 
   func mount() {
     guard item == nil else { return }
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     self.item = item
     hosting = HostingView(
-      view: MonitorStatusView().frame(height: 22).padding(.horizontal, 4),
+      view: MonitorStatusView()
+        .frame(height: MonitorStatusLayout.height)
+        .padding(.horizontal, MonitorStatusLayout.horizontalPadding),
       item: item,
       target: AppMenuActions.shared,
-      action: #selector(AppMenuActions.monitorPopover(_:))
+      action: #selector(AppMenuActions.monitorPopover(_:)),
+      fixedSize: MonitorStatusLayout.size(for: AppState.shared)
     )
+    stateSubscription = AppState.shared.objectWillChange.sink { [weak self] _ in
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        self.hosting?.setFixedSize(MonitorStatusLayout.size(for: AppState.shared))
+      }
+    }
   }
 
   func unmount() {
     panel?.close()
     panel = nil
+    SystemMetrics.shared.setMonitorPanelVisible(false)
+    stateSubscription?.cancel()
+    stateSubscription = nil
     hosting?.unmount()
     hosting = nil
     if let item { NSStatusBar.system.removeStatusItem(item) }
@@ -35,10 +49,14 @@ final class Monitor {
       panel?.close()
       return
     }
+    SystemMetrics.shared.setMonitorPanelVisible(true)
     let panel = StatusItemPanel(size: MonitorPopoverView.panelSize, content: MonitorPopoverView())
     // Discard the hidden chart tree; history belongs to SystemMetrics and is
     // ready when the panel is opened again.
-    panel.onClose = { [weak self] in self?.panel = nil }
+    panel.onClose = { [weak self] in
+      self?.panel = nil
+      SystemMetrics.shared.setMonitorPanelVisible(false)
+    }
     self.panel = panel
     panel.show(relativeTo: sender)
   }
@@ -57,8 +75,12 @@ private struct MonitorStatusView: View {
     } else {
       Image(RunnerConfig.defaultIconName)
         .resizable()
+        .interpolation(.none)
         .scaledToFit()
-        .frame(width: RunnerConfig.defaultIconSize)
+        .frame(width: 25, height: 25)
+        .frame(width: MonitorStatusLayout.emptyWidth,
+               height: MonitorStatusLayout.height, alignment: .center)
+        .clipped()
     }
   }
 }

@@ -8,11 +8,14 @@ final class HostingView {
   private weak var item: NSStatusItem?
   private var resizeWork: DispatchWorkItem?
   private var contentSize = NSSize.zero
+  private var fixedSize: NSSize?
 
-  init(view: some View, item: NSStatusItem, target: AnyObject, action: Selector) {
+  init(view: some View, item: NSStatusItem, target: AnyObject, action: Selector,
+       fixedSize: NSSize? = nil) {
     self.item = item
+    self.fixedSize = fixedSize
     hostingView = StatusButtonHostingView(rootView: AnyView(EmptyView()))
-    hostingView.sizingOptions = [.intrinsicContentSize]
+    hostingView.sizingOptions = fixedSize == nil ? [.intrinsicContentSize] : []
     guard let button = item.button else { return }
     button.target = target
     button.action = action
@@ -21,14 +24,27 @@ final class HostingView {
     // Keep the content centered while AppKit updates the button asynchronously.
     // Its width comes from SwiftUI's unconstrained layout, never the old button.
     hostingView.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin, .maxYMargin]
-    hostingView.rootView = AnyView(
-      view.fixedSize()
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { [weak self] size in
-          self?.scheduleResize(to: size)
-        }
-    )
+    if fixedSize != nil {
+      // Monitor and Duo already provide fixed geometry. Their value updates
+      // must not participate in SwiftUI measurement or queue a resize pass.
+      hostingView.rootView = AnyView(view)
+    } else {
+      hostingView.rootView = AnyView(
+        view.fixedSize()
+          .onGeometryChange(for: CGSize.self) { $0.size } action: { [weak self] size in
+            self?.scheduleResize(to: size)
+          }
+      )
+    }
     button.addSubview(hostingView)
-    scheduleResize(to: hostingView.intrinsicContentSize)
+    scheduleResize(to: fixedSize ?? hostingView.intrinsicContentSize)
+  }
+
+  func setFixedSize(_ size: NSSize?) {
+    guard fixedSize != size else { return }
+    fixedSize = size
+    hostingView.sizingOptions = size == nil ? [.intrinsicContentSize] : []
+    scheduleResize(to: size ?? hostingView.intrinsicContentSize)
   }
 
   func unmount() {
@@ -39,8 +55,10 @@ final class HostingView {
   }
 
   private func scheduleResize(to size: NSSize) {
-    guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return }
-    contentSize = size
+    let nextSize = fixedSize ?? size
+    guard nextSize.width.isFinite, nextSize.height.isFinite,
+          nextSize.width > 0, nextSize.height > 0 else { return }
+    contentSize = nextSize
     guard resizeWork == nil else { return }
     let work = DispatchWorkItem { [weak self] in
       self?.resizeWork = nil
@@ -54,12 +72,13 @@ final class HostingView {
     guard let item, let button = item.button else { return }
     let length = ceil(contentSize.width)
     if abs(item.length - length) > 0.5 { item.length = length }
-    hostingView.frame = NSRect(
+    let frame = NSRect(
       x: button.bounds.midX - length / 2,
       y: button.bounds.midY - contentSize.height / 2,
       width: length,
       height: contentSize.height
     )
+    if hostingView.frame != frame { hostingView.frame = frame }
   }
 }
 

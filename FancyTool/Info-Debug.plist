@@ -12,5 +12,9 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>FancyTool needs Screen Recording access to capture selected windows and areas.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>FancyTool connects and disconnects your paired Bluetooth devices from Duo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>FancyTool uses location access to show nearby Wi-Fi network names in Duo.</string>
 </dict>
 </plist>

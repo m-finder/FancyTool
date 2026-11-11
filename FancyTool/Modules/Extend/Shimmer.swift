@@ -17,26 +17,25 @@ private enum ShimmerConst {
   static let tiltFactor: CGFloat = -0.1
 }
 
-private struct ShimmerColors {
+enum ShimmerColors {
   static let plain: [CGColor] = [
     NSColor.clear.cgColor,
     NSColor.white.withAlphaComponent(0.8).cgColor,
     NSColor.clear.cgColor
   ]
   
-  static let rainbow: [CGColor] = [
-    NSColor.clear.cgColor,
-    NSColor.orange.withAlphaComponent(0.8).cgColor,
-    NSColor.blue.withAlphaComponent(0.8).cgColor,
-    NSColor.green.withAlphaComponent(0.8).cgColor,
-    NSColor.clear.cgColor
+  static let rainbowPalette: [NSColor] = [
+    NSColor.orange.withAlphaComponent(0.8),
+    NSColor.blue.withAlphaComponent(0.8),
+    NSColor.green.withAlphaComponent(0.8)
   ]
+  static let rainbow: [CGColor] = [NSColor.clear.cgColor] + rainbowPalette.map(\.cgColor) + [NSColor.clear.cgColor]
 }
 
 /// AppKit panels can be ordered out without SwiftUI sending onDisappear.
 /// Tie the layer's lifetime to actual window visibility instead.
 @MainActor
-private final class ShimmerVisibilityView: NSView {
+final class ShimmerVisibilityView: NSView {
   var onVisibilityChange: ((Bool) -> Void)?
   private var observers: [(NotificationCenter, NSObjectProtocol)] = []
   private var displaySleeping = false

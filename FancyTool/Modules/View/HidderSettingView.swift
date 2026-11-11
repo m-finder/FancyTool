@@ -27,7 +27,7 @@ struct HidderSettingView: View {
             step: 1
           ).frame(width: 150)
           
-          Text("\(state.hidderSize)").frame(width: 24, alignment: .trailing)
+          Text(verbatim: "\(state.hidderSize)").frame(width: 24, alignment: .trailing)
         }
         .onChange(of: state.hidderSize) { oldValue, newValue in
           hidderSizeDebouncer?.cancel()

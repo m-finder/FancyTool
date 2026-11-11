@@ -34,6 +34,7 @@ class AppMenuActions: NSObject {
     
     settingsWindow?.show()
   }
+
   
   // MARK: - 打开关于窗口
   @IBAction func about(_ sender: Any){
@@ -46,9 +47,13 @@ class AppMenuActions: NSObject {
     
     aboutWindow?.show()
   }
+
+  @IBAction func checkForUpdates(_ sender: NSMenuItem) {
+    Task { await UpdateChecker.shared.checkManually() }
+  }
   
   // MARK: - 停启用菜单折叠
-  @IBAction func hidder(_ sender: NSStatusBarButton){
+  @IBAction func hidder(_ sender: NSMenuItem){
     guard Hidder.isSupported else {
       AppState.shared.showHidder = false
       sender.state = .off
@@ -72,7 +77,7 @@ class AppMenuActions: NSObject {
   }
   
   // MARK: - 停启用炫彩签名
-  @IBAction func texter(_ sender: NSStatusBarButton){
+  @IBAction func texter(_ sender: NSMenuItem){
     AppState.shared.showTexter.toggle()
     sender.state = AppState.shared.showTexter ? .on : .off
     
@@ -90,7 +95,7 @@ class AppMenuActions: NSObject {
   }
   
   // MARK: - 停启用剪贴板
-  @IBAction func paster(_ sender: NSStatusBarButton){
+  @IBAction func paster(_ sender: NSMenuItem){
     AppState.shared.showPaster.toggle()
     sender.state = AppState.shared.showPaster ? .on : .off
     
@@ -108,7 +113,7 @@ class AppMenuActions: NSObject {
   }
   
   // MARK: - 停启用屏幕圆角
-  @IBAction func rounder(_ sender: NSStatusBarButton){
+  @IBAction func rounder(_ sender: NSMenuItem){
     AppState.shared.showRounder.toggle()
     sender.state = AppState.shared.showRounder ? .on : .off
     
@@ -121,7 +126,7 @@ class AppMenuActions: NSObject {
   }
   
   // MARK: - 停启用监控
-  @IBAction func monitor(_ sender: NSStatusBarButton){
+  @IBAction func monitor(_ sender: NSMenuItem){
     
     AppState.shared.showMonitor.toggle()
     
@@ -148,8 +153,18 @@ class AppMenuActions: NSObject {
     Monitor.shared.togglePanel(sender)
   }
 
+  // MARK: - 停启用聚合控制
+  @IBAction func duo(_ sender: NSMenuItem) {
+    AppState.shared.showDuo.toggle()
+    sender.state = AppState.shared.showDuo ? .on : .off
+    if AppState.shared.showDuo { Duo.shared.mount() } else { Duo.shared.unmount() }
+    AppMenu.shared.refreshFeatureStates()
+  }
+
+  @IBAction func duoPopover(_ sender: NSStatusBarButton) { Duo.shared.togglePanel(sender) }
+
   // MARK: - 停启用 Shotter
-  @IBAction func shotter(_ sender: NSStatusBarButton){
+  @IBAction func shotter(_ sender: NSMenuItem){
     AppState.shared.showShotter.toggle()
     sender.state = AppState.shared.showShotter ? .on : .off
 

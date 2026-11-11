@@ -6,12 +6,14 @@ final class Runner: NSObject, CAAnimationDelegate {
   static let shared = Runner()
 
   private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+  var statusButton: NSStatusBarButton? { item.button }
   private var cancellables = Set<AnyCancellable>()
   private weak var observedWindow: NSWindow?
   private var windowObservation: AnyCancellable?
   private var renderedScale: CGFloat = 0
   private var cpuUsage = 0.0
   private var smoothedCPU = 0.0
+  private var lastCPUSample: UInt64?
   private var isCharging = false
   private var displaySleeping = false
   private var lowPowerEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
@@ -43,6 +45,11 @@ final class Runner: NSObject, CAAnimationDelegate {
     RunnerCompanionPlayback.rate(cpu: smoothedCPU, lowPower: lowPowerEnabled)
   }
 
+  private var companionNeedsActivityClock: Bool {
+    guard let renderedState else { return false }
+    return renderedState != .idle && renderedState != .busy && renderedState != .sleeping
+  }
+
   func mount() {
     guard let button = item.button else { return }
     RunnerLayer.shared.mount(button: button, scale: currentScale)
@@ -72,7 +79,7 @@ final class Runner: NSObject, CAAnimationDelegate {
       item.button?.target = self
       item.button?.action = #selector(companionClicked)
       item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
-      setWidth(RunnerCompanionArt.size.width - 4)
+      setWidth(RunnerCompanionArt.size.width)
       refreshBehavior()
       return
     }
@@ -247,17 +254,18 @@ final class Runner: NSObject, CAAnimationDelegate {
   }
 
   private func synchronizeActivityClock() {
-    guard AppState.shared.runnerCompanion, !companionPaused else {
+    guard AppState.shared.runnerCompanion, !companionPaused, companionNeedsActivityClock else {
       activityClock?.cancel()
       activityClock = nil
       activityInterval = nil
       return
     }
-    let interval: TimeInterval = renderedState == .idle || renderedState == .busy || renderedState == .sleeping ? 1 : 0.25
+    let interval: TimeInterval = 1
     guard activityClock == nil || activityInterval != interval else { return }
     activityClock?.cancel()
     activityInterval = interval
-    // Core Animation draws frames independently; resting needs fewer behavior checks.
+    // Only short actions need this clock. Resting consumes the existing system
+    // samples instead, while Core Animation continues drawing every sprite frame.
     activityClock = Timer.publish(every: interval, tolerance: interval * 0.2, on: .main, in: .common)
       .autoconnect()
       .sink { [weak self] _ in self?.refreshBehavior() }
@@ -265,13 +273,17 @@ final class Runner: NSObject, CAAnimationDelegate {
 
   // Preserve the current frame/time when the CPU sample changes or playback pauses.
   private func setPlaybackSpeed(_ speed: Float) {
-    guard let layer = RunnerLayer.shared.layer, layer.speed != speed else { return }
+    guard let layer = RunnerLayer.shared.layer, layer.animationKeys()?.isEmpty == false else { return }
+    // CPU smoothing changes by tiny amounts even when the visible pace is the
+    // same. Avoid committing a new Core Animation clock for imperceptible drift.
+    let nextSpeed = speed == 0 ? 0 : (speed * 20).rounded() / 20
+    guard layer.speed != nextSpeed else { return }
     let now = CACurrentMediaTime()
     let localTime = layer.convertTime(now, from: nil)
     let parentTime = layer.superlayer?.convertTime(now, from: nil) ?? now
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    layer.speed = speed
+    layer.speed = nextSpeed
     layer.timeOffset = localTime
     layer.beginTime = parentTime
     CATransaction.commit()
@@ -295,16 +307,19 @@ final class Runner: NSObject, CAAnimationDelegate {
   private func observe() {
     cancellables.removeAll()
     SystemMetrics.shared.$bundle
-      .receive(on: DispatchQueue.main)
       .sink { [weak self] bundle in
         guard let self else { return }
-        let cpu = bundle?.cpuInfo?.percentage.value ?? 0
-        self.cpuUsage = cpu.isFinite ? min(100, max(0, cpu)) : 0
-        self.smoothedCPU = self.smoothedCPU * 0.6 + self.cpuUsage * 0.4
+        let sequence = SystemMetrics.shared.sampleSequence
+        if self.lastCPUSample != sequence {
+          self.lastCPUSample = sequence
+          let cpu = bundle?.cpuInfo?.percentage.value ?? 0
+          self.cpuUsage = cpu.isFinite ? min(100, max(0, cpu)) : 0
+          self.smoothedCPU = self.smoothedCPU * 0.6 + self.cpuUsage * 0.4
+        }
         self.isCharging = bundle?.batteryInfo?.isCharging ?? false
-        // The companion's existing clock consumes the new sample. GIF mode
-        // has no activity timer and updates its playback rate here.
-        if !AppState.shared.runnerCompanion { self.refreshBehavior() }
+        // Reuse the sampling clock for resting/sleeping; do not wake an extra
+        // timer just to read the same CPU/battery values between samples.
+        if !AppState.shared.runnerCompanion || !self.companionNeedsActivityClock { self.refreshBehavior() }
       }
       .store(in: &cancellables)
 

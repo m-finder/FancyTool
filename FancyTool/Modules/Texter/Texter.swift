@@ -14,7 +14,7 @@ final class Texter {
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     self.item = item
     hosting = HostingView(
-      view: TexterView().frame(height: 22).frame(minWidth: 40).padding(.horizontal, 4),
+      view: TexterView().frame(height: 22),
       item: item,
       target: AppMenuActions.shared,
       action: #selector(AppMenuActions.textPopover(_:))

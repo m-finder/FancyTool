@@ -7,58 +7,67 @@
 
 import SwiftUI
 
-struct SettingsView: View {
+enum SettingsSection: String, CaseIterable, Identifiable {
+  case universal
+  case hidder
+  case texter
+  case paster
+  case rounder
+  case monitor
+  case duo
+  case shotter
+  case runner
 
-  private enum Section: String, CaseIterable, Identifiable {
-    case universal
-    case hidder
-    case texter
-    case paster
-    case rounder
-    case monitor
-    case shotter
-    case runner
+  var id: Self { self }
 
-    var id: Self { self }
+  static var visibleCases: [Self] {
+    allCases.filter { $0 != .hidder || Hidder.isSupported }
+  }
 
-    static var visibleCases: [Self] {
-      allCases.filter { $0 != .hidder || Hidder.isSupported }
-    }
-
-    var title: LocalizedStringKey {
-      switch self {
-      case .universal: "Universal"
-      case .hidder: "Hidder"
-      case .texter: "Texter"
-      case .paster: "Paster"
-      case .rounder: "Rounder"
-      case .monitor: "Monitor"
-      case .shotter: "Shotter"
-      case .runner: "Runner"
-      }
-    }
-
-    var symbol: String {
-      switch self {
-      case .universal: "gearshape"
-      case .hidder: "menubar.rectangle"
-      case .texter: "text.cursor"
-      case .paster: "doc.on.clipboard"
-      case .rounder: "rectangle.roundedtop"
-      case .monitor: "chart.line.uptrend.xyaxis"
-      case .shotter: "pencil.and.outline"
-      case .runner: "square.grid.2x2"
-      }
+  var title: LocalizedStringKey {
+    switch self {
+    case .universal: "Universal"
+    case .hidder: "Hidder"
+    case .texter: "Texter"
+    case .paster: "Paster"
+    case .rounder: "Rounder"
+    case .monitor: "Monitor"
+    case .duo: "Duo"
+    case .shotter: "Shotter"
+    case .runner: "Runner"
     }
   }
 
-  @State private var selection: Section? = .universal
+  var symbol: String {
+    switch self {
+    case .universal: "gearshape"
+    case .hidder: "menubar.rectangle"
+    case .texter: "text.cursor"
+    case .paster: "doc.on.clipboard"
+    case .rounder: "rectangle.roundedtop"
+    case .monitor: "chart.line.uptrend.xyaxis"
+    case .duo: "circle.grid.2x2"
+    case .shotter: "pencil.and.outline"
+    case .runner: "square.grid.2x2"
+    }
+  }
+}
+
+@MainActor
+final class SettingsNavigation: ObservableObject {
+  static let shared = SettingsNavigation()
+  @Published var selection: SettingsSection? = .universal
+  private init() {}
+}
+
+struct SettingsView: View {
+  @ObservedObject private var navigation = SettingsNavigation.shared
 
   var body: some View {
     HStack(spacing: 0) {
-      List(Section.visibleCases, selection: $selection) { section in
+      List(SettingsSection.visibleCases, selection: $navigation.selection) { section in
         Label(section.title, systemImage: section.symbol)
-          .fontWeight(selection == section ? .semibold : .regular)
+          .fontWeight(navigation.selection == section ? .semibold : .regular)
           .tag(section)
       }
       .listStyle(.sidebar)
@@ -73,7 +82,7 @@ struct SettingsView: View {
 
   @ViewBuilder
   private var detail: some View {
-    switch selection ?? .universal {
+    switch navigation.selection ?? .universal {
     case .universal:
       SettingsDetailView {
         MainSettingView()
@@ -101,6 +110,10 @@ struct SettingsView: View {
     case .shotter:
       SettingsDetailView {
         ShotterSettingView()
+      }
+    case .duo:
+      SettingsDetailView {
+        DuoSettingView()
       }
     case .runner:
       SettingsDetailView(expandsContent: true) {

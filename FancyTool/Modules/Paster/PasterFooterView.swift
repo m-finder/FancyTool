@@ -37,7 +37,7 @@ struct PasterFooterView: View {
     HStack {
 
       // 绑定快捷键
-      Text("⌘+\(number)")
+      Text(verbatim: "⌘+\(number)")
         .padding(4)
         .cornerRadius(4)
         .buttonStyle(.plain)
@@ -47,14 +47,14 @@ struct PasterFooterView: View {
       
       // 字符统计
       if let textContent = item.content, !textContent.isEmpty {
-        Text("\(textContent.count) \(String(localized: "chars"))")
+        Text("\(textContent.count) chars")
           .font(.caption)
           .foregroundColor(.secondary)
       }
       
       // 图片尺寸
       if imageSize.width > 0, imageSize.height > 0 {
-        Text("\(Int(imageSize.width)) * \(Int(imageSize.height))")
+        Text(verbatim: "\(Int(imageSize.width)) * \(Int(imageSize.height))")
           .font(.caption)
           .foregroundColor(.secondary)
       }

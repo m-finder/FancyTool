@@ -26,7 +26,7 @@ struct RounderSettingView: View {
           )
           .frame(width: 150)
           
-          Text("\(state.radius)").frame(width: 24, alignment: .trailing)
+          Text(verbatim: "\(state.radius)").frame(width: 24, alignment: .trailing)
         }
         .onChange(of: state.radius) { oldValue, newValue in
           radiusDebouncer?.cancel()

@@ -140,7 +140,7 @@ struct MonitorPopoverView: View {
   }
 
   private func percentage(_ value: Double?) -> String {
-    value.flatMap { $0.isFinite ? String(format: "%.1f%%", $0) : nil } ?? "—"
+    PercentText.oneDecimal(value)
   }
 
   private func connectionName(_ network: NetworkInfo) -> String {

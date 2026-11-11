@@ -11,16 +11,29 @@ struct TexterView: View {
   
   @ObservedObject var state = AppState.shared
   @State private var isVisible: Bool = false
+  var previewColors: [Color]? = nil
+  var previewBorderColors: [Color]? = nil
+  var fitsAvailableWidth = false
   
   var body: some View {
-
-    Text(state.text)
+    Text((previewColors != nil || previewBorderColors != nil) && state.text.isEmpty ? String(localized: "Keep happy.") : state.text)
       .shimmering(
         active: (state.showShimmer || state.rainbowShimmer) && isVisible,
         rainbow: state.rainbowShimmer
       )
       .foregroundStyle(textGradient)
-      .font(Font(TexterFont.resolve(family: state.texterFontFamily, size: CGFloat(state.fontSize))))
+      .font(Font(TexterFont.resolve(family: state.fontFamily, size: CGFloat(state.fontSize))))
+      .lineLimit(1)
+      .minimumScaleFactor(fitsAvailableWidth ? 0.4 : 1)
+      .fixedSize(horizontal: !fitsAvailableWidth, vertical: false)
+      .frame(minWidth: state.text.isEmpty ? 8 : 0)
+      .padding(.horizontal, (state.normalBorder || rainbowBorder) ? TexterBorderStyle.horizontalPadding : 0)
+      .frame(height: 20)
+      .texterBorder(colors: selectedColors,
+                    borderColors: previewBorderColors ?? TexterPalette.borderColors(customData: state.customBorderColorsData,
+                                                                                    useCustom: state.useCustomBorderColors),
+                    plain: state.normalBorder, rainbow: rainbowBorder,
+                    gradientBackground: state.gradientBackground, clockwise: state.borderClockwise)
       .onAppear {
         isVisible = true
       }
@@ -32,9 +45,49 @@ struct TexterView: View {
   // 文字颜色渐变
   private var textGradient: LinearGradient {
     LinearGradient(
-      colors: ColorUtil.shared.getColor(index: state.colorIndex),
+      colors: selectedColors,
       startPoint: .topLeading,
       endPoint: .bottomTrailing
     )
+  }
+
+  private var selectedColors: [Color] {
+    previewColors ?? TexterPalette.colors(index: state.colorIndex, customData: state.customColorsData)
+  }
+
+  private var rainbowBorder: Bool { previewBorderColors != nil || state.rainbowBorder }
+}
+
+private struct TexterBorderModifier: ViewModifier {
+  let colors: [Color]
+  let borderColors: [Color]
+  let plain: Bool
+  let rainbow: Bool
+  let gradientBackground: Bool
+  let clockwise: Bool
+
+  func body(content: Content) -> some View {
+    content.background {
+      if gradientBackground && (rainbow || plain) {
+        RoundedRectangle(cornerRadius: TexterBorderStyle.cornerRadius)
+          .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing).opacity(0.12))
+          .allowsHitTesting(false).accessibilityHidden(true)
+      }
+    }.overlay {
+      if rainbow || plain {
+        GeometryReader { geometry in
+          TexterBorderView(colors: borderColors, rainbow: rainbow, bounds: geometry.size, clockwise: clockwise)
+        }
+          .allowsHitTesting(false).accessibilityHidden(true)
+      }
+    }
+  }
+}
+
+extension View {
+  func texterBorder(colors: [Color], borderColors: [Color], plain: Bool, rainbow: Bool,
+                    gradientBackground: Bool, clockwise: Bool) -> some View {
+    modifier(TexterBorderModifier(colors: colors, borderColors: borderColors, plain: plain, rainbow: rainbow,
+                                  gradientBackground: gradientBackground, clockwise: clockwise))
   }
 }

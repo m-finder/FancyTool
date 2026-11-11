@@ -16,91 +16,66 @@
 
 <p align="center">macOS 14.6+ · Swift / SwiftUI / AppKit · Free and open source</p>
 
-FancyTool brings colorful text, clipboard history, system monitoring, and screenshots to your menu bar, along with animated icons and a status dog. Enable the modules you need for a lightweight, practical Mac utility with a little personality.
+FancyTool brings colorful text, clipboard history, system monitoring, quick controls, and screenshots to your menu bar, along with animated icons and a status dog. Enable the modules you need for a lightweight, practical Mac utility with a little personality.
 
 ## Screenshots
 
-These screenshots show the development version running on macOS. Images retain their original Retina **2× resolution** and are saved as PNGs. Click an image to view it at full size; only its display size is reduced here.
+Current development build. Click an image to view it at full size.
 
 <table>
-  <tr><th>Colorful text · Texter</th><th>System monitor · Monitor</th></tr>
-  <tr>
-    <td align="center" valign="top"><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/texter@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/texter@2x.png" width="350" alt="Texter panel with text input, shimmer switches, and a color palette"></a></td>
-    <td align="center" valign="top"><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/monitor@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/monitor@2x.png" width="270" alt="Monitor panel with CPU, memory, storage, battery, and network measurements and charts"></a></td>
-  </tr>
-</table>
-
-Texter uses sample text, while Monitor shows live measurements with the local network address hidden. The clipboard panel contains demonstration text and images. Appearance varies with the macOS version and system theme; features in a published build are described in its release notes.
-
-### Menu bar monitoring
-
-The **Colored icons** setting changes only the monitoring icons in the menu bar. Values and the monitor panel retain their existing colors. These images preview the native menu bar content.
-
-<table>
-  <tr><th>Colored icons</th><th>Default colors</th></tr>
-  <tr>
-    <td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/monitor-menubar-color@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/monitor-menubar-color@2x.png" width="297" alt="Colored CPU, memory, storage, battery, and network icons"></a></td>
-    <td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/monitor-menubar-default@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/monitor-menubar-default@2x.png" width="297" alt="Monitoring icons using the default color"></a></td>
-  </tr>
+  <tr><th>Texter</th><th>Monitor</th><th>Duo</th></tr>
+  <tr><td align="center" valign="top"><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/texter@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/texter@2x.png" width="300" alt="Texter signature and color controls"></a></td><td align="center" valign="top"><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/monitor@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/monitor@2x.png" width="270" alt="Live system monitoring panel"></a></td><td align="center" valign="top"><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/duo@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/duo@2x.png" width="292" alt="Duo controls for Wi-Fi, Bluetooth, sound, display, and input source"></a></td></tr>
 </table>
 
 ### Clipboard and screenshot tools
 
-<p><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/paster@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/paster@2x.png" width="960" alt="Clipboard panel with search, pinned items, text and image cards, and keyboard shortcuts"></a></p>
+<p><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/paster@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/paster@2x.png" width="960" alt="Clipboard history with search and pinned items"></a></p>
 
-<p><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/shotter@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/shotter@2x.png" width="680" alt="Screenshot editor with rectangle, arrow, and numbered annotations and a separate toolbar"></a></p>
+<p><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/shotter@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/shotter@2x.png" width="680" alt="Screenshot editor with annotation tools"></a></p>
 
 ### Settings
 
 <table>
-  <tr><th>General</th><th>Animated icons · Runner</th></tr>
-  <tr>
-    <td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-universal@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-universal@2x.png" width="420" alt="General settings for appearance, launch at login, and quitting"></a></td>
-    <td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-runner@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-runner@2x.png" width="420" alt="Runner settings with GIF selection, custom icons, and the status dog"></a></td>
-  </tr>
+  <tr><th>General</th><th>Runner</th></tr>
+  <tr><td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-universal@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-universal@2x.png" width="420" alt="General preferences"></a></td><td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-runner@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-runner@2x.png" width="420" alt="Animated icon and status dog settings"></a></td></tr>
 </table>
 
 <details>
-<summary>Show settings for other modules</summary>
+<summary>Show more settings screenshots</summary>
 
 <table>
-  <tr><th>Colorful text</th><th>Clipboard</th></tr>
-  <tr>
-    <td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-texter@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-texter@2x.png" width="420" alt="Texter settings for font, size, shimmer, and rainbow shimmer"></a></td>
-    <td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-paster@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-paster@2x.png" width="420" alt="Clipboard settings for history limits, shortcuts, and automatic paste"></a></td>
-  </tr>
-  <tr><th>System monitor</th><th>Screenshots</th></tr>
-  <tr>
-    <td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-monitor@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-monitor@2x.png" width="420" alt="Monitor settings with metric switches and colored icons"></a></td>
-    <td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-shotter@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-shotter@2x.png" width="420" alt="Screenshot settings and shortcut"></a></td>
-  </tr>
-  <tr><th colspan="2">Rounded screen corners</th></tr>
-  <tr><td colspan="2" align="center"><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-rounder@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-rounder@2x.png" width="420" alt="Screen corner radius setting"></a></td></tr>
+  <tr><th>Texter</th><th>Monitor</th></tr>
+  <tr><td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-texter@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-texter@2x.png" width="420" alt="Signature appearance settings"></a></td><td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-monitor@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-monitor@2x.png" width="420" alt="Monitor metric settings"></a></td></tr>
+  <tr><th>Duo</th><th>Paster</th></tr>
+  <tr><td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-duo@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-duo@2x.png" width="420" alt="Duo menu bar settings"></a></td><td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-paster@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-paster@2x.png" width="420" alt="Clipboard settings"></a></td></tr>
+  <tr><th>Shotter</th><th>Rounder</th></tr>
+  <tr><td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-shotter@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-shotter@2x.png" width="420" alt="Screenshot shortcut settings"></a></td><td><a href="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-rounder@2x.png"><img src="https://raw.githubusercontent.com/m-finder/FancyToolApp/main/doc/screenshots/settings-rounder@2x.png" width="420" alt="Screen corner radius setting"></a></td></tr>
 </table>
 
 </details>
 
-The screenshots were captured on macOS 27. Hidder is unavailable on that version and is therefore not shown.
+The interface varies with your macOS version and appearance settings. Hidder is unavailable on macOS 27 and is not shown.
 
 ## Features
 
 | Module | Features |
 | --- | --- |
-| **Texter** | Edit menu bar text, choose gradient colors, and enable shimmer or rainbow shimmer. Select an installed font and font size in Settings. |
+| **Texter** | Edit menu bar text, choose fonts and gradient colors, and add shimmer, rounded or rainbow borders, custom border colors, and a gradient background. |
 | **Paster** | Keep text and image clipboard history, pin items, set a history limit, search by content or source application, and optionally paste automatically. |
-| **Monitor** | Show CPU, memory, storage, battery, and network metrics with optional colored menu bar icons. The panel includes five-minute CPU, memory, and network charts, storage and battery capacity charts, and charging status. |
+| **Monitor** | Show CPU, memory, storage, battery, and network speed as needed, with a compact menu bar layout and a panel of live values and charts. |
+| **Duo** | See battery, Wi-Fi, and sound status in one menu bar item. Control Bluetooth, volume, and display appearance; choose Wi-Fi networks, paired devices, and input sources. |
 | **Shotter** | Capture a region, window, or screen with pixel dimensions shown during selection. Add shapes, arrows, freehand strokes, highlights, text, numbers, and opaque redactions. Adjust colors, line widths, and font sizes; move or delete annotations; undo, redo, pin, copy, or save a full-resolution PNG. |
 | **Runner** | Drop in custom GIFs and adjust playback speed with CPU usage. Enable the status dog to react to system load, charging, and inactivity, with smooth changes in animation speed. |
 | **Rounder** | Add adjustable rounded corners to the screen. |
 | **Hidder** | Collapse or expand menu bar icons using a dot marker. Available on macOS versions earlier than 27. |
 
-The interface supports Simplified Chinese, English, Japanese, Korean, German, and French.
+The interface supports Simplified Chinese, English, Japanese, Korean, German, and French. FancyTool checks for updates once a day, supports manual checks, and shows a menu bar notice when a new version is available.
 
 ## Quick start
 
 1. Download FancyTool from [Releases](https://github.com/m-finder/FancyTool/releases), move it to **Applications**, and launch it.
 2. Open the FancyTool menu in the menu bar and enable the modules you need.
-3. Open **Settings** to configure text fonts and sizes, monitoring metrics, clipboard history limits, shortcuts, animated icons, and the status dog.
+3. Open **Settings** to configure signatures, monitoring, clipboard history, screenshot shortcuts, and animated icons.
 
 ### Common actions
 
@@ -112,7 +87,7 @@ The interface supports Simplified Chinese, English, Japanese, Korean, German, an
 | Change clipboard page | `Tab` / `⇧Tab` |
 | Select a clipboard item on the current page | `⌘1`–`⌘5` |
 | Confirm text and close Texter | Press `Return` in the input field |
-| Close Texter or Monitor | Click its menu bar item again, click outside the panel, or press `Esc` |
+| Close Texter, Monitor, or Duo | Click its menu bar item again, click outside the panel, or press `Esc` |
 | Undo / redo screenshot annotations | `⌘Z` / `⇧⌘Z` |
 | Adjust a screenshot selection | Hold `Shift` to select a square or `Space` to move the selection while dragging; press `Return` to capture the screen under the pointer |
 | Edit screenshot annotations | Press `V` to select or move an annotation, `Delete` to remove it, or arrow keys to nudge it |
@@ -127,6 +102,8 @@ The screenshot toolbar provides colors, line widths, and font sizes. Select an e
 | --- | --- |
 | Screenshots | Screen Recording |
 | Clipboard automatic paste | Accessibility; without it, you can still copy a history item and paste manually |
+| Nearby Wi-Fi networks in Duo | Location Services, requested when you open the network list |
+| Paired Bluetooth devices in Duo | Bluetooth, requested when you open the device list |
 
 Manage these permissions in **System Settings → Privacy & Security**.
 
@@ -135,7 +112,7 @@ Manage these permissions in **System Settings → Privacy & Security**.
 | macOS version | Details |
 | --- | --- |
 | **14.6 or later** | Minimum supported version |
-| **26 or later** | Texter, Monitor, and Paster use native glass materials; earlier versions use a compatible appearance |
+| **26 or later** | Texter, Monitor, Duo, and Paster use native glass materials; earlier versions use a compatible appearance |
 | **27 or later** | Hidder is automatically hidden and disabled |
 
 ## Build from source

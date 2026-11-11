@@ -68,6 +68,12 @@ struct AppMenuItem {
         action:  #selector(AppMenuActions.monitor(_:)),
         state: AppState.shared.showMonitor
       ),
+      // 聚合控制
+      AppMenuItem(
+        title: String(localized: "Duo"),
+        action: #selector(AppMenuActions.duo(_:)),
+        state: AppState.shared.showDuo
+      ),
       // 截图工具
       AppMenuItem(
         title: String(localized: "Shotter"),
@@ -89,6 +95,10 @@ struct AppMenuItem {
         title: String(localized: "About"),
         action:  #selector(AppMenuActions.about(_:)),
         key: "a"
+      ),
+      AppMenuItem(
+        title: String(localized: "Check for Updates…"),
+        action: #selector(AppMenuActions.checkForUpdates(_:))
       ),
       // 退出软件
       AppMenuItem(

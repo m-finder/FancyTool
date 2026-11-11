@@ -9,26 +9,10 @@ import SwiftUI
 
 struct RunnerSettingView: View {
   
-  @State private var isDragging = false
-  @State private var hoveredRunnerId: UUID? = nil
   @ObservedObject var state = AppState.shared
   @StateObject private var runnerHandler = RunnerHandler.shared
   
   private let columns = Array(repeating: GridItem(.flexible(minimum: 0), spacing: 10), count: 4)
-  
-  private var runners: [RunnerModel] {
-    runnerHandler.cachedRunners.sorted { a, b in
-      if a.isDefault && b.isDefault {
-        return a.id.uuidString < b.id.uuidString
-      } else if a.isDefault {
-        return true
-      } else if b.isDefault {
-        return false
-      } else {
-        return a.createdAt < b.createdAt
-      }
-    }
-  }
   
   var body: some View {
     VStack(alignment: .center, spacing: 0) {
@@ -71,7 +55,7 @@ struct RunnerSettingView: View {
             .aspectRatio(1, contentMode: .fit)
           
           /* 后面跟着所有 runner */
-          ForEach(runners) { runner in
+          ForEach(runnerHandler.cachedRunners) { runner in
             ZStack(alignment: .bottomTrailing) {
               VStack {
                 RunnerView(

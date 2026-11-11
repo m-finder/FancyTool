@@ -21,10 +21,6 @@ enum PasterSearch {
     }
   }
 
-  static func matches(_ query: String, content: String?, sourceAppPath: String) -> Bool {
-    Query(query).matches(content: content, sourceAppPath: sourceAppPath)
-  }
-
   static func pageRange(page: Int, count: Int, pageSize: Int) -> Range<Int> {
     guard page >= 0, count > 0, pageSize > 0,
           page <= (count - 1) / pageSize else { return 0..<0 }

@@ -5,7 +5,7 @@ import ImageIO
 /// Original pixel-art frames share one canvas and scale. No body parts are
 /// stretched or interpolated when the companion changes activities.
 enum RunnerCompanionArt {
-  static let size = CGSize(width: 32, height: 22)
+  static let size = CGSize(width: 26, height: 22)
 
   enum Sprite: Int, CaseIterable {
     case blink0 = 0, blink1, blink2, blink3, blink4, blink5
@@ -139,9 +139,10 @@ enum RunnerCompanionArt {
             bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
     context.interpolationQuality = .none
-    // 144 × 99 source pixels fit exactly into the 32 × 22 point menu-bar canvas.
+    // Trim the same transparent side margins in every pose, preserving the
+    // 4.5 source pixels per point and keeping the widest sleeping pose intact.
     context.scaleBy(x: scale / 4.5, y: scale / 4.5)
-    context.draw(spriteImage, in: CGRect(x: 8, y: 0, width: 128, height: 99))
+    context.draw(spriteImage, in: CGRect(x: -10, y: 0, width: 128, height: 99))
     guard let image = context.makeImage() else { return nil }
     frameCache.images.setObject(image, forKey: key, cost: image.bytesPerRow * image.height)
     return image

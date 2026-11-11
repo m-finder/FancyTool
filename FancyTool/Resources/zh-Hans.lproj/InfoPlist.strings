@@ -1,0 +1,3 @@
+"NSScreenCaptureUsageDescription" = "FancyTool 需要屏幕录制权限，以截取选中的窗口和区域。";
+"NSBluetoothAlwaysUsageDescription" = "FancyTool 需要蓝牙权限，以在聚合图标中连接或断开已配对的设备。";
+"NSLocationWhenInUseUsageDescription" = "FancyTool 需要定位权限，以在聚合图标中显示附近的 Wi-Fi 网络名称。";

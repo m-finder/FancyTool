@@ -34,7 +34,10 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 @MainActor
 final class AppState: ObservableObject {
   
-  static let shared = AppState()
+  static let shared: AppState = {
+    migrateLegacyTexterSettings()
+    return AppState()
+  }()
   
   // 主程序配置
   @AppStorage("startUp") var startUp: Bool = false
@@ -61,8 +64,15 @@ final class AppState: ObservableObject {
   @AppStorage("rainbowShimmer") var rainbowShimmer: Bool = false
   @AppStorage("colorIndex") var colorIndex: Int = 0
   @AppStorage("fontSize") var fontSize: Int = 14
-  @AppStorage("texterFontFamily") var texterFontFamily: String = ""
+  @AppStorage("fontFamily") var fontFamily: String = ""
   @AppStorage("text") var text: String = String(localized: "Keep happy.")
+  @AppStorage("normalBorder") var normalBorder: Bool = false
+  @AppStorage("rainbowBorder") var rainbowBorder: Bool = false
+  @AppStorage("gradientBackground") var gradientBackground: Bool = false
+  @AppStorage("customColorsData") var customColorsData: Data = Data()
+  @AppStorage("useCustomBorderColors") var useCustomBorderColors: Bool = false
+  @AppStorage("customBorderColorsData") var customBorderColorsData: Data = Data()
+  @AppStorage("borderClockwise") var borderClockwise: Bool = false
   
   
   // Paster
@@ -83,10 +93,32 @@ final class AppState: ObservableObject {
   @AppStorage("showStorage") var showStorage: Bool = false
   @AppStorage("showMemory") var showMemory: Bool = false
   @AppStorage("showBattery") var showBattery: Bool = false
-  @AppStorage("monitorColoredIcons") var monitorColoredIcons: Bool = true
+  @AppStorage("monitorCompactLayout") var monitorCompactLayout: Bool = true
+
+  // Duo
+  @AppStorage("showDuo") var showDuo: Bool = false
 
   // Shotter
   @AppStorage("showShotter") var showShotter: Bool = false
+
+  private static func migrateLegacyTexterSettings() {
+    let defaults = UserDefaults.standard
+    let texterKeys = [
+      ("texterFontFamily", "fontFamily"),
+      ("texterNormalBorder", "normalBorder"),
+      ("texterRainbowBorder", "rainbowBorder"),
+      ("texterGradientBackground", "gradientBackground"),
+      ("texterCustomColors", "customColorsData"),
+      ("texterUseCustomBorderColors", "useCustomBorderColors"),
+      ("texterCustomBorderColors", "customBorderColorsData"),
+      ("texterBorderClockwise", "borderClockwise")
+    ]
+    for (oldKey, newKey) in texterKeys where defaults.object(forKey: newKey) == nil {
+      if let value = defaults.object(forKey: oldKey) {
+        defaults.set(value, forKey: newKey)
+      }
+    }
+  }
 
   private init() {
     let defaults = UserDefaults.standard

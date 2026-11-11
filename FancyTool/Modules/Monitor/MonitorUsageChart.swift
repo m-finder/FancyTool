@@ -36,7 +36,7 @@ struct MonitorUsageChart: View {
         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 3]))
           .foregroundStyle(.secondary.opacity(0.2))
         if let percent = value.as(Int.self), percent != 50 {
-          AxisValueLabel(anchor: .leading) { Text("\(percent)%").font(.system(size: 8)).foregroundStyle(Color.primary.opacity(0.75)) }
+          AxisValueLabel(anchor: .leading) { Text(PercentText.whole(Double(percent))).font(.system(size: 8)).foregroundStyle(Color.primary.opacity(0.75)) }
         }
       }
     }

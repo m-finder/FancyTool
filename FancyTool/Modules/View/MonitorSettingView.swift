@@ -19,7 +19,11 @@ struct MonitorSettingView: View {
       SettingsToggle("Storage", isOn: state.$showStorage)
       SettingsToggle("Memory", isOn: state.$showMemory)
       SettingsToggle("Battery", isOn: state.$showBattery)
-      SettingsToggle("Colorful icons", isOn: state.$monitorColoredIcons)
+      if MonitorStatusLayout(for: state).supportsCompactLayout {
+        SettingsToggle("Compact Layout", isOn: state.$monitorCompactLayout)
+          .help("Stack monitor modules to save menu-bar space. Turn off to arrange them horizontally.")
+          .accessibilityIdentifier("monitor.compactLayout")
+      }
     }
   }
 }

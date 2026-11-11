@@ -8,24 +8,19 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct RunnerDropHandler :DropDelegate{
-  
-  @Binding var isDragging: Bool
+struct RunnerDropHandler: DropDelegate {
   private let onComplete: (Data) -> Void
-  
-  init(isDragging: Binding<Bool>, onComplete: @escaping (Data) -> Void) {
-    self._isDragging = isDragging
+
+  init(onComplete: @escaping (Data) -> Void) {
     self.onComplete = onComplete
   }
-  
+
   func performDrop(info: DropInfo) -> Bool {
-    isDragging = false
-    
     // 处理拖放的文件
     let itemProviders = info.itemProviders(for: [.fileURL])
     for itemProvider in itemProviders {
       _ = itemProvider.loadObject(ofClass: URL.self) { url, error in
-        guard let url = url, error == nil else { return }
+        guard let url, error == nil else { return }
         
         // 验证是否为GIF文件
         if url.pathExtension.lowercased() == "gif" {
@@ -42,16 +37,8 @@ struct RunnerDropHandler :DropDelegate{
     }
     return true
   }
-  
-  func dropEntered(info: DropInfo) {
-    isDragging = true
-  }
-  
-  func dropExited(info: DropInfo?) {
-    isDragging = false
-  }
-  
+
   func dropUpdated(info: DropInfo) -> DropProposal? {
-    return DropProposal(operation: .copy)
+    DropProposal(operation: .copy)
   }
 }

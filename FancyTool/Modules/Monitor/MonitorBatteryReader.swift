@@ -3,6 +3,23 @@ import IOKit
 import SystemInfoKit
 
 enum MonitorBatteryReader {
+  static func snapshot() -> BatteryInfo? {
+    let properties = readProperties("AppleSmartBattery")
+    guard let installed = properties["BatteryInstalled"] as? NSNumber else { return nil }
+    let adapter = properties["AdapterDetails"] as? [String: Any]
+    let info = BatteryInfo(
+      percentage: .zero, isInstalled: installed.boolValue,
+      isCharging: (properties["IsCharging"] as? NSNumber)?.boolValue ?? false,
+      adapterName: adapter?["Name"] as? String, maxCapacity: .zero,
+      cycleCount: (properties["CycleCount"] as? NSNumber)?.intValue ?? 0,
+      temperature: Temperature(value: .nan)
+    )
+    // Only query the pack when this system moved temperature out of the battery.
+    let pack = temperature(properties: properties, packProperties: [:]) == nil
+      ? readProperties("AppleSmartBatteryPack") : [:]
+    return corrected(info, properties: properties, packProperties: pack)
+  }
+
   static func corrected(_ info: BatteryInfo?) -> BatteryInfo? {
     guard let info, info.isInstalled else { return info }
     return corrected(info, properties: readProperties("AppleSmartBattery"),

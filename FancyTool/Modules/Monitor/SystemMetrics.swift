@@ -1,21 +1,28 @@
 import AppKit
 import Combine
+import IOKit.ps
 import SystemInfoKit
 
-struct SystemMetricsDemand: Equatable {
+struct SystemMetricsDemand: Equatable, Sendable {
   var monitor = false
+  var panel = false
+  var cpu = false
+  var memory = false
+  var storage = false
+  var network = false
+  var battery = false
   var companion = false
   var animatedRunner = false
   var suspended = false
 
-  var isActive: Bool { !suspended && (monitor || companion || animatedRunner) }
+  var isActive: Bool { requests.values.contains(true) }
 
   var requests: [SystemInfoType: Bool] {
-    [.cpu: !suspended && (monitor || companion || animatedRunner),
-     .battery: !suspended && (monitor || companion),
-     .memory: !suspended && monitor,
-     .storage: !suspended && monitor,
-     .network: !suspended && monitor]
+    [.cpu: !suspended && ((monitor && (cpu || panel)) || companion || animatedRunner),
+     .battery: !suspended && ((monitor && (battery || panel)) || companion),
+     .memory: !suspended && monitor && (memory || panel),
+     .storage: !suspended && monitor && (storage || panel),
+     .network: !suspended && monitor && (network || panel)]
   }
 }
 
@@ -27,12 +34,14 @@ final class SystemMetrics: ObservableObject {
 
   @Published var bundle: SystemInfoBundle?
   private(set) var history = MonitorHistory()
+  private(set) var sampleSequence: UInt64 = 0
   private var demand = SystemMetricsDemand()
-  private let observer = SystemInfoObserver.shared
-  private var monitoringTask: Task<Void, Never>?
+  private var sampler: SystemMetricsSampler?
+  private var generation: UInt64 = 0
+  private var powerSource: CFRunLoopSource?
   private var subscriptions = Set<AnyCancellable>()
   private var displaySleeping = false
-  private var needsCPUBaseline = true
+  private var monitorPanelVisible = false
 
   func start() {
     guard subscriptions.isEmpty else { return }
@@ -58,54 +67,85 @@ final class SystemMetrics: ObservableObject {
     updateDemand()
   }
 
+  func setMonitorPanelVisible(_ visible: Bool) {
+    guard monitorPanelVisible != visible else { return }
+    monitorPanelVisible = visible
+    updateDemand()
+  }
+
   private func updateDemand() {
     let state = AppState.shared
     let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     let next = SystemMetricsDemand(
-      monitor: state.showMonitor,
+      monitor: state.showMonitor, panel: monitorPanelVisible,
+      cpu: state.showCpu, memory: state.showMemory, storage: state.showStorage,
+      network: state.showNetWork, battery: state.showBattery,
       companion: state.runnerCompanion && !reduceMotion,
       animatedRunner: !state.runnerCompanion && !state.runnerId.isEmpty && !reduceMotion
         && !ProcessInfo.processInfo.isLowPowerModeEnabled,
       suspended: displaySleeping
     )
     guard next != demand else { return }
-    if !demand.isActive && next.isActive { needsCPUBaseline = true }
+    let previousRequests = demand.requests
     demand = next
-    observer.toggleActivation(requests: next.requests)
-    guard next.isActive, monitoringTask == nil else { return }
-
-    let stream = observer.systemInfoStream()
-    observer.startMonitoring(monitorInterval: MonitorHistory.sampleInterval)
-    monitoringTask = Task { [weak self] in
-      for await snapshot in stream {
-        guard !Task.isCancelled else { break }
-        self?.receive(snapshot)
+    // Opening a panel or changing a consumer need not restart sampling when
+    // the same measurements are already being collected.
+    guard next.requests != previousRequests else { return }
+    generation &+= 1
+    observePowerChanges(next.requests[.battery] == true)
+    if !next.isActive {
+      sampler?.stop()
+      sampler = nil
+      return
+    }
+    if sampler == nil {
+      sampler = SystemMetricsSampler { [weak self] update, generation in
+        guard let self, self.generation == generation else { return }
+        self.receive(update)
       }
     }
+    sampler?.configure(next, generation: generation)
   }
 
-  private func receive(_ snapshot: SystemInfoBundle) {
+  private func observePowerChanges(_ enabled: Bool) {
+    guard enabled != (powerSource != nil) else { return }
+    if !enabled {
+      if let powerSource { CFRunLoopSourceInvalidate(powerSource) }
+      powerSource = nil
+      return
+    }
+    powerSource = IOPSNotificationCreateRunLoopSource({ context in
+      guard let context else { return }
+      MainActor.assumeIsolated {
+        Unmanaged<SystemMetrics>.fromOpaque(context).takeUnretainedValue().sampler?.batteryChanged()
+      }
+    }, Unmanaged.passUnretained(self).toOpaque())?.takeRetainedValue()
+    if let powerSource { CFRunLoopAddSource(CFRunLoopGetMain(), powerSource, .commonModes) }
+  }
+
+  private func receive(_ update: SystemMetricsUpdate) {
     guard demand.isActive else { return }
-    var snapshot = snapshot
-    if needsCPUBaseline, snapshot.cpuInfo != nil {
-      // Disabling CPU resets the library's cumulative tick counters. Its first
-      // reading establishes a baseline, not usage over a measured interval.
-      snapshot.cpuInfo = nil
-      needsCPUBaseline = false
+    switch update {
+    case .sample(let snapshot):
+      if demand.monitor { history.append(snapshot) }
+      sampleSequence &+= 1
+      bundle = snapshot
+    case .battery(let battery):
+      // Power notifications must not resample CPU/network, add extra chart
+      // points, or shorten the network counter's measurement interval.
+      guard demand.requests[.battery] == true, var snapshot = bundle else { return }
+      snapshot.batteryInfo = battery
+      bundle = snapshot
     }
-    if demand.monitor {
-      snapshot.batteryInfo = MonitorBatteryReader.corrected(snapshot.batteryInfo)
-      history.append(snapshot)
-    }
-    bundle = snapshot
   }
 
   func stop() {
     subscriptions.removeAll()
-    monitoringTask?.cancel()
-    monitoringTask = nil
-    // SystemInfoKit owns one process-wide NWPathMonitor. Cancel only at final
-    // shutdown; feature toggles disable repositories without cancelling it.
-    observer.stopMonitoring()
+    if let powerSource { CFRunLoopSourceInvalidate(powerSource) }
+    powerSource = nil
+    generation &+= 1
+    demand = SystemMetricsDemand()
+    sampler?.stop()
+    sampler = nil
   }
 }

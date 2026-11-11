@@ -40,35 +40,41 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     // Texter
-    if(AppState.shared.showTexter){
+    if AppState.shared.showTexter {
       Texter.shared.mount()
     }
     
     
     // Paster
-    if(AppState.shared.showPaster){
+    if AppState.shared.showPaster {
       Paster.shared.mount()
     }
     
     
     // Rounder
-    if(AppState.shared.showRounder){
+    if AppState.shared.showRounder {
       Rounder.shared.mount()
     }
     
     
     // Monitor
-    if(AppState.shared.showMonitor){
+    if AppState.shared.showMonitor {
       Monitor.shared.mount()
     }
 
+    // Duo
+    if AppState.shared.showDuo {
+      Duo.shared.mount()
+    }
+
     // Shotter
-    if(AppState.shared.showShotter){
+    if AppState.shared.showShotter {
       Shotter.shared.mount()
     }
     
     // 开始监控
     SystemMetrics.shared.start()
+    UpdateChecker.shared.start()
   }
   
   // 失去焦点
@@ -80,6 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationWillTerminate(_ notification: Notification) {
+    DuoMetrics.shared.stop()
     SystemMetrics.shared.stop()
   }
 }
