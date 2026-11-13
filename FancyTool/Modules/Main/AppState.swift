@@ -70,8 +70,6 @@ final class AppState: ObservableObject {
   @AppStorage("rainbowBorder") var rainbowBorder: Bool = false
   @AppStorage("gradientBackground") var gradientBackground: Bool = false
   @AppStorage("customColorsData") var customColorsData: Data = Data()
-  @AppStorage("useCustomBorderColors") var useCustomBorderColors: Bool = false
-  @AppStorage("customBorderColorsData") var customBorderColorsData: Data = Data()
   @AppStorage("borderClockwise") var borderClockwise: Bool = false
   
   
@@ -109,8 +107,6 @@ final class AppState: ObservableObject {
       ("texterRainbowBorder", "rainbowBorder"),
       ("texterGradientBackground", "gradientBackground"),
       ("texterCustomColors", "customColorsData"),
-      ("texterUseCustomBorderColors", "useCustomBorderColors"),
-      ("texterCustomBorderColors", "customBorderColorsData"),
       ("texterBorderClockwise", "borderClockwise")
     ]
     for (oldKey, newKey) in texterKeys where defaults.object(forKey: newKey) == nil {

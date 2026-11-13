@@ -17,28 +17,30 @@ struct RunnerView: View {
   @State private var direction = 1
   @State private var imageIndex = 0
   @State private var isWindowVisible = false
+  @State private var frames: [CGImage] = []
+
+  private struct FrameLoad: Equatable {
+    let runnerID: UUID?
+    let isRunning: Bool
+  }
   
   private struct Playback: Equatable {
     let runnerID: UUID?
     let interval: Float
     let isRunning: Bool
     let isWindowVisible: Bool
+    let frameCount: Int
   }
 
   var body: some View {
     VStack {
       
-      if let runner = runner {
-        
-        Image(
-          runner.getImage(imageIndex),
-          scale: 1,
-          label: Text("")
-        )
-        .interpolation(.high)
-        .resizable()
-        .aspectRatio(contentMode: .fit)
-        
+      if !frames.isEmpty {
+        Image(decorative: frames[min(imageIndex, frames.count - 1)], scale: 1)
+          .interpolation(runner?.isPowerStar == true ? .medium : runner?.isDefault == true ? .none : .high)
+          .resizable()
+          .aspectRatio(contentMode: .fit)
+          .accessibilityLabel(Text(""))
       } else {
         Image("default").resizable().aspectRatio(contentMode: .fit).scaledToFit()
       }
@@ -49,27 +51,51 @@ struct RunnerView: View {
         RunnerPreviewVisibility(isVisible: $isWindowVisible)
       }
     }
+    .task(id: FrameLoad(runnerID: runner?.id, isRunning: isRunning)) {
+      guard let runner else {
+        frames = []
+        return
+      }
+      let frameCount = isRunning ? min(runner.frameNumber, RunnerGIFProcessor.maximumFrames) : 1
+      let previewIndex = runner.isDefault ? min(max(0, runner.frameNumber - 1), runner.frameNumber / 3) : 0
+      let loadedFrames = await Task.detached(priority: .utility) {
+        guard let source = runner.imageSource() else { return [CGImage]() }
+        return (0..<frameCount).compactMap {
+          RunnerGIFProcessor.displayFrame(source: source, index: isRunning ? $0 : previewIndex,
+                                          height: RunnerGIFProcessor.displayHeight,
+                                          sharp: runner.isDefault && !runner.isPowerStar)
+        }
+      }.value
+      guard !Task.isCancelled else { return }
+      frames = loadedFrames
+      imageIndex = 0
+      direction = 1
+    }
     .task(id: Playback(runnerID: runner?.id, interval: factor, isRunning: isRunning,
-                       isWindowVisible: isWindowVisible)) {
+                       isWindowVisible: isWindowVisible, frameCount: frames.count)) {
       // Static thumbnails do not need a clock; SwiftUI cancels playback when
       // the preview disappears or a different runner is selected.
       guard isRunning, isWindowVisible, factor.isFinite, factor > 0,
-            let frameNumber = runner?.frameNumber, frameNumber > 1 else { return }
-      let count = min(frameNumber, RunnerGIFProcessor.maximumFrames)
+            frames.count > 1 else { return }
+      let count = frames.count
       while !Task.isCancelled {
         do { try await Task.sleep(for: .seconds(Double(factor))) }
         catch { return }
         guard !Task.isCancelled else { return }
-        if imageIndex == 0 { direction = 1 }
-        if imageIndex >= count - 1 {
-          if autoReverse { direction = -1 }
-          else { direction = 1; imageIndex = 0 }
+        if autoReverse {
+          if imageIndex >= count - 1 { direction = -1 }
+          else if imageIndex <= 0 { direction = 1 }
+          imageIndex += direction
+        } else if imageIndex >= count - 1 {
+          imageIndex = 0
+        } else {
+          imageIndex += 1
         }
-        imageIndex += direction
       }
     }
     .onChange(of: runner) {
       imageIndex = 0
+      direction = 1
     }
     
   }

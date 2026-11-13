@@ -341,9 +341,8 @@ final class ShotterSelectionController {
     windowProbeInFlight = true
     let generation = windowProbeGeneration
     let overlayIDs = Set(overlayWindows.map { CGWindowID($0.windowNumber) })
-    let ownPID = ProcessInfo.processInfo.processIdentifier
     DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-      let entries = Self.queryWindowEntries(excluding: overlayIDs, ownPID: ownPID)
+      let entries = Self.queryWindowEntries(excluding: overlayIDs)
       DispatchQueue.main.async { [weak self] in
         guard let self, !self.isFinishing, self.windowProbeGeneration == generation else { return }
         self.windowProbeInFlight = false
@@ -378,14 +377,13 @@ final class ShotterSelectionController {
       rect: ShotterCoordinateSpace.boundingAppKitRect(fromQuartz: entry.quartzRect), rects: rects)
   }
 
-  nonisolated private static func queryWindowEntries(excluding overlayIDs: Set<CGWindowID>,
-                                                     ownPID: pid_t) -> [WindowListEntry] {
+  nonisolated private static func queryWindowEntries(excluding overlayIDs: Set<CGWindowID>) -> [WindowListEntry] {
     guard let infos = CGWindowListCopyWindowInfo(
       [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID
     ) as? [[String: Any]] else { return [] }
+    // FancyTool's own normal windows are selectable; only the overlays are excluded.
     return infos.compactMap { info in
       guard let layer = info[kCGWindowLayer as String] as? Int, layer == 0,
-            let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t, ownerPID != ownPID,
             let bounds = info[kCGWindowBounds as String] as? NSDictionary,
             let rect = CGRect(dictionaryRepresentation: bounds), rect.width > 24, rect.height > 24,
             let id = info[kCGWindowNumber as String] as? CGWindowID,

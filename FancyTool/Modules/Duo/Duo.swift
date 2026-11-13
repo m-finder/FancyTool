@@ -126,8 +126,8 @@ struct DuoStatusEmblem: View {
       .foregroundStyle(batteryColor)
       .mask {
         Rectangle().overlay {
-          if charging {
-            Capsule().frame(width: 4.6, height: 6.8).position(DuoEmblemGeometry.chargingPosition)
+          if charging || pluggedIn {
+            Capsule().frame(width: 5.8, height: 8).position(DuoEmblemGeometry.powerPosition)
               .blendMode(.destinationOut)
           }
         }.compositingGroup()
@@ -141,7 +141,11 @@ struct DuoStatusEmblem: View {
         .position(x: 12, y: 18.5)
       if charging {
         DuoChargeBolt().fill(.green)
-          .frame(width: 3.4, height: 5.6).position(DuoEmblemGeometry.chargingPosition)
+          .frame(width: 3.4, height: 5.6).position(DuoEmblemGeometry.powerPosition)
+      } else if pluggedIn {
+        DuoPowerPlug().fill(.white)
+          .frame(width: 5, height: 6.8).position(DuoEmblemGeometry.powerPosition)
+          .shadow(color: .black.opacity(0.5), radius: 0.5)
       }
     }
     .frame(width: 24, height: 22)
@@ -194,6 +198,22 @@ private struct DuoChargeBolt: Shape {
   }
 }
 
+private struct DuoPowerPlug: Shape {
+  func path(in rect: CGRect) -> Path {
+    var path = Path()
+    path.addRect(CGRect(x: rect.minX + rect.width * 0.2, y: rect.minY,
+                        width: rect.width * 0.16, height: rect.height * 0.34))
+    path.addRect(CGRect(x: rect.minX + rect.width * 0.64, y: rect.minY,
+                        width: rect.width * 0.16, height: rect.height * 0.34))
+    path.addRoundedRect(in: CGRect(x: rect.minX + rect.width * 0.1, y: rect.minY + rect.height * 0.28,
+                                   width: rect.width * 0.8, height: rect.height * 0.42),
+                        cornerSize: CGSize(width: rect.width * 0.12, height: rect.height * 0.12))
+    path.addRect(CGRect(x: rect.minX + rect.width * 0.42, y: rect.minY + rect.height * 0.68,
+                        width: rect.width * 0.16, height: rect.height * 0.32))
+    return path
+  }
+}
+
 /// The left half is a battery gauge; the right half carries Wi-Fi status.
 /// The Wi-Fi segments share the battery gauge's circle and grow progressively
 /// longer from top to bottom.
@@ -202,10 +222,7 @@ private enum DuoEmblemGeometry {
   static let radius = 9.1
   static let batteryStart = Angle.degrees(140)
   static let batteryEnd = Angle.degrees(250)
-  static var chargingPosition: CGPoint {
-    let midpoint = (batteryStart.radians + batteryEnd.radians) / 2
-    return CGPoint(x: center.x + radius * cos(midpoint), y: center.y + radius * sin(midpoint))
-  }
+  static let powerPosition = CGPoint(x: center.x - radius, y: center.y)
 }
 
 private struct DuoBatteryArc: Shape {

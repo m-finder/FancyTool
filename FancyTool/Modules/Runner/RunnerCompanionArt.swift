@@ -42,7 +42,7 @@ enum RunnerCompanionArt {
     guard let url = Bundle.main.url(forResource: "RunnerCompanionDog", withExtension: "png"),
           let source = CGImageSourceCreateWithURL(url as CFURL, nil),
           let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
-          image.width == 512, image.height == 1408 else { return nil }
+          image.width == 320, image.height == 880 else { return nil }
     return image
   }()
 
@@ -129,20 +129,18 @@ enum RunnerCompanionArt {
     let scale = scale.isFinite ? max(1, scale) : 1
     let key = "\(sprite.rawValue):\(scale)" as NSString
     if let image = frameCache.images.object(forKey: key) { return image }
-    // The supplied sheet is already transparent. Keep its pixel colors intact,
-    // crop only cell padding, and align the three lying-down poses to the floor.
-    let top = sprite == .asleep ? 21 : (sprite == .lyingDown ? 15 : 14)
-    let crop = CGRect(x: (sprite.rawValue % 4) * 128, y: (sprite.rawValue / 4) * 128 + top,
-                      width: 128, height: 99)
+    // The medium-resolution sheet keeps transparent padding and original poses.
+    let top = sprite == .asleep ? 13 : 9
+    let crop = CGRect(x: (sprite.rawValue % 4) * 80, y: (sprite.rawValue / 4) * 80 + top,
+                      width: 80, height: 62)
     guard let spriteImage = source?.cropping(to: crop),
           let context = CGContext(data: nil, width: Int(size.width * scale), height: Int(size.height * scale),
             bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
     context.interpolationQuality = .none
-    // Trim the same transparent side margins in every pose, preserving the
-    // 4.5 source pixels per point and keeping the widest sleeping pose intact.
-    context.scaleBy(x: scale / 4.5, y: scale / 4.5)
-    context.draw(spriteImage, in: CGRect(x: -10, y: 0, width: 128, height: 99))
+    // The sheet is five eighths of the original resolution.
+    context.scaleBy(x: scale / 2.8125, y: scale / 2.8125)
+    context.draw(spriteImage, in: CGRect(x: -6.25, y: 0, width: 80, height: 62))
     guard let image = context.makeImage() else { return nil }
     frameCache.images.setObject(image, forKey: key, cost: image.bytesPerRow * image.height)
     return image

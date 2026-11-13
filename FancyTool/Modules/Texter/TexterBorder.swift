@@ -1,4 +1,5 @@
 import AppKit
+import CoreImage
 import SwiftUI
 
 enum TexterBorderStyle {
@@ -70,9 +71,16 @@ struct TexterBorderView: NSViewRepresentable {
   final class Coordinator {
     private let base = CAGradientLayer()
     private let border = CAShapeLayer()
+    private let glowClip = CALayer()
+    private let glowOutline = CAShapeLayer()
+    private let glowContainer = CALayer()
+    private let glow = CAGradientLayer()
+    private let glowTrail = CALayer()
     private let flow = CAGradientLayer()
     private let trail = CALayer()
+    private let segmentCount = 12
     private var segments: [CAShapeLayer] = []
+    private var glowSegments: [CAShapeLayer] = []
     private var animated = false
     private var clockwise = false
     private var visible = false
@@ -81,23 +89,43 @@ struct TexterBorderView: NSViewRepresentable {
 
     func install(in view: NSView) {
       guard let root = view.layer else { return }
-      for gradient in [base, flow] {
+      root.addSublayer(glowClip)
+      glowClip.masksToBounds = true
+      glowOutline.fillColor = NSColor.white.cgColor
+      glowClip.mask = glowOutline
+      glowClip.addSublayer(glowContainer)
+      glowContainer.addSublayer(glow)
+      let blur = CIFilter(name: "CIGaussianBlur")!
+      blur.setValue(3.5, forKey: kCIInputRadiusKey)
+      glowContainer.filters = [blur]
+      for gradient in [glow, base, flow] {
         gradient.startPoint = CGPoint(x: 0, y: 1)
         gradient.endPoint = CGPoint(x: 1, y: 0)
-        root.addSublayer(gradient)
       }
+      root.addSublayer(base)
+      root.addSublayer(flow)
       border.fillColor = nil
       border.strokeColor = NSColor.white.cgColor
       border.lineWidth = TexterBorderStyle.lineWidth
       base.mask = border
+      glow.mask = glowTrail
       flow.mask = trail
-      for index in 0..<12 {
+      for index in 0..<segmentCount {
+        let profile = beamProfile(at: index)
+        let softSegment = CAShapeLayer()
+        softSegment.fillColor = nil
+        softSegment.strokeColor = NSColor.white.cgColor
+        softSegment.lineWidth = 1 + 5 * profile
+        softSegment.lineCap = .round
+        softSegment.opacity = Float(profile * profile) * 0.9
+        glowTrail.addSublayer(softSegment)
+        glowSegments.append(softSegment)
         let segment = CAShapeLayer()
         segment.fillColor = nil
         segment.strokeColor = NSColor.white.cgColor
         segment.lineWidth = TexterBorderStyle.lineWidth
-        segment.lineCap = .butt
-        segment.opacity = Float(index + 1) / 12
+        segment.lineCap = .round
+        segment.opacity = Float(profile * profile)
         trail.addSublayer(segment)
         segments.append(segment)
       }
@@ -110,16 +138,21 @@ struct TexterBorderView: NSViewRepresentable {
       if border.lineWidth != lineWidth { previousBounds = .zero }
       CATransaction.begin()
       CATransaction.setDisableActions(true)
-      for layer in [base, flow, border, trail] + segments { layer.contentsScale = scale }
+      for layer in [base, glowClip, glowOutline, glowContainer, glow, glowTrail, flow, border, trail] + segments + glowSegments { layer.contentsScale = scale }
       border.lineWidth = lineWidth
-      segments.forEach { $0.lineWidth = lineWidth }
+      for (index, segment) in segments.enumerated() {
+        segment.lineWidth = lineWidth * (0.25 + 1.1 * beamProfile(at: index))
+      }
       base.colors = palette
+      glow.colors = palette
       flow.colors = palette
+      glowContainer.opacity = rainbow ? 1 : 0.65
+      glowContainer.isHidden = !animated
       base.opacity = rainbow ? (animated ? 0.42 : 1) : (animated ? 0.22 : 0.38)
       flow.opacity = rainbow ? 1 : 0.92
       flow.isHidden = !animated
       CATransaction.commit()
-      let direction = rainbow ? clockwise : true
+      let direction = clockwise
       guard self.animated != animated || self.clockwise != direction else { return }
       self.animated = animated
       self.clockwise = direction
@@ -140,12 +173,18 @@ struct TexterBorderView: NSViewRepresentable {
       CATransaction.begin()
       CATransaction.setDisableActions(true)
       base.frame = bounds
+      glowClip.frame = bounds
+      glowOutline.frame = glowClip.bounds
+      glowOutline.path = geometry.path
+      glowContainer.frame = bounds
+      glow.frame = bounds
       flow.frame = bounds
       border.frame = base.bounds
       border.path = geometry.path
+      glowTrail.frame = glow.bounds
       trail.frame = flow.bounds
       let step = length * 0.22 / CGFloat(segments.count)
-      for segment in segments {
+      for segment in segments + glowSegments {
         segment.frame = trail.bounds
         segment.path = geometry.path
         segment.lineDashPattern = [NSNumber(value: Double(step)), NSNumber(value: Double(length - step))]
@@ -154,7 +193,11 @@ struct TexterBorderView: NSViewRepresentable {
       updateAnimation()
     }
 
-    func stop() { segments.forEach { $0.removeAllAnimations() } }
+    func stop() { (segments + glowSegments).forEach { $0.removeAllAnimations() } }
+
+    private func beamProfile(at index: Int) -> CGFloat {
+      sin(.pi * (CGFloat(index) + 0.5) / CGFloat(segmentCount))
+    }
 
     private func updateAnimation() {
       stop()
@@ -165,10 +208,13 @@ struct TexterBorderView: NSViewRepresentable {
       for (index, segment) in segments.enumerated() {
         segment.lineDashPhase = (clockwise ? -1 : 1) * CGFloat(index) * step
       }
+      for (index, segment) in glowSegments.enumerated() {
+        segment.lineDashPhase = (clockwise ? -1 : 1) * CGFloat(index) * step
+      }
       CATransaction.commit()
       guard animated, visible, length > 0 else { return }
       let start = CACurrentMediaTime()
-      for segment in segments {
+      for segment in segments + glowSegments {
         let animation = CABasicAnimation(keyPath: "lineDashPhase")
         animation.fromValue = segment.lineDashPhase
         animation.toValue = segment.lineDashPhase + (clockwise ? -length : length)

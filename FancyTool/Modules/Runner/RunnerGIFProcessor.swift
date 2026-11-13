@@ -21,7 +21,7 @@ enum RunnerGIFProcessor {
     }
   }
 
-  static func prepare(_ data: Data) throws -> (data: Data, frames: Int) {
+  static func prepare(_ data: Data, outputHeight: Int = displayHeight) throws -> (data: Data, frames: Int) {
     guard data.count <= maximumInputBytes else { throw ImportError.tooLarge }
     guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
           CGImageSourceGetType(source) == UTType.gif.identifier as CFString else { throw ImportError.invalid }
@@ -41,7 +41,9 @@ enum RunnerGIFProcessor {
               let height = properties[kCGImagePropertyPixelHeight] as? Int,
               width > 0, height > 0 else { throw ImportError.invalid }
         guard width <= maximumDimension, height <= maximumDimension else { throw ImportError.tooLarge }
-        guard let frame = displayFrame(source: source, index: index, height: displayHeight) else {
+        let preparedHeight = min(outputHeight, height)
+        guard let frame = displayFrame(source: source, index: index, height: preparedHeight,
+                                       maximumHeight: outputHeight) else {
           throw ImportError.invalid
         }
         let gif = properties[kCGImagePropertyGIFDictionary] as? [CFString: Any] ?? [:]
@@ -56,13 +58,16 @@ enum RunnerGIFProcessor {
   }
 
   /// Also bounds legacy GIFs at playback without changing the user's original files.
-  static func displayFrame(source: CGImageSource, index: Int, height: Int) -> CGImage? {
-    let height = min(displayHeight, max(1, height))
+  static func displayFrame(source: CGImageSource, index: Int, height: Int,
+                           maximumHeight: Int = displayHeight, sharp: Bool = false) -> CGImage? {
+    let height = min(maximumHeight, max(1, height))
     let maxWidth = height * 3
     let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
       kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceThumbnailMaxPixelSize: maxWidth,
       kCGImageSourceShouldCache: false]
-    guard let image = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary) else { return nil }
+    guard let image = sharp
+      ? CGImageSourceCreateImageAtIndex(source, index, [kCGImageSourceShouldCache: false] as CFDictionary)
+      : CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary) else { return nil }
     let ratio = Double(image.width) / Double(image.height)
     let width = min(maxWidth, max(1, Int((Double(height) * ratio).rounded())))
     guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
@@ -70,7 +75,7 @@ enum RunnerGIFProcessor {
       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
     let factor = min(Double(width) / Double(image.width), Double(height) / Double(image.height))
     let w = Double(image.width) * factor, h = Double(image.height) * factor
-    context.interpolationQuality = .high
+    context.interpolationQuality = sharp ? .none : .high
     context.draw(image, in: CGRect(x: (Double(width) - w) / 2, y: (Double(height) - h) / 2, width: w, height: h))
     return context.makeImage()
   }

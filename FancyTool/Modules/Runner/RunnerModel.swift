@@ -8,6 +8,8 @@ struct RunnerModel: Identifiable, Codable, Hashable, Sendable {
   let dataFileName: String
   let createdAt: Date
 
+  var isPowerStar: Bool { id.uuidString == "10007B46-EB35-4625-BB4A-BC0A25C3310B" }
+
   static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
   func hash(into hasher: inout Hasher) { hasher.combine(id) }
 

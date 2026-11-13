@@ -406,6 +406,7 @@
       }
     },
     "A little dog that rests, plays and keeps you company." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -525,42 +526,42 @@
         }
       }
     },
-    "Add a subtle gradient background when a border is enabled." : {
+    "Add a subtle gradient background." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fügt bei aktiviertem Rahmen einen dezenten Farbverlauf hinzu."
+            "value" : "Fügt einen dezenten Hintergrundverlauf hinzu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a subtle gradient background when a border is enabled."
+            "value" : "Add a subtle gradient background."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajoute un léger dégradé lorsque la bordure est activée."
+            "value" : "Ajoute un léger dégradé en arrière-plan."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "枠線が有効なときに控えめなグラデーション背景を追加します。"
+            "value" : "控えめなグラデーション背景を追加します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "테두리를 켜면 은은한 그라데이션 배경을 추가합니다."
+            "value" : "은은한 그라데이션 배경을 추가합니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "开启外框时，显示淡淡的渐变背景。"
+            "value" : "显示淡淡的渐变背景。"
           }
         }
       }
@@ -2293,6 +2294,16 @@
         }
       }
     },
+    "Clockwise Short" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "↻" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "CW" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "↻" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "順" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "순" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "顺" } }
+      }
+    },
     "Clockwise" : {
       "localizations" : {
         "de" : {
@@ -2975,6 +2986,16 @@
         }
       }
     },
+    "Counterclockwise Short" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "↺" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "CCW" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "↺" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "逆" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "역" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "逆" } }
+      }
+    },
     "Counterclockwise" : {
       "localizations" : {
         "de" : {
@@ -3055,82 +3076,43 @@
         }
       }
     },
-    "Custom Border Colors" : {
+    "Custom" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eigene Rahmenfarben"
+            "value" : "Benutzerdefiniert"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Custom Border Colors"
+            "value" : "Custom"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couleurs de bordure personnalisées"
+            "value" : "Personnalisé"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "カスタム枠線の色"
+            "value" : "カスタム"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "사용자 지정 테두리 색상"
+            "value" : "사용자 지정"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自定义外框颜色"
-          }
-        }
-      }
-    },
-    "Custom Border Gradient" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eigener Rahmenverlauf"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Custom Border Gradient"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dégradé de bordure personnalisé"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "カスタム枠線グラデーション"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "사용자 지정 테두리 그라데이션"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自定义外框渐变"
+            "value" : "自定义"
           }
         }
       }
@@ -7416,42 +7398,42 @@
         }
       }
     },
-    "Rounded Border" : {
+    "Signature Border" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abgerundeter Rahmen"
+            "value" : "Signaturrahmen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rounded Border"
+            "value" : "Signature Border"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bordure arrondie"
+            "value" : "Bordure de signature"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "角丸の枠線"
+            "value" : "署名の枠線"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "둥근 테두리"
+            "value" : "서명 테두리"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "圆角外框"
+            "value" : "签名外框"
           }
         }
       }

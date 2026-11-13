@@ -40,7 +40,13 @@ final class RunnerHandler: ObservableObject {
 
   private func receive(_ result: Result<[RunnerModel], Error>) {
     switch result {
-    case .success(let runners): cachedRunners = runners
+    case .success(let runners):
+      cachedRunners = runners
+      let selectedID = AppState.shared.runnerId
+      if !selectedID.isEmpty && !runners.contains(where: { $0.id.uuidString == selectedID }) {
+        AppState.shared.runnerId = ""
+        Runner.shared.change()
+      }
     case .failure(let error): importError = error.localizedDescription
     }
   }

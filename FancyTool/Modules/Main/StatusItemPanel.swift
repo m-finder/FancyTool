@@ -239,15 +239,26 @@ final class StatusItemPanel: NSObject {
 @MainActor
 private final class MenuBarPanel: NSPanel {
   var onDismiss: (() -> Void)?
+  private var dismissalScheduled = false
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { false }
-  override func cancelOperation(_ sender: Any?) { onDismiss?() }
+  override func cancelOperation(_ sender: Any?) { dismissOnNextRunLoop() }
 
   override func sendEvent(_ event: NSEvent) {
     if event.type == .keyDown, event.keyCode == 53 {
-      onDismiss?()
+      dismissOnNextRunLoop()
       return
     }
     super.sendEvent(event)
+  }
+
+  private func dismissOnNextRunLoop() {
+    guard !dismissalScheduled else { return }
+    dismissalScheduled = true
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return }
+      self.dismissalScheduled = false
+      self.onDismiss?()
+    }
   }
 }

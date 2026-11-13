@@ -23,13 +23,7 @@ enum TexterPalette {
     return ColorUtil.shared.getColor(index: index)
   }
 
-  static func borderColors(customData: Data, useCustom: Bool) -> [Color] {
-    let custom = useCustom ? customValues(from: customData) : []
-    return custom.isEmpty ? ShimmerColors.rainbowPalette.map { Color(nsColor: $0) } : custom.map(\.color)
-  }
-
   static func editCustomColors() { TexterCustomColorWindow.shared.show() }
-  static func editCustomBorderColors() { TexterCustomColorWindow.border.show() }
 }
 
 struct TexterColorValue: Codable, Identifiable {
@@ -57,12 +51,8 @@ struct TexterColorValue: Codable, Identifiable {
 
 @MainActor
 private final class TexterCustomColorWindow: NSObject, NSWindowDelegate {
-  static let shared = TexterCustomColorWindow(editsBorder: false)
-  static let border = TexterCustomColorWindow(editsBorder: true)
-  private let editsBorder: Bool
+  static let shared = TexterCustomColorWindow()
   private var window: NSWindow?
-
-  private init(editsBorder: Bool) { self.editsBorder = editsBorder; super.init() }
 
   func show() {
     if let window {
@@ -71,26 +61,17 @@ private final class TexterCustomColorWindow: NSObject, NSWindowDelegate {
       return
     }
     let state = AppState.shared
-    var values = TexterPalette.customValues(from: editsBorder ? state.customBorderColorsData : state.customColorsData)
-    if editsBorder && values.isEmpty {
-      values = ShimmerColors.rainbowPalette.map { TexterColorValue(Color(nsColor: $0), id: UUID()) }
-    }
-    let content = TexterCustomColorEditor(values: values, editsBorder: editsBorder, onSave: { [weak self] values in
+    let values = TexterPalette.customValues(from: state.customColorsData)
+    let content = TexterCustomColorEditor(values: values, onSave: { [weak self] values in
       guard let self else { return }
       guard let data = try? JSONEncoder().encode(values) else { return }
-      if self.editsBorder {
-        state.customBorderColorsData = data
-        state.useCustomBorderColors = true
-      } else {
-        state.customColorsData = data
-        state.colorIndex = TexterPalette.customIndex
-      }
+      state.customColorsData = data
+      state.colorIndex = TexterPalette.customIndex
       self.window?.close()
     }, onCancel: { [weak self] in self?.window?.close() })
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 420),
                           styleMask: [.titled, .closable], backing: .buffered, defer: false)
-    window.title = editsBorder ? String(localized: "Custom Border Gradient")
-      : (values.isEmpty ? String(localized: "Add Custom Gradient") : String(localized: "Edit Custom Gradient"))
+    window.title = values.isEmpty ? String(localized: "Add Custom Gradient") : String(localized: "Edit Custom Gradient")
     window.isReleasedWhenClosed = false
     window.contentView = NSHostingView(rootView: content)
     window.delegate = self
@@ -108,14 +89,12 @@ private final class TexterCustomColorWindow: NSObject, NSWindowDelegate {
 
 struct TexterCustomColorEditor: View {
   @State private var values: [TexterColorValue]
-  let editsBorder: Bool
   let onSave: ([TexterColorValue]) -> Void
   let onCancel: () -> Void
 
-  init(values: [TexterColorValue], editsBorder: Bool = false,
+  init(values: [TexterColorValue],
        onSave: @escaping ([TexterColorValue]) -> Void, onCancel: @escaping () -> Void) {
     _values = State(initialValue: values.isEmpty ? [TexterColorValue(red: 0.25, green: 0.65, blue: 1)] : values)
-    self.editsBorder = editsBorder
     self.onSave = onSave
     self.onCancel = onCancel
   }
@@ -130,8 +109,7 @@ struct TexterCustomColorEditor: View {
       VStack(alignment: .leading, spacing: 8) {
         Text("Live Preview")
           .font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
-        TexterView(previewColors: editsBorder ? nil : values.map(\.color),
-                   previewBorderColors: editsBorder ? values.map(\.color) : nil, fitsAvailableWidth: true)
+        TexterView(previewColors: values.map(\.color), fitsAvailableWidth: true)
           .frame(maxWidth: .infinity, minHeight: 34)
           .padding(.horizontal, 12)
           .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))

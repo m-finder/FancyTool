@@ -2,10 +2,12 @@ import SwiftUI
 
 struct TexterPopoverView: View {
   static let panelSize = NSSize(width: 350, height: 460)
+  static let panelPadding: CGFloat = 16
 
   @ObservedObject var state = AppState.shared
   @FocusState private var isEditing: Bool
   var onSubmit: () -> Void = {}
+  var onHeightChange: (CGFloat) -> Void = { _ in }
 
   private var signatureGradient: LinearGradient {
     LinearGradient(colors: TexterPalette.colors(index: state.colorIndex, customData: state.customColorsData),
@@ -25,16 +27,34 @@ struct TexterPopoverView: View {
       }
 
       HStack(spacing: 8) {
-        animationToggle("Rounded Border", isOn: borderBinding(rainbow: false), tint: .accentColor)
+        animationToggle("Signature Border", isOn: borderBinding(rainbow: false), tint: .accentColor)
           .accessibilityIdentifier("texter.border")
         animationToggle("Rainbow Border", isOn: borderBinding(rainbow: true), tint: .purple)
           .accessibilityIdentifier("texter.rainbowBorder")
       }
 
-      TexterBorderControls(beforeEditing: onSubmit)
+      HStack(spacing: 8) {
+        animationToggle("Gradient Background", isOn: state.$gradientBackground, tint: .accentColor)
+          .accessibilityIdentifier("texter.gradientBackground")
+        if state.normalBorder || state.rainbowBorder {
+          TexterBorderControls()
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity)
+            .frame(height: 40)
+            .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.primary.opacity(0.06)))
+        } else {
+          Color.clear.frame(maxWidth: .infinity)
+        }
+      }
+      .frame(height: 40)
       TexterPaletteView(beforeEditing: onSubmit)
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    .fixedSize(horizontal: false, vertical: true)
+    .onGeometryChange(for: CGFloat.self) { ceil($0.size.height) } action: { height in
+      onHeightChange(height + 2 * Self.panelPadding)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
   }
 
   private var header: some View {

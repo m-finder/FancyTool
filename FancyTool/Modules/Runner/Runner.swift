@@ -123,8 +123,9 @@ final class Runner: NSObject, CAAnimationDelegate {
     layer.timeOffset = 0
     layer.beginTime = 0
     layer.contentsScale = currentScale
-    layer.magnificationFilter = .linear
-    layer.minificationFilter = .linear
+    let sharp = RunnerFrame.shared.runner.map { $0.isDefault && !$0.isPowerStar } == true
+    layer.magnificationFilter = sharp ? .nearest : .linear
+    layer.minificationFilter = sharp ? .nearest : .linear
     layer.contents = first
     layer.isHidden = false
     layer.frame = item.button?.bounds ?? .zero

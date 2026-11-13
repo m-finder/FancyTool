@@ -60,7 +60,7 @@ struct TexterSettingView: View {
               }
             }
 
-          effectToggle("Rounded Border", isOn: state.$normalBorder)
+          effectToggle("Signature Border", isOn: state.$normalBorder)
             .onChange(of: state.normalBorder) { _, newValue in
               if newValue { state.rainbowBorder = false }
             }
@@ -71,12 +71,15 @@ struct TexterSettingView: View {
             }
 
           effectToggle("Gradient Background", isOn: state.$gradientBackground)
-            .help("Add a subtle gradient background when a border is enabled.")
+            .help("Add a subtle gradient background.")
             .accessibilityIdentifier("texter.gradientBackground")
-        }
 
-        TexterBorderControls()
-        TexterPaletteView(columns: 8)
+          if state.normalBorder || state.rainbowBorder {
+            TexterBorderControls(fontSize: 12)
+              .frame(maxWidth: .infinity, alignment: .leading)
+          }
+        }
+        TexterPaletteView(columns: 10)
       }
       .padding(.bottom, 12)
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -89,11 +92,15 @@ struct TexterSettingView: View {
   }
 
   private func effectToggle(_ title: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
-    Toggle(isOn: isOn) {
-      Text(title).fixedSize(horizontal: false, vertical: true)
+    HStack(spacing: 8) {
+      Text(title)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(minWidth: 48, alignment: .leading)
+      Toggle(title, isOn: isOn)
+        .labelsHidden()
+        .toggleStyle(.switch)
+        .controlSize(.small)
     }
-    .toggleStyle(.switch)
-    .controlSize(.small)
     .frame(maxWidth: .infinity, alignment: .leading)
   }
 

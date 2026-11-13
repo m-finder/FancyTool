@@ -53,21 +53,46 @@ final class RunnerStore: @unchecked Sendable {
 
   private func loadIfNeeded() throws {
     guard !loaded else { return }
+    let defaults = ["1": "10001b46-eb35-4625-bb4a-bc0a25c3310b", "2": "10002b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "3": "10003b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "4": "10004b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "5": "10005b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "6": "10006b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "7": "10007b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "8": "10008b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "9": "10009b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "10": "10013b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "11": "10018b46-eb35-4625-bb4a-bc0a25c3310b",
+                    "12": "10024b46-eb35-4625-bb4a-bc0a25c3310b"]
+    let activeDefaultIDs = Set(defaults.values.compactMap(UUID.init(uuidString:)))
     let url = try Self.manifestURL()
     if FileManager.default.fileExists(atPath: url.path) {
       let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: url))
       guard manifest.version == 1 else { throw CocoaError(.fileReadCorruptFile) }
       runners = manifest.runners.filter {
+        guard !$0.isDefault || activeDefaultIDs.contains($0.id) else { return false }
         guard let url = try? Self.mediaURL($0.dataFileName) else { return false }
         return FileManager.default.fileExists(atPath: url.path)
       }
     }
-    let defaults = ["1": "10001b46-eb35-4625-bb4a-bc0a25c3310b", "2": "10002b46-eb35-4625-bb4a-bc0a25c3310b",
-                    "3": "10003b46-eb35-4625-bb4a-bc0a25c3310b"]
     for url in Bundle.main.urls(forResourcesWithExtension: "gif", subdirectory: nil) ?? [] {
-      guard let idString = defaults[url.deletingPathExtension().lastPathComponent], let id = UUID(uuidString: idString),
-            !runners.contains(where: { $0.id == id }) else { continue }
-      let prepared = try RunnerGIFProcessor.prepare(Data(contentsOf: url))
+      let resourceName = url.deletingPathExtension().lastPathComponent
+      guard let idString = defaults[resourceName],
+            let id = UUID(uuidString: idString) else { continue }
+      let existingIndex = runners.firstIndex(where: { $0.id == id })
+      if let existingIndex, !runners[existingIndex].isDefault { continue }
+      let outputHeight = (Int(resourceName) ?? 0) >= 5 ? 88 : RunnerGIFProcessor.displayHeight
+      let prepared = try RunnerGIFProcessor.prepare(Data(contentsOf: url), outputHeight: outputHeight)
+      if let existingIndex, runners[existingIndex].isDefault {
+        let existing = runners[existingIndex]
+        let mediaURL = try Self.mediaURL(existing.dataFileName)
+        if (try? Data(contentsOf: mediaURL)) != prepared.data {
+          try FancyToolFileStore.writeAtomically(prepared.data, to: mediaURL)
+          runners[existingIndex] = RunnerModel(id: existing.id, isDefault: true, frameNumber: prepared.frames,
+                                               dataFileName: existing.dataFileName, createdAt: existing.createdAt)
+        }
+        continue
+      }
       try add(prepared, id: id, isDefault: true)
     }
     loaded = true

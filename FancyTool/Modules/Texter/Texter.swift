@@ -9,6 +9,7 @@ final class Texter {
   private var item: NSStatusItem?
   private var hosting: HostingView?
   private var textWhenOpened: String?
+  private var panelContentHeight: CGFloat?
 
   func mount() {
     guard item == nil else { return }
@@ -35,8 +36,19 @@ final class Texter {
     if panel == nil {
       panel = StatusItemPanel(
         size: TexterPopoverView.panelSize,
-        content: TexterPopoverView(onSubmit: { [weak self] in self?.panel?.close() })
+        content: TexterPopoverView(
+          onSubmit: { [weak self] in self?.panel?.close() },
+          onHeightChange: { [weak self] height in
+            self?.panelContentHeight = height
+            self?.panel?.setContentSize(NSSize(width: TexterPopoverView.panelSize.width, height: height))
+          }
+        ),
+        contentPadding: TexterPopoverView.panelPadding,
+        resizesContent: true
       )
+      if let height = panelContentHeight {
+        panel?.setContentSize(NSSize(width: TexterPopoverView.panelSize.width, height: height))
+      }
       panel?.onShow = { [weak self] window in
         self?.textWhenOpened = AppState.shared.text
         Self.focusInputAtEnd(in: window)

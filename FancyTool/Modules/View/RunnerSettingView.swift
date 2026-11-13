@@ -12,93 +12,132 @@ struct RunnerSettingView: View {
   @ObservedObject var state = AppState.shared
   @StateObject private var runnerHandler = RunnerHandler.shared
   
-  private let columns = Array(repeating: GridItem(.flexible(minimum: 0), spacing: 10), count: 4)
+  private let cardSize: CGFloat = 36
+  private let columns = [GridItem(.adaptive(minimum: 36, maximum: 36), spacing: 4)]
   
   var body: some View {
     VStack(alignment: .center, spacing: 0) {
       ScrollView {
-        VStack(alignment: .leading, spacing: 10) {
-          Toggle("Status pup", isOn: state.$runnerCompanion)
-            .toggleStyle(.switch)
-            .onChange(of: state.runnerCompanion) { Runner.shared.change() }
-          Text("A little dog that rests, plays and keeps you company.")
-            .font(.caption)
-            .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 12) {
           HStack(spacing: 8) {
-            ForEach([RunnerCompanionState.idle, .busy, .charging, .sleeping], id: \.self) { mood in
-              VStack(spacing: 4) {
-                if let image = RunnerCompanionArt.frame(state: mood, index: RunnerCompanionArt.previewIndex(for: mood), scale: 2) {
-                  Image(decorative: image, scale: 2)
-                    .interpolation(.none)
-                    .frame(height: 26)
+            Toggle("Status pup", isOn: state.$runnerCompanion)
+              .toggleStyle(.switch)
+              .fixedSize()
+              .onChange(of: state.runnerCompanion) { Runner.shared.change() }
+
+            Divider().frame(height: 38)
+
+            HStack(spacing: 4) {
+              ForEach([RunnerCompanionState.idle, .busy, .charging, .sleeping], id: \.self) { mood in
+                VStack(spacing: 1) {
+                  if let image = RunnerCompanionArt.frame(
+                    state: mood,
+                    index: RunnerCompanionArt.previewIndex(for: mood),
+                    scale: 3
+                  ) {
+                    Image(decorative: image, scale: 3)
+                      .resizable()
+                      .interpolation(.high)
+                      .scaledToFit()
+                      .frame(width: 30, height: 24)
+                  }
+                  Text(mood.title)
+                    .font(.system(size: 9))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
                 }
-                Text(mood.title).font(.system(size: 10))
+                .frame(maxWidth: .infinity)
+                .help(mood.title)
               }
-              .frame(maxWidth: .infinity)
             }
           }
-          if state.runnerCompanion {
-            Text("Click to spin · Right-click for menu")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-          Divider()
-        }
-        .padding(.horizontal, 10)
-        .padding(.bottom, 12)
-        /* 关键：用 LazyVGrid 代替 FlowStack */
-        LazyVGrid(columns: columns, spacing: 10) {
-          
-          /* 拖放入口始终放在第一个格子 */
+
           RunnerDropView()
-            .frame(maxWidth: 90, maxHeight: 90)
-            .aspectRatio(1, contentMode: .fit)
-          
-          /* 后面跟着所有 runner */
-          ForEach(runnerHandler.cachedRunners) { runner in
-            ZStack(alignment: .bottomTrailing) {
-              VStack {
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .modifier(RunnerCardSurface(colors: texterColors, isSelected: false))
+
+          LazyVGrid(columns: columns, spacing: 5) {
+            ForEach(runnerHandler.cachedRunners) { runner in
+              ZStack(alignment: .bottomTrailing) {
                 RunnerView(
                   runner: runner,
-                  factor: state.runnerId == runner.id.uuidString ? 0.5 : 1,
+                  factor: state.runnerId == runner.id.uuidString ? RunnerConfig.previewFrameInterval : 1,
                   isRunning: !state.runnerCompanion && state.runnerId == runner.id.uuidString
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .cornerRadius(8)
-                .scaledToFit()
+                .frame(width: 34, height: 32)
+
+                if !runner.isDefault {
+                  RunnerRemoveView(id: runner.id)
+                }
               }
-              .background(Color.secondary.colorInvert())
-              .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-              .overlay(
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                  .stroke(
-                    !state.runnerCompanion && state.runnerId == runner.id.uuidString ? Color.accentColor : Color.clear,
-                    lineWidth: 1
-                  )
-              )
-              
-              if !runner.isDefault {
-                RunnerRemoveView(id: runner.id)
+              .frame(width: cardSize, height: cardSize)
+              .modifier(RunnerCardSurface(
+                colors: texterColors,
+                isSelected: !state.runnerCompanion && state.runnerId == runner.id.uuidString
+              ))
+              .contentShape(RoundedRectangle(cornerRadius: 5))
+              .onTapGesture {
+                let wasCompanion = state.runnerCompanion
+                state.runnerCompanion = false
+                state.runnerId = !wasCompanion && state.runnerId == runner.id.uuidString ? "" : runner.id.uuidString
+                Runner.shared.change()
               }
+              .id(runner.id.uuidString)
             }
-            .frame(maxWidth: 90, maxHeight: 90)
-            .aspectRatio(1, contentMode: .fit)
-            .contentShape(RoundedRectangle(cornerRadius: 5))
-            .onTapGesture {
-              let wasCompanion = state.runnerCompanion
-              state.runnerCompanion = false
-              state.runnerId = !wasCompanion && state.runnerId == runner.id.uuidString ? "" : runner.id.uuidString
-              Runner.shared.change()
-            }
-            .id(runner.id.uuidString)
           }
+          .padding(.vertical, 10)
         }
         .padding(.horizontal, 10)
       }
-      // Keep the fourth column clear of a permanently visible scrollbar.
+      // Keep the adaptive grid clear of the scroll indicator.
       .contentMargins(.trailing, 18, for: .scrollContent)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+  }
+
+  private var texterColors: [Color] {
+    TexterPalette.colors(index: state.colorIndex, customData: state.customColorsData)
+  }
+}
+
+struct RunnerCardSurface: ViewModifier {
+  let colors: [Color]
+  let isSelected: Bool
+
+  private var palette: [Color] { colors.isEmpty ? [.accentColor, .cyan] : colors }
+
+  func body(content: Content) -> some View {
+    let startColor = palette.first ?? .accentColor
+    let endColor = palette.last ?? .cyan
+    let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+
+    content
+      .clipShape(shape)
+      .background {
+        shape.fill(LinearGradient(
+          colors: [
+            startColor.opacity(isSelected ? 0.14 : 0.05),
+            endColor.opacity(isSelected ? 0.08 : 0.025)
+          ],
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
+        ))
+      }
+      .overlay {
+        shape.stroke(
+          LinearGradient(
+            colors: palette.map { $0.opacity(isSelected ? 0.92 : 0.52) },
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          ),
+          lineWidth: isSelected ? 1.8 : 1
+        )
+      }
+      .shadow(
+        color: startColor.opacity(isSelected ? 0.34 : 0.12),
+        radius: isSelected ? 8 : 3
+      )
   }
 }
 

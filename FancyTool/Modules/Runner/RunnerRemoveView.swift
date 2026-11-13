@@ -22,6 +22,7 @@ struct RunnerRemoveView: View {
         },
         label: {
           Image(systemName: "xmark.circle.fill")
+            .font(.system(size: 11))
             .foregroundColor(.red)
             .background(Color.white.opacity(0.8))
             .clipShape(Circle())
@@ -29,7 +30,7 @@ struct RunnerRemoveView: View {
       )
       .buttonStyle(PlainButtonStyle())
       .zIndex(1)
-      .frame(width: 24, height: 24)
+      .frame(width: 16, height: 16)
       .contentShape(Circle())
     }
   }
