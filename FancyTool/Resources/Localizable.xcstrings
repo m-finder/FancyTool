@@ -1220,6 +1220,7 @@
       }
     },
     "Automatic follows the system appearance." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1761,6 +1762,86 @@
         }
       }
     },
+    "Capture stalled. Reconnecting…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufnahme angehalten. Verbindung wird wiederhergestellt…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture stalled. Reconnecting…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture interrompue. Reconnexion…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撮影が停止しました。再接続しています…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캡처가 멈췄습니다. 다시 연결하는 중…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图停滞，正在重新连接…"
+          }
+        }
+      }
+    },
+    "Capture stopped. Finish to keep the captured content." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Aufnahme wurde angehalten. Klicke auf Fertig, um den erfassten Inhalt zu behalten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture stopped. Finish to keep the captured content."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La capture est arrêtée. Cliquez sur Terminer pour conserver le contenu capturé."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撮影が停止しました。「完了」をクリックすると撮影済みの内容を保存できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캡처가 중지되었습니다. 캡처한 내용을 유지하려면 완료를 클릭하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图已停止。点击“完成”保留已截取的内容。"
+          }
+        }
+      }
+    },
     "Capture this screen" : {
       "localizations" : {
         "de" : {
@@ -1998,6 +2079,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择 1–5 个渐变颜色"
+          }
+        }
+      }
+    },
+    "Choose a smaller area for a scrolling screenshot." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle einen kleineren Bereich für den Scroll-Screenshot."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a smaller area for a scrolling screenshot."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez une zone plus petite pour la capture défilante."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクロール撮影の範囲を小さくしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 캡처 영역을 더 작게 선택하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选择更小的滚动截图区域。"
+          }
+        }
+      }
+    },
+    "Choose an area of at least 80 × 80 points within one display." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle auf einem Bildschirm einen Bereich von mindestens 80 × 80 Punkten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an area of at least 80 × 80 points within one display."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez une zone d’au moins 80 × 80 points sur un seul écran."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 つの画面内で 80 × 80 ポイント以上の範囲を選択してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "한 화면 안에서 80 × 80포인트 이상의 영역을 선택하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在同一块屏幕内选择至少 80 × 80 点的区域。"
           }
         }
       }
@@ -2294,16 +2455,6 @@
         }
       }
     },
-    "Clockwise Short" : {
-      "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "↻" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "CW" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "↻" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "順" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "순" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "顺" } }
-      }
-    },
     "Clockwise" : {
       "localizations" : {
         "de" : {
@@ -2340,6 +2491,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顺时针"
+          }
+        }
+      }
+    },
+    "Clockwise Short" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↻"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CW"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↻"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "順"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "순"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顺"
           }
         }
       }
@@ -2866,6 +3057,47 @@
         }
       }
     },
+    "Could not capture the final frame. Try Finish again." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das letzte Bild konnte nicht erfasst werden. Klicke erneut auf Fertig."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not capture the final frame. Try Finish again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de capturer la dernière image. Cliquez à nouveau sur Terminer."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後の画面を撮影できませんでした。もう一度「完了」をクリックしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "마지막 화면을 캡처하지 못했습니다. 완료를 다시 클릭하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法获取最后一帧，请再次点击“完成”。"
+          }
+        }
+      }
+    },
     "Could not capture this area" : {
       "localizations" : {
         "de" : {
@@ -2986,14 +3218,44 @@
         }
       }
     },
-    "Counterclockwise Short" : {
+    "Could not start scrolling capture" : {
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "↺" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "CCW" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "↺" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "逆" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "역" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "逆" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll-Aufnahme konnte nicht gestartet werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not start scrolling capture"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de démarrer la capture défilante"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクロール撮影を開始できませんでした"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 캡처를 시작할 수 없습니다"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法开始滚动截图"
+          }
+        }
       }
     },
     "Counterclockwise" : {
@@ -3032,6 +3294,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "逆时针"
+          }
+        }
+      }
+    },
+    "Counterclockwise Short" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↺"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CCW"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↺"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "逆"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "역"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "逆"
           }
         }
       }
@@ -3581,6 +3883,7 @@
       }
     },
     "Duo groups battery, Wi-Fi, and sound status in one menu-bar item." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3776,6 +4079,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已展开"
+          }
+        }
+      }
+    },
+    "Finish" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        }
+      }
+    },
+    "Finishing…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird abgeschlossen…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finishing…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finalisation…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "処理中…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료하는 중…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在生成长图…"
           }
         }
       }
@@ -5185,6 +5568,46 @@
         }
       }
     },
+    "No frames were captured. Try selecting the area again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es wurden keine Bilder aufgenommen. Wähle den Bereich erneut aus."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No frames were captured. Try selecting the area again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune image n’a été capturée. Essayez de sélectionner à nouveau la zone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像を撮影できませんでした。範囲を選択し直してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캡처된 이미지가 없습니다. 영역을 다시 선택해 보세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未采集到画面，请重新选择区域。"
+          }
+        }
+      }
+    },
     "No input sources available" : {
       "localizations" : {
         "de" : {
@@ -5261,6 +5684,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有匹配的剪贴板记录。"
+          }
+        }
+      }
+    },
+    "No matching overlap. Scroll back a little, then continue slowly." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine passende Überlappung. Scrolle ein Stück zurück und dann langsam weiter."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching overlap. Scroll back a little, then continue slowly."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune zone commune trouvée. Remontez légèrement, puis continuez lentement."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重なる部分が見つかりません。少し上に戻してから、ゆっくり下にスクロールしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "겹치는 부분을 찾을 수 없습니다. 조금 위로 돌아간 다음 천천히 계속 스크롤하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到重叠内容，请稍向上回滚，再缓慢向下滚动。"
           }
         }
       }
@@ -5392,6 +5856,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未找到 Wi-Fi 网络"
+          }
+        }
+      }
+    },
+    "Normal screenshot" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normaler Screenshot"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal screenshot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture normale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通常の撮影"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일반 캡처"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通截图"
           }
         }
       }
@@ -6665,6 +7169,46 @@
         }
       }
     },
+    "Preparing capture…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufnahme wird vorbereitet…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing capture…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Préparation de la capture…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撮影を準備中…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캡처 준비 중…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在准备截图…"
+          }
+        }
+      }
+    },
     "Previous page" : {
       "localizations" : {
         "de" : {
@@ -7398,42 +7942,43 @@
         }
       }
     },
-    "Signature Border" : {
+    "Restoring scrolling capture…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Signaturrahmen"
+            "value" : "Scrollaufnahme wird wiederhergestellt…"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Signature Border"
+            "value" : "Restoring scrolling capture…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bordure de signature"
+            "value" : "Restauration de la capture défilante…"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "署名の枠線"
+            "value" : "スクロール撮影を復旧しています…"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "서명 테두리"
+            "value" : "스크롤 캡처를 복구하는 중…"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "签名外框"
+            "value" : "正在恢复滚动截图…"
           }
         }
       }
@@ -7674,6 +8219,287 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "需要屏幕录制权限"
+          }
+        }
+      }
+    },
+    "Scroll down slowly inside the selected area." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrolle innerhalb des gewählten Bereichs langsam nach unten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll down slowly inside the selected area."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites défiler lentement vers le bas dans la zone sélectionnée."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択した範囲内でゆっくり下にスクロールしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택한 영역 안에서 천천히 아래로 스크롤하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在选定区域内缓慢向下滚动。"
+          }
+        }
+      }
+    },
+    "Scrolling capture could not recover. Cancel and try again." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Scrollaufnahme konnte nicht wiederhergestellt werden. Abbrechen und erneut versuchen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrolling capture could not recover. Cancel and try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La capture défilante n'a pas pu être rétablie. Annulez et réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクロール撮影を復旧できませんでした。キャンセルして再試行してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 캡처를 복구할 수 없습니다. 취소하고 다시 시도하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法恢复滚动截图。请取消后重试。"
+          }
+        }
+      }
+    },
+    "Scrolling screenshot" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll-Screenshot"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrolling screenshot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture défilante"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクロール撮影"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 캡처"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滚动截图"
+          }
+        }
+      }
+    },
+    "Scrolling Screenshot" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll-Screenshot"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrolling Screenshot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture défilante"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクロール撮影"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 캡처"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滚动截图"
+          }
+        }
+      }
+    },
+    "Scrolling screenshot · Select the area to scroll" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll-Screenshot · Wähle den Scrollbereich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrolling screenshot · Select the area to scroll"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture défilante · Sélectionnez la zone à faire défiler"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクロール撮影 · スクロールする範囲を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 캡처 · 스크롤할 영역 선택"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滚动截图 · 请选择需要滚动的区域"
+          }
+        }
+      }
+    },
+    "Scrolling screenshot (S)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll-Screenshot (S)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrolling screenshot (S)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture défilante (S)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクロール撮影 (S)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 캡처 (S)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "长图 (S)"
+          }
+        }
+      }
+    },
+    "Scrolling screenshot preview" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorschau des Scroll-Screenshots"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrolling screenshot preview"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aperçu de la capture défilante"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクロール撮影のプレビュー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 캡처 미리보기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "长图实时预览"
           }
         }
       }
@@ -8078,6 +8904,86 @@
         }
       }
     },
+    "Signature Border" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signaturrahmen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signature Border"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bordure de signature"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "署名の枠線"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "서명 테두리"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "签名外框"
+          }
+        }
+      }
+    },
+    "Size limit reached. Finish to keep the preview, or cancel and select a smaller area." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Größenlimit erreicht. Klicke auf Fertig, um die Vorschau zu behalten, oder wähle nach dem Abbrechen einen kleineren Bereich."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size limit reached. Finish to keep the preview, or cancel and select a smaller area."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite de taille atteinte. Terminez pour conserver l’aperçu, ou annulez et sélectionnez une zone plus petite."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サイズ制限に達しました。「完了」でプレビューを保存するか、キャンセルして範囲を小さくしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "크기 제한에 도달했습니다. 완료를 눌러 미리보기를 저장하거나 취소 후 더 작은 영역을 선택하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已达到大小上限。点击“完成”保留预览内容，或取消后缩小选区。"
+          }
+        }
+      }
+    },
     "Solid redaction (X)" : {
       "localizations" : {
         "de" : {
@@ -8114,6 +9020,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "实心遮挡 (X)"
+          }
+        }
+      }
+    },
+    "Some content is missing. Scroll back until the preview resumes, then continue slowly." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Teil des Inhalts fehlt. Scrolle zurück, bis die Vorschau fortgesetzt wird, und dann langsam weiter."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some content is missing. Scroll back until the preview resumes, then continue slowly."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du contenu manque. Revenez en arrière jusqu’à la reprise de l’aperçu, puis continuez lentement."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一部の内容が未取得です。プレビューが再開するまで戻り、ゆっくりスクロールしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일부 내용이 누락되었습니다. 미리보기가 이어질 때까지 위로 돌아간 후 천천히 계속하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分内容尚未拼接。请向上回滚至预览恢复，再缓慢向下继续。"
           }
         }
       }
@@ -8889,6 +9836,127 @@
         }
       }
     },
+    "The capture reached its size limit." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Aufnahme hat ihre maximale Größe erreicht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The capture reached its size limit."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La capture a atteint sa taille maximale."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撮影サイズの上限に達しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캡처 크기 제한에 도달했습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图已达到尺寸上限。"
+          }
+        }
+      }
+    },
+    "The display changed. Start a new scrolling screenshot." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Bildschirm wurde geändert. Starte einen neuen Scroll-Screenshot."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The display changed. Start a new scrolling screenshot."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’écran a changé. Lancez une nouvelle capture défilante."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面構成が変わりました。スクロール撮影をやり直してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "화면 구성이 변경되었습니다. 스크롤 캡처를 다시 시작하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "屏幕配置已变化，请重新开始滚动截图。"
+          }
+        }
+      }
+    },
+    "The screenshot shortcut is unavailable. Close the other screenshot tool, then turn Shotter off and on to retry." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Screenshot-Kurzbefehl ist nicht verfügbar. Schließe das andere Screenshot-Tool und schalte Shotter aus und wieder ein, um es erneut zu versuchen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The screenshot shortcut is unavailable. Close the other screenshot tool, then turn Shotter off and on to retry."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le raccourci de capture est indisponible. Fermez l’autre outil de capture, puis désactivez et réactivez Shotter pour réessayer."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スクリーンショットのショートカットを使用できません。他のスクリーンショットツールを終了し、Shotter をオフにしてからオンにし直してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크린샷 단축키를 사용할 수 없습니다. 다른 스크린샷 도구를 종료한 다음 Shotter를 껐다 켜서 다시 시도하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图快捷键暂不可用。请退出其他截图工具，再关闭并重新开启截图工具以重试。"
+          }
+        }
+      }
+    },
     "The window may have closed or screen recording access may have changed. Try selecting the area again." : {
       "localizations" : {
         "de" : {
@@ -9547,6 +10615,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法生成 PNG 数据。"
+          }
+        }
+      }
+    },
+    "Unable to match the latest frame." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das letzte Bild konnte nicht zugeordnet werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to match the latest frame."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’aligner la dernière image."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新のフレームを照合できませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "최신 프레임을 일치시킬 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新画面暂未匹配。"
           }
         }
       }

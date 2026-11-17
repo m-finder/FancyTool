@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 /// A single FIFO worker owns the manifest and all imports/removals.
 final class RunnerStore: @unchecked Sendable {
@@ -6,9 +7,32 @@ final class RunnerStore: @unchecked Sendable {
   private struct Manifest: Codable {
     var version = 1
     var runners: [RunnerModel]
+    var defaultCache: [String: DefaultCache]?
+
+    private enum CodingKeys: String, CodingKey { case version, runners, defaultCache }
+
+    init(runners: [RunnerModel], defaultCache: [String: DefaultCache]) {
+      self.runners = runners
+      self.defaultCache = defaultCache
+    }
+
+    init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      version = try container.decode(Int.self, forKey: .version)
+      runners = try container.decode([RunnerModel].self, forKey: .runners)
+      defaultCache = try? container.decode([String: DefaultCache].self, forKey: .defaultCache)
+    }
+  }
+  private struct DefaultCache: Codable {
+    var version = 1
+    var sourceDigest: Data
+    var mediaDigest: Data
+    var outputHeight: Int
+    var frames: Int
   }
   private let queue = DispatchQueue(label: "FancyTool.Runner.storage", qos: .utility)
   private var runners: [RunnerModel] = []
+  private var defaultCache: [String: DefaultCache] = [:]
   private var loaded = false
 
   func load(completion: @escaping Completion) { perform(completion: completion) { _ in } }
@@ -40,7 +64,7 @@ final class RunnerStore: @unchecked Sendable {
               if $0.isDefault != $1.isDefault { return $0.isDefault }
               return $0.isDefault ? $0.id.uuidString < $1.id.uuidString : $0.createdAt < $1.createdAt
             }
-            let data = try JSONEncoder().encode(Manifest(runners: self.runners))
+            let data = try JSONEncoder().encode(Manifest(runners: self.runners, defaultCache: self.defaultCache))
             try FancyToolFileStore.writeAtomically(data, to: Self.manifestURL())
           } catch { self.runners = previous; throw error }
           self.cleanup()
@@ -69,6 +93,9 @@ final class RunnerStore: @unchecked Sendable {
     if FileManager.default.fileExists(atPath: url.path) {
       let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: url))
       guard manifest.version == 1 else { throw CocoaError(.fileReadCorruptFile) }
+      defaultCache = (manifest.defaultCache ?? [:]).filter { key, _ in
+        UUID(uuidString: key).map(activeDefaultIDs.contains) ?? false
+      }
       runners = manifest.runners.filter {
         guard !$0.isDefault || activeDefaultIDs.contains($0.id) else { return false }
         guard let url = try? Self.mediaURL($0.dataFileName) else { return false }
@@ -82,18 +109,30 @@ final class RunnerStore: @unchecked Sendable {
       let existingIndex = runners.firstIndex(where: { $0.id == id })
       if let existingIndex, !runners[existingIndex].isDefault { continue }
       let outputHeight = (Int(resourceName) ?? 0) >= 5 ? 88 : RunnerGIFProcessor.displayHeight
-      let prepared = try RunnerGIFProcessor.prepare(Data(contentsOf: url), outputHeight: outputHeight)
+      let sourceData = try Data(contentsOf: url)
+      let sourceDigest = Data(SHA256.hash(data: sourceData))
+      let mediaData = existingIndex.flatMap { try? Data(contentsOf: Self.mediaURL(runners[$0].dataFileName)) }
+      if let existingIndex, let cached = defaultCache[id.uuidString],
+         cached.version == 1, cached.outputHeight == outputHeight,
+         cached.frames == runners[existingIndex].frameNumber, cached.sourceDigest == sourceDigest,
+         let mediaData, cached.mediaDigest == Data(SHA256.hash(data: mediaData)) {
+        continue
+      }
+      let prepared = try RunnerGIFProcessor.prepare(sourceData, outputHeight: outputHeight)
       if let existingIndex, runners[existingIndex].isDefault {
         let existing = runners[existingIndex]
         let mediaURL = try Self.mediaURL(existing.dataFileName)
-        if (try? Data(contentsOf: mediaURL)) != prepared.data {
+        if mediaData != prepared.data {
           try FancyToolFileStore.writeAtomically(prepared.data, to: mediaURL)
-          runners[existingIndex] = RunnerModel(id: existing.id, isDefault: true, frameNumber: prepared.frames,
-                                               dataFileName: existing.dataFileName, createdAt: existing.createdAt)
         }
-        continue
+        runners[existingIndex] = RunnerModel(id: existing.id, isDefault: true, frameNumber: prepared.frames,
+                                             dataFileName: existing.dataFileName, createdAt: existing.createdAt)
+      } else {
+        try add(prepared, id: id, isDefault: true)
       }
-      try add(prepared, id: id, isDefault: true)
+      defaultCache[id.uuidString] = DefaultCache(sourceDigest: sourceDigest,
+                                                mediaDigest: Data(SHA256.hash(data: prepared.data)),
+                                                outputHeight: outputHeight, frames: prepared.frames)
     }
     loaded = true
   }

@@ -7,6 +7,7 @@ final class ShotterSelectionController {
 
   var onComplete: ((ShotterCaptureSelection) -> Void)?
   var onCancel: (() -> Void)?
+  private(set) var captureMode: ShotterCaptureSelection.Mode
 
   private var overlayWindows: [ShotterSelectionWindow] = []
   private var candidate: WindowCandidate?
@@ -25,6 +26,10 @@ final class ShotterSelectionController {
 
   private let windowListProbeInterval: TimeInterval = 1 / 5
 
+  init(mode: ShotterCaptureSelection.Mode = .image) {
+    captureMode = mode
+  }
+
   @discardableResult
   func start() -> Bool {
     guard overlayWindows.isEmpty, !NSScreen.screens.isEmpty else { return false }
@@ -39,7 +44,6 @@ final class ShotterSelectionController {
     cachedWindowEntries = []
     windowProbeGeneration &+= 1
     windowProbeInFlight = false
-    NSApp.activate(ignoringOtherApps: true)
 
     overlayWindows = NSScreen.screens.map { screen in
       let window = ShotterSelectionWindow(
@@ -63,11 +67,12 @@ final class ShotterSelectionController {
       window.onCancel = { [weak self] in
         self?.cancel()
       }
-      window.orderFrontRegardless()
       return window
     }
 
     installInputMonitoring()
+    NSApp.activate(ignoringOtherApps: true)
+    overlayWindows.forEach { $0.orderFrontRegardless() }
     makeOverlayKey(at: NSEvent.mouseLocation)
     selectionCursor.set()
     handleMouseMoved(to: NSEvent.mouseLocation)
@@ -153,6 +158,25 @@ final class ShotterSelectionController {
     refreshWindowCandidate(at: point)
   }
 
+  func handleMouseEvent(_ event: NSEvent) {
+    let point: NSPoint
+    if let window = event.window {
+      point = window.convertPoint(toScreen: event.locationInWindow)
+    } else if let cgEvent = event.cgEvent {
+      point = ShotterCoordinateSpace.boundingAppKitRect(
+        fromQuartz: CGRect(origin: cgEvent.location, size: .zero)).origin
+    } else {
+      point = event.locationInWindow
+    }
+    switch event.type {
+    case .leftMouseDown: handleMouseDown(at: point)
+    case .leftMouseDragged: handleMouseDragged(to: point)
+    case .leftMouseUp: handleMouseUp(at: point)
+    case .mouseMoved: handleMouseMoved(to: point)
+    default: break
+    }
+  }
+
   func selectionRects(for view: NSView) -> [NSRect] {
     guard let frame = view.window?.frame else { return [] }
     let rects: [NSRect]
@@ -186,6 +210,7 @@ final class ShotterSelectionController {
   }
 
   var selectionHint: String {
+    if captureMode == .scrolling { return String(localized: "Scrolling screenshot · Select the area to scroll") }
     if isMovingSelection { return String(localized: "Move selection · Release Space to resize") }
     if dragRect != nil { return String(localized: "Release to capture") }
     if candidate != nil { return String(localized: "Click window or drag a region") }
@@ -225,6 +250,14 @@ final class ShotterSelectionController {
         redraw()
       }
       return true
+    case 1 where event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty:
+      // Repeats belong to this shortcut too; forwarding them to AppKit rings
+      // the system bell and must not toggle the mode back and forth.
+      if !event.isARepeat {
+        captureMode = captureMode == .image ? .scrolling : .image
+        redraw()
+      }
+      return true
     default:
       return false
     }
@@ -245,17 +278,8 @@ final class ShotterSelectionController {
       guard let self, !self.isFinishing else { return event }
 
       switch event.type {
-      case .leftMouseDown:
-        self.handleMouseDown(at: NSEvent.mouseLocation)
-        return nil
-      case .leftMouseDragged:
-        self.handleMouseDragged(to: NSEvent.mouseLocation)
-        return nil
-      case .leftMouseUp:
-        self.handleMouseUp(at: NSEvent.mouseLocation)
-        return nil
-      case .mouseMoved:
-        self.handleMouseMoved(to: NSEvent.mouseLocation)
+      case .leftMouseDown, .leftMouseDragged, .leftMouseUp, .mouseMoved:
+        self.handleMouseEvent(event)
         return nil
       case .keyDown where self.handleKeyDown(event):
         return nil
@@ -270,21 +294,11 @@ final class ShotterSelectionController {
       }
     }
 
-    // Mouse-only AppKit monitoring is used solely as an event-driven fallback
-    // while a cursor moves between displays. Unlike a CGEvent tap, it does not
-    // request the system-wide Input Monitoring permission.
     globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(
-      matching: [.mouseMoved, .leftMouseDragged]
-    ) { [weak self] _ in
-      DispatchQueue.main.async { [weak self] in
-        guard let self, !self.isFinishing else { return }
-        let point = NSEvent.mouseLocation
-        if self.drag == nil {
-          self.handleMouseMoved(to: point)
-        } else {
-          self.handleMouseDragged(to: point)
-        }
-      }
+      matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp, .mouseMoved]
+    ) { [weak self] event in
+      guard let self, !self.isFinishing else { return }
+      self.handleMouseEvent(event)
     }
   }
 
@@ -294,6 +308,12 @@ final class ShotterSelectionController {
     onComplete = nil
     onCancel = nil
     closeOverlay()
+    let center = NSPoint(x: selection.rect.midX, y: selection.rect.midY)
+    let quartzCenter = ShotterCoordinateSpace.quartzPoint(fromAppKit: center)
+    let target = selection.windowID.flatMap { id in cachedWindowEntries.first { $0.id == id } }
+      ?? cachedWindowEntries.first { $0.quartzRect.contains(quartzCenter) }
+    let selection = ShotterCaptureSelection(rect: selection.rect, windowID: selection.windowID,
+                                           mode: captureMode, targetProcessID: target?.processID)
     DispatchQueue.main.async {
       completion?(selection)
     }
@@ -366,6 +386,7 @@ final class ShotterSelectionController {
   private struct WindowListEntry: Sendable {
     let id: CGWindowID
     let quartzRect: CGRect
+    let processID: pid_t
   }
 
   private func windowListCandidate(at quartzPoint: CGPoint) -> WindowCandidate? {
@@ -387,9 +408,10 @@ final class ShotterSelectionController {
             let bounds = info[kCGWindowBounds as String] as? NSDictionary,
             let rect = CGRect(dictionaryRepresentation: bounds), rect.width > 24, rect.height > 24,
             let id = info[kCGWindowNumber as String] as? CGWindowID,
+            let processID = info[kCGWindowOwnerPID as String] as? pid_t,
             !overlayIDs.contains(id),
             (info[kCGWindowAlpha as String] as? CGFloat ?? 1) > 0.01 else { return nil }
-      return WindowListEntry(id: id, quartzRect: rect)
+      return WindowListEntry(id: id, quartzRect: rect, processID: processID)
     }
   }
 
@@ -425,6 +447,8 @@ private final class ShotterSelectionView: NSView {
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
   override var acceptsFirstResponder: Bool { true }
+
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
   override func updateTrackingAreas() {
     super.updateTrackingAreas()
@@ -509,7 +533,10 @@ private final class ShotterSelectionView: NSView {
     let shortcuts = [
       ("⇧", String(localized: "Square")),
       ("Space", String(localized: "Move")),
-      ("↩", String(localized: "Capture this screen")),
+      // U+23CE is in the monospaced font. U+21A9 falls back to emoji,
+      // which can raise a CoreText exception while measuring these hints.
+      ("⏎", String(localized: "Capture this screen")),
+      ("S", controller?.captureMode == .scrolling ? String(localized: "Normal screenshot") : String(localized: "Scrolling screenshot")),
       ("Esc", String(localized: "Cancel"))
     ]
     let itemSizes = shortcuts.map { key, label -> (CGFloat, CGFloat) in
@@ -581,19 +608,19 @@ private final class ShotterSelectionView: NSView {
   }
 
   override func mouseDown(with event: NSEvent) {
-    controller?.handleMouseDown(at: NSEvent.mouseLocation)
+    controller?.handleMouseEvent(event)
   }
 
   override func mouseDragged(with event: NSEvent) {
-    controller?.handleMouseDragged(to: NSEvent.mouseLocation)
+    controller?.handleMouseEvent(event)
   }
 
   override func mouseUp(with event: NSEvent) {
-    controller?.handleMouseUp(at: NSEvent.mouseLocation)
+    controller?.handleMouseEvent(event)
   }
 
   override func mouseMoved(with event: NSEvent) {
-    controller?.handleMouseMoved(to: NSEvent.mouseLocation)
+    controller?.handleMouseEvent(event)
   }
 
   override func cursorUpdate(with event: NSEvent) {

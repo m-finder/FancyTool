@@ -53,6 +53,7 @@ struct MonitorStatusLayout {
   // leaving a tiny row floating in half an otherwise empty column.
   var hasStandaloneMetric: Bool { density == .balanced && metricCount % 2 == 1 }
   var standaloneWidth: CGFloat { metricValueWidth }
+  var isNetworkOnly: Bool { showsNetwork && metricCount == 0 }
   var networkFontSize: CGFloat { metricFontSize }
   // Fits the longest compact rate (999T+) at the existing font sizes.
   var networkValueWidth: CGFloat { density == .compact ? 25 : 28 }
@@ -60,7 +61,7 @@ struct MonitorStatusLayout {
   var networkArrowSize: CGSize { CGSize(width: networkArrowWidth, height: 7) }
   var networkRowWidth: CGFloat { networkArrowWidth + 1 + networkValueWidth }
   var networkLeadingPadding: CGFloat { metricCount > 0 ? 3 : 0 }
-  var networkWidth: CGFloat { networkLeadingPadding + networkRowWidth }
+  var networkWidth: CGFloat { isNetworkOnly ? 51 : networkLeadingPadding + networkRowWidth }
   var contentWidth: CGFloat {
     let columns = pairsMetrics ? (metricCount + 1) / 2 : metricCount
     let fullColumns = columns - (hasStandaloneMetric ? 1 : 0)

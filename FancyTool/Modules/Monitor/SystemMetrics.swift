@@ -20,7 +20,7 @@ struct SystemMetricsDemand: Equatable, Sendable {
   var requests: [SystemInfoType: Bool] {
     [.cpu: !suspended && ((monitor && (cpu || panel)) || companion || animatedRunner),
      .battery: !suspended && ((monitor && (battery || panel)) || companion),
-     .memory: !suspended && monitor && (memory || panel),
+     .memory: !suspended && monitor,
      .storage: !suspended && monitor && (storage || panel),
      .network: !suspended && monitor && (network || panel)]
   }
@@ -133,6 +133,8 @@ final class SystemMetrics: ObservableObject {
     case .sample(let snapshot):
       if demand.monitor { history.append(snapshot) }
       sampleSequence &+= 1
+      bundle = snapshot
+    case .refresh(let snapshot):
       bundle = snapshot
     case .battery(let battery):
       // Power notifications must not resample CPU/network, add extra chart

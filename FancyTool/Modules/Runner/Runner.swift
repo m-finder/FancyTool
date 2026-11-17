@@ -15,6 +15,7 @@ final class Runner: NSObject, CAAnimationDelegate {
   private weak var observedWindow: NSWindow?
   private var windowObservation: AnyCancellable?
   private var renderedScale: CGFloat = 0
+  private var screenChangeWork: DispatchWorkItem?
   private var cpuUsage = 0.0
   private var smoothedCPU = 0.0
   private var lastCPUSample: UInt64?
@@ -376,8 +377,17 @@ final class Runner: NSObject, CAAnimationDelegate {
 
   private func screenChanged() {
     observeStatusWindow()
+    screenChangeWork?.cancel()
+    screenChangeWork = nil
     guard renderedScale != currentScale else { return }
-    reload()
+    let work = DispatchWorkItem { [weak self] in
+      guard let self else { return }
+      self.screenChangeWork = nil
+      guard self.renderedScale != self.currentScale else { return }
+      self.reload()
+    }
+    screenChangeWork = work
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: work)
   }
 
   private func observeStatusWindow() {

@@ -18,8 +18,10 @@ struct MonitorPopoverView: View {
         Spacer()
         Text("Last 5 minutes").font(.system(size: 9)).foregroundStyle(.primary.opacity(0.75))
       }
-      usageSection(title: "CPU", icon: "cpu", metric: .cpu, color: .blue, details: cpu?.details ?? [])
-      usageSection(title: "Memory", icon: "memorychip", metric: .memory, color: .purple, details: mem?.details ?? [])
+      usageSection(title: "CPU", icon: "cpu", metric: .cpu, color: .blue,
+                   value: cpu?.percentage.value, details: cpu?.details ?? [])
+      usageSection(title: "Memory", icon: "memorychip", metric: .memory, color: .purple,
+                   value: mem?.percentage.value, details: mem?.details ?? [])
       storageSection
       if let bat { batterySection(bat) }
       if let net { networkSection(net) }
@@ -28,8 +30,7 @@ struct MonitorPopoverView: View {
   }
 
   private func usageSection(title: LocalizedStringKey, icon: String, metric: MonitorHistory.Metric,
-                            color: Color, details: [String]) -> some View {
-    let value = metrics.history.samples.last?.value(for: metric)
+                            color: Color, value: Double?, details: [String]) -> some View {
     return card(title: title, icon: icon, color: color, value: percentage(value)) {
       MonitorUsageChart(history: metrics.history, metric: metric, color: color)
         .accessibilityLabel(title)
@@ -39,7 +40,7 @@ struct MonitorPopoverView: View {
   }
 
   private var storageSection: some View {
-    let value = metrics.history.samples.last?.value(for: .storage)
+    let value = sto?.percentage.value
     return card(title: "Storage", icon: "internaldrive", color: .blue,
                 value: value.map { String(localized: "\(percentage($0)) used") } ?? "—") {
       if let value {

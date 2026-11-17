@@ -5,6 +5,7 @@ import SystemInfoKit
 
 enum SystemMetricsUpdate: Sendable {
   case sample(SystemInfoBundle)
+  case refresh(SystemInfoBundle)
   case battery(BatteryInfo?)
 }
 
@@ -20,6 +21,7 @@ final class SystemMetricsSampler: @unchecked Sendable {
   private var timer: DispatchSourceTimer?
   private var interval: TimeInterval?
   private var requests: [SystemInfoType: Bool] = [:]
+  private var latestSample = SystemInfoBundle()
   private var generation: UInt64 = 0
   private var cpu = MonitorCPUCounter()
   private var network = MonitorNetworkCounter()
@@ -44,6 +46,10 @@ final class SystemMetricsSampler: @unchecked Sendable {
   func configure(_ demand: SystemMetricsDemand, generation: UInt64) {
     queue.async { [self] in
       let next = demand.requests
+      let wasActive = requests.values.contains(true)
+      let added = Set(next.compactMap { type, enabled in
+        enabled && requests[type] != true ? type : nil
+      })
       if next[.cpu] != requests[.cpu] { cpu = MonitorCPUCounter() }
       if next[.storage] != requests[.storage] { storageReadAt = -.infinity }
       if next[.battery] != requests[.battery] { batteryReadAt = -.infinity }
@@ -66,7 +72,7 @@ final class SystemMetricsSampler: @unchecked Sendable {
           source.resume()
         }
       }
-      if demand.isActive { sample() }
+      if demand.isActive { sample(refreshing: added, recordsHistory: !wasActive) }
     }
   }
 
@@ -99,11 +105,16 @@ final class SystemMetricsSampler: @unchecked Sendable {
     configure(SystemMetricsDemand(), generation: 0)
   }
 
-  private func sample() {
+  private func sample(refreshing types: Set<SystemInfoType>? = nil, recordsHistory: Bool = true) {
     let now = ProcessInfo.processInfo.systemUptime
     var result = SystemInfoBundle()
-    if requests[.cpu] == true { result.cpuInfo = cpu.read() }
-    if requests[.memory] == true { result.memoryInfo = Self.readMemory() }
+    func needsRefresh(_ type: SystemInfoType) -> Bool { types?.contains(type) ?? true }
+    if requests[.cpu] == true {
+      result.cpuInfo = needsRefresh(.cpu) ? cpu.read() : latestSample.cpuInfo
+    }
+    if requests[.memory] == true {
+      result.memoryInfo = needsRefresh(.memory) ? Self.readMemory() : latestSample.memoryInfo
+    }
     if requests[.storage] == true {
       // Purgeable-capacity queries contact disk services; they do not belong in
       // the five-second CPU/network loop. Cache them for one minute.
@@ -121,12 +132,18 @@ final class SystemMetricsSampler: @unchecked Sendable {
       result.batteryInfo = battery
     }
     if requests[.network] == true {
-      let rates = network.update(Self.readTraffic(), at: now)
-      result.networkInfo = NetworkInfo(hasConnection: connection, networkInterface: interface,
-        ipAddress: ipAddress, upload: ByteData(byteCount: connection ? rates.upload : 0),
-        download: ByteData(byteCount: connection ? rates.download : 0))
+      if needsRefresh(.network) {
+        if let rates = network.update(Self.readTraffic(), at: now) {
+          result.networkInfo = NetworkInfo(hasConnection: connection, networkInterface: interface,
+            ipAddress: ipAddress, upload: ByteData(byteCount: connection ? rates.upload : 0),
+            download: ByteData(byteCount: connection ? rates.download : 0))
+        }
+      } else {
+        result.networkInfo = latestSample.networkInfo
+      }
     }
-    publish(.sample(result))
+    latestSample = result
+    publish(recordsHistory ? .sample(result) : .refresh(result))
   }
 
   private func publish(_ update: SystemMetricsUpdate) {
@@ -148,7 +165,6 @@ final class SystemMetricsSampler: @unchecked Sendable {
     let monitor = NWPathMonitor()
     monitor.pathUpdateHandler = { [weak self, weak monitor] path in
       guard let self, let monitor, self.pathMonitor === monitor else { return }
-      self.network = MonitorNetworkCounter()
       self.connection = path.status == .satisfied
       let primary = path.availableInterfaces.first { path.usesInterfaceType($0.type) }
       self.interface = switch primary?.type {
@@ -275,11 +291,11 @@ struct MonitorNetworkCounter {
   private var previous: [UInt16: Bytes]?
   private var sampledAt: TimeInterval = 0
 
-  mutating func update(_ values: [UInt16: Bytes]?, at now: TimeInterval) -> (upload: Double, download: Double) {
-    guard let values, now.isFinite else { return (0, 0) }
+  mutating func update(_ values: [UInt16: Bytes]?, at now: TimeInterval) -> (upload: Double, download: Double)? {
+    guard let values, now.isFinite, previous == nil || now > sampledAt else { return nil }
     defer { previous = values; sampledAt = now }
     let elapsed = now - sampledAt
-    guard let previous, elapsed > 0 else { return (0, 0) }
+    guard let previous else { return nil }
     var upload = 0.0, download = 0.0
     for (id, value) in values {
       guard let old = previous[id] else { continue }

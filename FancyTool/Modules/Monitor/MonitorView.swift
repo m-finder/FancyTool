@@ -11,22 +11,26 @@ import SystemInfoKit
 struct MonitorView: View {
   
   @ObservedObject private var state = AppState.shared
-  @ObservedObject private var metrics = SystemMetrics.shared
-  
-  // 快速读取，省得每次都写可选链
-  private var cpu: CPUInfo? { metrics.bundle?.cpuInfo }
-  private var mem: MemoryInfo? { metrics.bundle?.memoryInfo }
-  private var sto: StorageInfo? { metrics.bundle?.storageInfo }
-  private var bat: BatteryInfo? { metrics.bundle?.batteryInfo }
-  private var net: NetworkInfo? { metrics.bundle?.networkInfo }
+  @State private var readings = MonitorStatusReadings(nil,
+    cpu: false, memory: false, storage: false, battery: false, network: false)
+
+  private var selection: [Bool] {
+    [state.showCpu, state.showMemory, state.showStorage, state.showBattery, state.showNetWork]
+  }
+
+  private func updateReadings(_ bundle: SystemInfoBundle?) {
+    let next = MonitorStatusReadings(bundle, cpu: state.showCpu, memory: state.showMemory,
+      storage: state.showStorage, battery: state.showBattery, network: state.showNetWork)
+    if next != readings { readings = next }
+  }
   
   
   private var upload: String {
-    net?.upload.description ?? "-"
+    MonitorByteFormatter.string(readings.upload)
   }
   
   private var download: String {
-    net?.download.description ?? "-"
+    MonitorByteFormatter.string(readings.download)
   }
   
   
@@ -45,16 +49,18 @@ struct MonitorView: View {
 
   private var enabledMetrics: [Metric] {
     var result: [Metric] = []
-    if state.showCpu { result.append(Metric(id: String(localized: "CPU"), symbol: "cpu", value: cpu?.percentage.value)) }
-    if state.showMemory { result.append(Metric(id: String(localized: "Memory"), symbol: "memorychip", value: mem?.percentage.value)) }
-    if state.showStorage { result.append(Metric(id: String(localized: "Storage"), symbol: "internaldrive", value: sto?.percentage.value)) }
-    if state.showBattery { result.append(Metric(id: String(localized: "Battery"), symbol: bat?.icon ?? "battery.50percent", value: bat?.percentage.value)) }
+    if state.showCpu { result.append(Metric(id: String(localized: "CPU"), symbol: "cpu", value: readings.cpu)) }
+    if state.showMemory { result.append(Metric(id: String(localized: "Memory"), symbol: "memorychip", value: readings.memory)) }
+    if state.showStorage { result.append(Metric(id: String(localized: "Storage"), symbol: "internaldrive", value: readings.storage)) }
+    if state.showBattery { result.append(Metric(id: String(localized: "Battery"), symbol: readings.batterySymbol, value: readings.battery)) }
     return result
   }
 
   var body: some View {
     let values = enabledMetrics
     let layout = MonitorStatusLayout(for: state)
+    let upload = state.showNetWork ? upload : ""
+    let download = state.showNetWork ? download : ""
     HStack(spacing: layout.spacing) {
       if layout.pairsMetrics {
         ForEach(0..<((values.count + 1) / 2), id: \.self) { column in
@@ -72,15 +78,30 @@ struct MonitorView: View {
         ForEach(values) { metricRow($0, layout: layout) }
       }
       if state.showNetWork {
-        // Leading-aligned values stay beside the arrows at every digit count.
-        // Fixed slots and a separate inset preserve the gap from other metrics.
-        Grid(alignment: .leading, horizontalSpacing: 1, verticalSpacing: 0) {
-          networkRow(net?.upload.byteCount, arrow: "arrow.up", layout: layout)
-          networkRow(net?.download.byteCount, arrow: "arrow.down", layout: layout)
+        if layout.isNetworkOnly {
+          HStack(spacing: 1) {
+            icon("arrow.up.arrow.down", size: CGSize(width: 10, height: 8))
+            VStack(alignment: .trailing, spacing: -1) {
+              Text(upload).frame(width: 40)
+              Text(download).frame(width: 40)
+            }
+            .font(.system(size: 8))
+            .monospacedDigit()
+            .lineLimit(1)
+          }
+          .frame(width: layout.networkWidth, height: MonitorStatusLayout.height)
+          .help(Text(verbatim: "↑ \(upload)/s  ↓ \(download)/s"))
+        } else {
+          // Leading-aligned values stay beside the arrows at every digit count.
+          // Fixed slots and a separate inset preserve the gap from other metrics.
+          Grid(alignment: .leading, horizontalSpacing: 1, verticalSpacing: 0) {
+            networkRow(readings.upload, arrow: "arrow.up", layout: layout)
+            networkRow(readings.download, arrow: "arrow.down", layout: layout)
+          }
+          .padding(.leading, layout.networkLeadingPadding)
+          .frame(width: layout.networkWidth, height: MonitorStatusLayout.height, alignment: .leading)
+          .help(Text(verbatim: "↑ \(upload)/s  ↓ \(download)/s"))
         }
-        .padding(.leading, layout.networkLeadingPadding)
-        .frame(width: layout.networkWidth, height: MonitorStatusLayout.height, alignment: .leading)
-        .help(Text(verbatim: "↑ \(upload)/s  ↓ \(download)/s"))
       }
     }
     .frame(
@@ -89,6 +110,8 @@ struct MonitorView: View {
       alignment: .leading
     )
     .fixedSize()
+    .onReceive(SystemMetrics.shared.$bundle) { updateReadings($0) }
+    .onChange(of: selection, initial: true) { updateReadings(SystemMetrics.shared.bundle) }
   }
 
   private func metricRow(_ metric: Metric, layout: MonitorStatusLayout) -> some View {

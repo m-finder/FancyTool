@@ -2,8 +2,8 @@ import AppKit
 
 @MainActor
 final class ShotterToolbarView: NSView {
-  enum Action { case undo, redo, delete, pin, save, copy, close }
-  static let preferredSize = NSSize(width: 636, height: 104)
+  enum Action { case undo, redo, delete, scrollingCapture, pin, save, copy, close }
+  static let preferredSize = NSSize(width: 672, height: 104)
 
   var onTool: ((ShotterTool) -> Void)?
   var onColor: ((ShotterAnnotationColor) -> Void)?
@@ -81,6 +81,7 @@ final class ShotterToolbarView: NSView {
     addAction(.redo, symbol: "arrow.uturn.forward", title: String(localized: "Redo (⇧⌘Z)"))
     addAction(.delete, symbol: "trash", title: String(localized: "Delete selected annotation"))
     toolsRow.addArrangedSubview(spacer())
+    addAction(.scrollingCapture, symbol: "arrow.up.and.down.square", title: String(localized: "Scrolling screenshot (S)"))
     addAction(.pin, symbol: "pin", title: String(localized: "Pin"))
     addAction(.save, symbol: "square.and.arrow.down", title: String(localized: "Save PNG (⌘S)"))
     addAction(.copy, symbol: "doc.on.doc", title: String(localized: "Copy (⌘C)"))
@@ -155,11 +156,12 @@ final class ShotterToolbarView: NSView {
   }
 
   func update(tool: ShotterTool, selectionTool: ShotterTool?, style: ShotterAnnotationStyle, canUndo: Bool, canRedo: Bool,
-              hasSelection: Bool, isPinned: Bool, pixelSize: NSSize) {
+              hasSelection: Bool, isPinned: Bool, pixelSize: NSSize, canStartScrollingCapture: Bool = false) {
     toolButtons.forEach { $0.value.isActive = $0.key == tool }
     actionButtons[.undo]?.isEnabled = canUndo
     actionButtons[.redo]?.isEnabled = canRedo
     actionButtons[.delete]?.isEnabled = hasSelection
+    actionButtons[.scrollingCapture]?.isEnabled = canStartScrollingCapture
     actionButtons[.pin]?.isActive = isPinned
     actionButtons[.pin]?.toolTip = String(localized: isPinned ? "Unpin" : "Pin")
     swatches.forEach { $0.value.isActive = $0.key == style.color }

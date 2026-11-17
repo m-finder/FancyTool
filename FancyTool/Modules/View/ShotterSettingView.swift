@@ -9,6 +9,7 @@ import KeyboardShortcuts
 struct ShotterSettingView: View {
 
   @ObservedObject var state = AppState.shared
+  @ObservedObject private var shortcut = ShotterShortcut.shared
 
   var body: some View {
     SettingsForm {
@@ -23,6 +24,13 @@ struct ShotterSettingView: View {
 
       SettingsFormRow("Shortcut:") {
         KeyboardShortcuts.Recorder(for: .shotter)
+      }
+
+      if shortcut.registrationError != nil {
+        Text("The screenshot shortcut is unavailable. Close the other screenshot tool, then turn Shotter off and on to retry.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
       }
     }
   }

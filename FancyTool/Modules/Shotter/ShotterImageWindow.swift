@@ -7,32 +7,54 @@ import AppKit
 import UniformTypeIdentifiers
 
 @MainActor
+private final class ShotterCenteredClipView: NSClipView {
+  override func constrainBoundsRect(_ proposedBounds: NSRect) -> NSRect {
+    var result = super.constrainBoundsRect(proposedBounds)
+    guard let documentView else { return result }
+    if documentView.frame.width < result.width {
+      result.origin.x = (documentView.frame.width - result.width) / 2
+    }
+    if documentView.frame.height < result.height {
+      result.origin.y = (documentView.frame.height - result.height) / 2
+    }
+    return result
+  }
+}
+
+@MainActor
 final class ShotterImageWindow: NSWindow, NSWindowDelegate {
+
+  private static let toolbarClearance = ShotterToolbarView.preferredSize.height + 18
 
   var onClose: (() -> Void)?
   private let editorView: ShotterEditorView
   private let selectionRect: NSRect?
   private let fullScreenCaptureScreen: NSScreen?
+  private let longImageScrollView: NSScrollView?
+  private let longImageMaximumContentSize: NSSize?
   private var toolbarWindow: ShotterToolbarWindow?
+  private var onStartScrollingCapture: (() -> Void)?
+  private var originalCaptureFrame: NSRect?
   private var isDismissing = false
 
-  init(image: NSImage, sourceCGImage: CGImage? = nil, selectionRect: NSRect?) {
+  init(image: NSImage, sourceCGImage: CGImage? = nil, selectionRect: NSRect?,
+       onStartScrollingCapture: (() -> Void)? = nil) {
     self.selectionRect = selectionRect
+    self.onStartScrollingCapture = onStartScrollingCapture
     fullScreenCaptureScreen = selectionRect.flatMap(Self.fullScreenCaptureScreen(for:))
     editorView = ShotterEditorView(
       image: image,
       sourceCGImage: sourceCGImage,
-      fillsScreen: fullScreenCaptureScreen != nil
+      fillsScreen: false
     )
 
     let imageSize = image.size
     let screen = fullScreenCaptureScreen ?? selectionRect.flatMap { ShotterCoordinateSpace.screen(for: $0) } ?? NSScreen.main
-    let availableFrame = fullScreenCaptureScreen?.frame
-      ?? screen?.frame
+    let availableFrame = screen?.visibleFrame
       ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
     let maximumImageSize = CGSize(
       width: max(1, availableFrame.width),
-      height: max(1, availableFrame.height)
+      height: max(1, availableFrame.height - Self.toolbarClearance)
     )
     let scale = min(
       1,
@@ -45,7 +67,41 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
       width: imageSize.width * scale,
       height: imageSize.height * scale
     )
-    let contentSize = fullScreenCaptureScreen?.frame.size ?? imageDisplaySize
+    let isLongImage = selectionRect == nil && imageSize.height > maximumImageSize.height
+    let contentSize: CGSize
+    if isLongImage {
+      let visibleFrame = screen?.visibleFrame ?? availableFrame
+      contentSize = CGSize(
+        width: min(imageSize.width, max(480, visibleFrame.width * 0.8)),
+        height: min(imageSize.height, maximumImageSize.height,
+                    max(480, visibleFrame.height * 0.8))
+      )
+    } else {
+      contentSize = imageDisplaySize
+    }
+    if isLongImage {
+      let scrollView = NSScrollView(frame: NSRect(origin: .zero, size: contentSize))
+      scrollView.autoresizingMask = [.width, .height]
+      scrollView.contentView = ShotterCenteredClipView(frame: scrollView.contentView.frame)
+      scrollView.hasVerticalScroller = true
+      scrollView.hasHorizontalScroller = true
+      scrollView.autohidesScrollers = true
+      scrollView.scrollerStyle = .overlay
+      scrollView.allowsMagnification = true
+      scrollView.minMagnification = min(1, contentSize.width / imageSize.width,
+                                        contentSize.height / imageSize.height)
+      scrollView.maxMagnification = 4
+      scrollView.drawsBackground = true
+      scrollView.backgroundColor = .windowBackgroundColor
+      editorView.wantsLayer = false
+      editorView.frame = NSRect(origin: .zero, size: imageSize)
+      scrollView.documentView = editorView
+      longImageScrollView = scrollView
+      longImageMaximumContentSize = contentSize
+    } else {
+      longImageScrollView = nil
+      longImageMaximumContentSize = nil
+    }
 
     super.init(
       contentRect: NSRect(origin: .zero, size: contentSize),
@@ -60,17 +116,36 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     isReleasedWhenClosed = false
     isOpaque = false
     backgroundColor = .clear
-    hasShadow = fullScreenCaptureScreen == nil
+    hasShadow = true
     animationBehavior = .none
     level = .screenSaver
     isMovableByWindowBackground = false
     collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-    contentView = editorView
+    contentView = longImageScrollView ?? editorView
     editorView.hostWindow = self
     toolbarWindow = ShotterToolbarWindow(editor: editorView)
   }
 
   var isFullScreenCapture: Bool { fullScreenCaptureScreen != nil }
+
+  var canStartScrollingCapture: Bool {
+    !isDismissing && onStartScrollingCapture != nil && editorView.isPristineForScrollingCapture
+  }
+
+  func startScrollingCapture() {
+    guard canStartScrollingCapture, let callback = onStartScrollingCapture else { return }
+    onStartScrollingCapture = nil
+    // Remove the static image and its toolbar before the live viewport starts.
+    // The callback survives window disposal without retaining this editor.
+    orderOut(nil)
+    dismissWindow()
+    DispatchQueue.main.async { callback() }
+  }
+
+  fileprivate func invalidateScrollingCapture() {
+    onStartScrollingCapture = nil
+    editorView.refreshScrollingCaptureAvailability()
+  }
 
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { true }
@@ -81,6 +156,11 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
 
   override func sendEvent(_ event: NSEvent) {
     if event.type == .keyDown, event.keyCode == 53, editorView.handleShortcut(event) { return }
+    if event.type == .scrollWheel, let scrollView = longImageScrollView,
+       event.modifierFlags.contains(.command) {
+      zoom(scrollView, to: scrollView.magnification * exp(event.scrollingDeltaY * 0.04))
+      return
+    }
     super.sendEvent(event)
   }
 
@@ -93,6 +173,16 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
   }
 
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
+    if let scrollView = longImageScrollView, event.type == .keyDown,
+       event.modifierFlags.intersection([.command, .option, .control]) == [.command] {
+      switch event.charactersIgnoringModifiers {
+      case "+", "=": zoom(scrollView, to: scrollView.magnification * 1.25); return true
+      case "-": zoom(scrollView, to: scrollView.magnification / 1.25); return true
+      case "0": zoom(scrollView, to: scrollView.minMagnification); return true
+      case "1": zoom(scrollView, to: min(1, scrollView.contentSize.width / editorView.frame.width)); return true
+      default: break
+      }
+    }
     if editorView.handleShortcut(event) { return true }
     if event.type == .keyDown, event.keyCode == 53 {
       dismissWindow()
@@ -103,10 +193,51 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
 
   func show() {
     positionNearSelection()
+    originalCaptureFrame = frame
     orderFrontRegardless()
+    if let scrollView = longImageScrollView {
+      let widthScale = min(1, scrollView.contentSize.width / editorView.frame.width)
+      zoom(scrollView, to: widthScale)
+      scrollView.contentView.scroll(to: NSPoint(
+        x: 0,
+        y: max(0, editorView.frame.height - scrollView.documentVisibleRect.height)
+      ))
+      scrollView.reflectScrolledClipView(scrollView.contentView)
+    }
     makeKey()
     makeFirstResponder(editorView)
     showToolbar()
+  }
+
+  private func zoom(_ scrollView: NSScrollView, to magnification: CGFloat) {
+    let magnification = min(scrollView.maxMagnification,
+                            max(scrollView.minMagnification, magnification))
+    let center = NSPoint(x: scrollView.documentVisibleRect.midX,
+                         y: scrollView.documentVisibleRect.midY)
+    scrollView.setMagnification(magnification, centeredAt: center)
+    if let maximum = longImageMaximumContentSize {
+      let target = NSSize(width: min(maximum.width, editorView.frame.width * magnification),
+                          height: min(maximum.height, editorView.frame.height * magnification))
+      if abs(frame.width - target.width) > 1 || abs(frame.height - target.height) > 1 {
+        let midpoint = NSPoint(x: frame.midX, y: frame.midY)
+        setContentSize(target)
+        let visible = screen?.visibleFrame ?? NSScreen.main?.visibleFrame
+        let proposed = NSPoint(x: midpoint.x - frame.width / 2,
+                               y: midpoint.y - frame.height / 2)
+        if let visible {
+          setFrameOrigin(NSPoint(
+            x: min(max(proposed.x, visible.minX), visible.maxX - frame.width),
+            y: min(max(proposed.y, visible.minY + Self.toolbarClearance),
+                   visible.maxY - frame.height)
+          ))
+        } else {
+          setFrameOrigin(proposed)
+        }
+      }
+    }
+    scrollView.contentView.scroll(to: scrollView.contentView.bounds.origin)
+    scrollView.reflectScrolledClipView(scrollView.contentView)
+    updateToolbarPosition()
   }
 
   private func showToolbar() {
@@ -130,6 +261,8 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
     }
 
     let imageRectInWindow = editorView.convert(editorView.currentImageRect, to: nil)
+      .intersection(NSRect(origin: .zero, size: contentView?.bounds.size ?? .zero))
+    guard !imageRectInWindow.isEmpty else { return }
     let imageRect = convertToScreen(imageRectInWindow)
     let availableFrame = screen.visibleFrame
     let toolbarSize = toolbarWindow.preferredSize
@@ -158,30 +291,26 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
   }
 
   private func positionNearSelection() {
-    if let fullScreenCaptureScreen {
-      setFrame(fullScreenCaptureScreen.frame, display: true)
-      return
-    }
-
     guard let selectionRect else {
       center()
+      if let visible = screen?.visibleFrame ?? NSScreen.main?.visibleFrame {
+        setFrameOrigin(NSPoint(x: frame.minX,
+          y: min(max(frame.minY, visible.minY + Self.toolbarClearance),
+                 visible.maxY - frame.height)))
+      }
       return
     }
 
-    let screen = ShotterCoordinateSpace.screen(for: selectionRect) ?? NSScreen.main
-    guard let availableFrame = screen?.frame else {
+    let screen = fullScreenCaptureScreen ?? ShotterCoordinateSpace.screen(for: selectionRect) ?? NSScreen.main
+    guard let availableFrame = screen?.visibleFrame else {
       center()
       return
     }
 
     let imageRect = editorView.currentImageRect
     let imageOffset = NSPoint(x: imageRect.minX, y: imageRect.minY)
-    // The preview image should stay aligned with the captured region. Do not
-    // reserve space by moving the preview upward for the floating toolbar:
-    // updateToolbarPosition() will place the toolbar inside the image whenever
-    // there is not enough room below it.
     let minimumOriginX = availableFrame.minX - imageRect.minX
-    let minimumOriginY = availableFrame.minY - imageRect.minY
+    let minimumOriginY = availableFrame.minY + Self.toolbarClearance - imageRect.minY
     let maximumOriginX = max(minimumOriginX, availableFrame.maxX - imageRect.maxX)
     let maximumOriginY = max(minimumOriginY, availableFrame.maxY - imageRect.maxY)
     let origin = NSPoint(
@@ -242,15 +371,24 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
   }
 
   func windowDidMove(_ notification: Notification) {
+    invalidateScrollingCaptureIfRelocated()
     updateToolbarPosition()
   }
 
   func windowDidResize(_ notification: Notification) {
+    invalidateScrollingCaptureIfRelocated()
     updateToolbarPosition()
   }
 
   func windowDidChangeScreen(_ notification: Notification) {
+    invalidateScrollingCaptureIfRelocated()
     updateToolbarPosition()
+  }
+
+  private func invalidateScrollingCaptureIfRelocated() {
+    guard let originalCaptureFrame, frame != originalCaptureFrame else { return }
+    // A moved preview no longer identifies the live area under its image.
+    invalidateScrollingCapture()
   }
 
   func windowWillClose(_ notification: Notification) {
@@ -337,7 +475,9 @@ final class ShotterEditorView: NSView {
   typealias Tool = ShotterTool
   typealias Annotation = ShotterAnnotation
 
-  weak var hostWindow: ShotterImageWindow?
+  weak var hostWindow: ShotterImageWindow? {
+    didSet { updateToolbar() }
+  }
   private let image: NSImage
   private let sourceCGImage: CGImage?
   private let fillsScreen: Bool
@@ -382,7 +522,25 @@ final class ShotterEditorView: NSView {
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current?.imageInterpolation = .high
     NSBezierPath(rect: rect).addClip()
-    image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+    if let sourceCGImage, enclosingScrollView != nil,
+       let context = NSGraphicsContext.current?.cgContext {
+      let visible = rect.intersection(dirtyRect).intersection(visibleRect)
+      if !visible.isEmpty {
+        let scaleX = CGFloat(sourceCGImage.width) / rect.width
+        let scaleY = CGFloat(sourceCGImage.height) / rect.height
+        let crop = CGRect(x: (visible.minX - rect.minX) * scaleX,
+                          y: (rect.maxY - visible.maxY) * scaleY,
+                          width: visible.width * scaleX, height: visible.height * scaleY)
+          .integral.intersection(CGRect(x: 0, y: 0, width: sourceCGImage.width, height: sourceCGImage.height))
+        if let portion = sourceCGImage.cropping(to: crop) {
+          context.draw(portion, in: CGRect(x: rect.minX + crop.minX / scaleX,
+                                          y: rect.maxY - crop.maxY / scaleY,
+                                          width: crop.width / scaleX, height: crop.height / scaleY))
+        }
+      }
+    } else {
+      image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+    }
     for (index, annotation) in annotations.enumerated() where index != editingTextIndex {
       (index == selectedIndex ? (movedAnnotation ?? annotation) : annotation).draw(in: rect, imageSize: image.size)
     }
@@ -508,6 +666,12 @@ final class ShotterEditorView: NSView {
       default: return false
       }
     }
+    if event.keyCode == 1, flags.isEmpty {
+      // Repeats must be consumed as well, otherwise AppKit emits its default
+      // unhandled-key sound while S is held down.
+      if !event.isARepeat { hostWindow?.startScrollingCapture() }
+      return true
+    }
     guard flags.subtracting(.shift).isEmpty else { return false }
     if event.keyCode == 51 || event.keyCode == 117 { deleteSelection(); return true }
     if event.keyCode == 36 || event.keyCode == 76 { copyImage(); return true }
@@ -578,8 +742,10 @@ final class ShotterEditorView: NSView {
       case .undo: self.undo()
       case .redo: self.redo()
       case .delete: self.deleteSelection()
+      case .scrollingCapture: self.hostWindow?.startScrollingCapture()
       case .pin:
         self.commitTextEntry(); self.isPinned.toggle()
+        self.hostWindow?.invalidateScrollingCapture()
         self.hostWindow?.alphaValue = 1
         self.hostWindow?.level = self.isPinned ? .floating : .screenSaver
         self.hostWindow?.synchronizeToolbarLevel()
@@ -610,8 +776,14 @@ final class ShotterEditorView: NSView {
     let size = sourceCGImage.map { NSSize(width: $0.width, height: $0.height) } ?? image.representations.first.map { NSSize(width: $0.pixelsWide, height: $0.pixelsHigh) } ?? image.size
     let selectionTool = selectedIndex.flatMap { annotations.indices.contains($0) ? annotations[$0].tool : nil }
     toolbar?.update(tool: selectedTool, selectionTool: selectionTool, style: style, canUndo: editHistory.canUndo, canRedo: editHistory.canRedo,
-                    hasSelection: selectedIndex != nil, isPinned: isPinned, pixelSize: size)
+                    hasSelection: selectedIndex != nil, isPinned: isPinned, pixelSize: size,
+                    canStartScrollingCapture: hostWindow?.canStartScrollingCapture == true)
   }
+  fileprivate var isPristineForScrollingCapture: Bool {
+    !isPinned && annotations.isEmpty && !editHistory.canUndo && !editHistory.canRedo
+      && draft == nil && textField == nil && activeSavePanel == nil
+  }
+  fileprivate func refreshScrollingCaptureAvailability() { updateToolbar() }
   var toolbarPreferredSize: NSSize { ShotterToolbarView.preferredSize }
   func installToolbar(in container: NSView) {
     toolbar.removeFromSuperview(); container.addSubview(toolbar)
@@ -652,7 +824,7 @@ final class ShotterEditorView: NSView {
   }
   private func cancelTextEntry() {
     textField?.removeFromSuperview(); textField = nil; textEntryPoint = nil; editingTextIndex = nil
-    window?.makeFirstResponder(self); needsDisplay = true
+    window?.makeFirstResponder(self); updateToolbar(); needsDisplay = true
   }
 
   private var imageRect: NSRect {

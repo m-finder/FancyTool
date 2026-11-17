@@ -13,10 +13,6 @@ struct DuoSettingView: View {
           AppMenu.shared.refreshFeatureStates()
         }
       ))
-      Text("Duo groups battery, Wi-Fi, and sound status in one menu-bar item.")
-        .font(.system(size: 11))
-        .foregroundStyle(.secondary)
-        .fixedSize(horizontal: false, vertical: true)
     }
   }
 }

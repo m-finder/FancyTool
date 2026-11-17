@@ -1,12 +1,18 @@
 import AppKit
 import CoreGraphics
 import Foundation
-import KeyboardShortcuts
 import ScreenCaptureKit
 
 struct ShotterCaptureSelection {
+  enum Mode {
+    case image
+    case scrolling
+  }
+
   let rect: NSRect
   let windowID: CGWindowID?
+  var mode: Mode = .image
+  var targetProcessID: pid_t? = nil
 }
 
 enum ShotterCoordinateSpace {
@@ -109,48 +115,47 @@ final class Shotter {
   // Holds windows closed by unmount until AppKit's deferred cleanup finishes.
   private var retiringImageWindows: [ShotterImageWindowHandle] = []
   private var selectionController: ShotterSelectionController?
+  private var scrollCaptureController: ShotterScrollCaptureController?
   private var captureTask: Task<Void, Never>?
   private var isMounted = false
-  private var shortcutHandlerInstalled = false
 
   private init() {}
 
   public func mount() {
     isMounted = true
-    if shortcutHandlerInstalled {
-      KeyboardShortcuts.enable(.shotter)
-    } else {
-      KeyboardShortcuts.onKeyUp(for: .shotter) { [weak self] in
-        DispatchQueue.main.async {
-          self?.startSelection()
-        }
-      }
-      shortcutHandlerInstalled = true
+    ShotterShortcut.shared.mount { [weak self] in
+      self?.startSelection()
     }
   }
 
   public func unmount() {
     isMounted = false
-    KeyboardShortcuts.disable(.shotter)
+    ShotterShortcut.shared.unmount()
     cancelSelection()
     closeImageWindows()
   }
 
-  public func startSelection() {
-    guard isMounted, selectionController == nil, captureTask == nil else { return }
+  public func startSelection(mode: ShotterCaptureSelection.Mode = .image) {
+    guard isMounted, selectionController == nil, scrollCaptureController == nil, captureTask == nil else { return }
     guard ensureScreenCapturePermission() else { return }
 
-    let controller = ShotterSelectionController()
+    let targetApp = NSWorkspace.shared.frontmostApplication
+    let controller = ShotterSelectionController(mode: mode)
     controller.onComplete = { [weak self, weak controller] selection in
       guard let self, let controller, self.selectionController === controller else { return }
-      self.capture(selection: selection)
+      let selectedApp = selection.targetProcessID.flatMap { NSRunningApplication(processIdentifier: $0) } ?? targetApp
+      if selection.mode == .scrolling {
+        self.startScrollCapture(selection: selection, targetApp: selectedApp)
+      } else {
+        self.capture(selection: selection, targetApp: selectedApp)
+      }
     }
     controller.onCancel = { [weak self, weak controller] in
       guard let self, let controller, self.selectionController === controller else { return }
       self.selectionController = nil
     }
-    guard controller.start() else { return }
     selectionController = controller
+    if !controller.start() { selectionController = nil }
   }
 
   private func ensureScreenCapturePermission() -> Bool {
@@ -182,9 +187,68 @@ final class Shotter {
     let controller = selectionController
     selectionController = nil
     controller?.cancel()
+    let scrollController = scrollCaptureController
+    scrollCaptureController = nil
+    scrollController?.cancel()
   }
 
-  private func capture(selection: ShotterCaptureSelection) {
+  private func startScrollCapture(selection: ShotterCaptureSelection, targetApp: NSRunningApplication?) {
+    selectionController = nil
+    let controller = ShotterScrollCaptureController()
+    scrollCaptureController = controller
+    controller.onComplete = { [weak self, weak controller] image, scale in
+      guard let self, let controller, self.scrollCaptureController === controller else { return }
+      self.scrollCaptureController = nil
+      self.captureTask?.cancel()
+      self.captureTask = nil
+      let size = NSSize(width: CGFloat(image.width) / max(scale, 1), height: CGFloat(image.height) / max(scale, 1))
+      self.showImage(NSImage(cgImage: image, size: size), sourceCGImage: image, at: nil)
+    }
+    controller.onCancel = { [weak self, weak controller] in
+      guard let self, let controller, self.scrollCaptureController === controller else { return }
+      self.scrollCaptureController = nil
+      self.captureTask?.cancel()
+      self.captureTask = nil
+    }
+    controller.onError = { [weak self, weak controller] error in
+      guard let self, let controller, self.scrollCaptureController === controller else { return }
+      self.scrollCaptureController = nil
+      self.captureTask?.cancel()
+      self.captureTask = nil
+      self.showScrollCaptureError(error)
+    }
+
+    captureTask = Task { [weak self, weak controller] in
+      do {
+        // Let AppKit remove the selection overlay before the stream starts.
+        try await Task.sleep(nanoseconds: 80_000_000)
+        guard !Task.isCancelled, let self, let controller,
+              self.scrollCaptureController === controller else { return }
+        try await controller.start(in: selection.rect, targetApp: targetApp)
+        guard !Task.isCancelled, self.scrollCaptureController === controller else { return }
+        self.captureTask = nil
+      } catch {
+        guard !Task.isCancelled, let self, let controller,
+              self.scrollCaptureController === controller else { return }
+        self.captureTask = nil
+        self.scrollCaptureController = nil
+        controller.cancel()
+        self.showScrollCaptureError(error)
+      }
+    }
+  }
+
+  private func showScrollCaptureError(_ error: Error) {
+    let alert = NSAlert()
+    alert.alertStyle = .warning
+    alert.messageText = String(localized: "Could not start scrolling capture")
+    alert.informativeText = error.localizedDescription
+    alert.addButton(withTitle: String(localized: "OK"))
+    NSApp.activate(ignoringOtherApps: true)
+    alert.runModal()
+  }
+
+  private func capture(selection: ShotterCaptureSelection, targetApp: NSRunningApplication?) {
     selectionController = nil
 
     // The selection overlay is above every application. Capture on the next
@@ -204,7 +268,17 @@ final class Shotter {
       }
 
       let imageSize = selection.rect.size
-      self.showImage(NSImage(cgImage: image, size: imageSize), sourceCGImage: image, at: selection.rect)
+      let canScroll = selection.rect.width >= 80 && selection.rect.height >= 80
+        && NSScreen.screens.contains { $0.frame.contains(selection.rect) }
+      let startScrolling: (() -> Void)? = canScroll ? { [weak self] in
+        guard let self, self.isMounted, self.selectionController == nil,
+              self.scrollCaptureController == nil, self.captureTask == nil else { return }
+        var scrollingSelection = selection
+        scrollingSelection.mode = .scrolling
+        self.startScrollCapture(selection: scrollingSelection, targetApp: targetApp)
+      } : nil
+      self.showImage(NSImage(cgImage: image, size: imageSize), sourceCGImage: image, at: selection.rect,
+                     onStartScrollingCapture: startScrolling)
     }
   }
 
@@ -375,8 +449,10 @@ final class Shotter {
     }
   }
 
-  private func showImage(_ image: NSImage, sourceCGImage: CGImage? = nil, at selectionRect: NSRect?) {
-    let window = ShotterImageWindow(image: image, sourceCGImage: sourceCGImage, selectionRect: selectionRect)
+  private func showImage(_ image: NSImage, sourceCGImage: CGImage? = nil, at selectionRect: NSRect?,
+                         onStartScrollingCapture: (() -> Void)? = nil) {
+    let window = ShotterImageWindow(image: image, sourceCGImage: sourceCGImage, selectionRect: selectionRect,
+                                    onStartScrollingCapture: onStartScrollingCapture)
     let handle = ShotterImageWindowHandle(window: window)
     imageWindows.append(handle)
     window.onClose = { [weak self, weak handle] in

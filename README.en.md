@@ -64,7 +64,7 @@ The interface varies with your macOS version and appearance settings. Hidder is 
 | **Paster** | Keep text and image clipboard history, pin items, limit both item count and total size to 256 MB, search by content or source application, and optionally paste automatically. |
 | **Monitor** | Show CPU, memory, storage, battery, and network speed as needed, with a compact menu bar layout and a panel of live values and charts. |
 | **Duo** | See battery, Wi-Fi, and sound status in one menu bar item. Control Bluetooth, volume, and display appearance; choose Wi-Fi networks, paired devices, and input sources. |
-| **Shotter** | Capture a region, window, or screen with pixel dimensions shown during selection. Add shapes, arrows, freehand strokes, highlights, text, numbers, and opaque redactions. Adjust colors, line widths, and font sizes; move or delete annotations; undo, redo, pin, copy, or save a full-resolution PNG. |
+| **Shotter** | Capture a region, window, or screen with pixel dimensions shown during selection, or manually scroll within a fixed area to stitch a long screenshot. Add shapes, arrows, freehand strokes, highlights, text, numbers, and opaque redactions. Adjust colors, line widths, and font sizes; move or delete annotations; undo, redo, pin, copy, or save a full-resolution PNG. |
 | **Runner** | Choose built-in animations or drop in custom GIFs, resized for display on import with file size and frame count limits, and adjust playback speed with CPU usage. The status dog reacts to system load, charging, inactivity, screenshot copies, and signature changes. |
 | **Rounder** | Add adjustable rounded corners to the screen. |
 | **Hidder** | Collapse or expand menu bar icons using a dot marker. Available on macOS versions earlier than 27. |
@@ -83,6 +83,7 @@ The interface supports Simplified Chinese, English, Japanese, Korean, German, an
 | --- | --- |
 | Open the clipboard panel | `⇧⌘C`; configurable in Settings |
 | Take a screenshot | `⇧⌘S`; configurable in Settings |
+| Take a scrolling screenshot | Select an area within one display, then click **Scrolling screenshot** in the toolbar or press `S`. Scroll down inside the area, then click **Finish** to edit, copy, or save the long screenshot |
 | Focus clipboard search | `⌘F`; separate search terms with spaces |
 | Change clipboard page | `Tab` / `⇧Tab` |
 | Select a clipboard item on the current page | `⌘1`–`⌘5` |
@@ -95,6 +96,8 @@ The interface supports Simplified Chinese, English, Japanese, Korean, German, an
 | Interact with the status dog | Left-click to spin; right-click to open the menu |
 
 The screenshot toolbar provides colors, line widths, and font sizes. Select an existing annotation to change its style. Click the active drawing tool again to return to selection mode, or double-click text to edit it. Copying or saving flattens annotations and opaque redactions into the image.
+
+A live preview shows the stitched image and its pixel dimensions while scrolling. Keep fixed toolbars and floating content outside the selected area, and leave some overlap between views. If content is missing, scroll back until the preview resumes, then continue down slowly.
 
 ### Permissions
 

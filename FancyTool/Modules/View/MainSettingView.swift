@@ -28,11 +28,6 @@ struct MainSettingView: View {
           .pickerStyle(.segmented)
           .controlSize(.small)
         }
-
-        Text("Automatic follows the system appearance.")
-          .font(.system(size: 11))
-          .foregroundStyle(.secondary)
-          .padding(.leading, 80)
       }
 
       SettingsToggle(

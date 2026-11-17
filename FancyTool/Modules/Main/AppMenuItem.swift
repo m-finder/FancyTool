@@ -98,7 +98,8 @@ struct AppMenuItem {
       ),
       AppMenuItem(
         title: String(localized: "Check for Updates"),
-        action: #selector(AppMenuActions.checkForUpdates(_:))
+        action: #selector(AppMenuActions.checkForUpdates(_:)),
+        key: "r"
       ),
       // 退出软件
       AppMenuItem(

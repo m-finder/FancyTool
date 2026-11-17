@@ -1,4 +1,43 @@
 import Foundation
+import RegexBuilder
+
+@MainActor
+enum MonitorByteFormatter {
+  private static let measurement = MeasurementFormatter()
+  private static let number = NumberFormatter()
+  private static var configuredLocale: Locale?
+  private static let components = Regex {
+    Capture {
+      ChoiceOf {
+        Regex {
+          OneOrMore(.digit)
+          ChoiceOf { "."; "," }
+          OneOrMore(.digit)
+        }
+        OneOrMore(.digit)
+      }
+    }
+    Optionally(.whitespace)
+    Capture { OneOrMore(.word) }
+  }
+
+  static func string(_ bytes: Double?, locale: Locale = .current) -> String {
+    guard let bytes else { return "-" }
+    if configuredLocale != locale {
+      measurement.locale = locale
+      measurement.unitStyle = .short
+      measurement.unitOptions = .naturalScale
+      number.locale = locale
+      number.numberStyle = .decimal
+      configuredLocale = locale
+    }
+    let text = measurement.string(from: Measurement<UnitInformationStorage>(value: bytes, unit: .bytes))
+    let match = text.firstMatch(of: components)
+    let value = match.flatMap { number.number(from: String($0.1))?.doubleValue }
+    return String(format: "%4.1f %@", locale: locale,
+      value ?? 0, value != nil ? String(match!.2) : "")
+  }
+}
 
 enum MonitorRateFormatter {
   /// B/K/M/G/T denote bytes per second in the menu bar; full values stay in the panel.
