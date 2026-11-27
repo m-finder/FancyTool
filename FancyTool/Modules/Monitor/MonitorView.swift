@@ -10,21 +10,9 @@ import SystemInfoKit
 
 struct MonitorView: View {
   
-  @ObservedObject private var state = AppState.shared
-  @State private var readings = MonitorStatusReadings(nil,
-    cpu: false, memory: false, storage: false, battery: false, network: false)
+  let state: MonitorStatusSelection
+  let readings: MonitorStatusReadings
 
-  private var selection: [Bool] {
-    [state.showCpu, state.showMemory, state.showStorage, state.showBattery, state.showNetWork]
-  }
-
-  private func updateReadings(_ bundle: SystemInfoBundle?) {
-    let next = MonitorStatusReadings(bundle, cpu: state.showCpu, memory: state.showMemory,
-      storage: state.showStorage, battery: state.showBattery, network: state.showNetWork)
-    if next != readings { readings = next }
-  }
-  
-  
   private var upload: String {
     MonitorByteFormatter.string(readings.upload)
   }
@@ -37,7 +25,10 @@ struct MonitorView: View {
   
 
   private func icon(_ name: String, size: CGSize = CGSize(width: 14, height: 8)) -> some View {
-    MonitorStatusIcon(name: name, size: size)
+    Image(nsImage: MonitorStatusSymbols.image(named: name))
+      .resizable()
+      .scaledToFit()
+      .frame(width: size.width, height: size.height)
       .fixedSize()
   }
 
@@ -58,7 +49,7 @@ struct MonitorView: View {
 
   var body: some View {
     let values = enabledMetrics
-    let layout = MonitorStatusLayout(for: state)
+    let layout = state.layout
     let upload = state.showNetWork ? upload : ""
     let download = state.showNetWork ? download : ""
     HStack(spacing: layout.spacing) {
@@ -110,8 +101,6 @@ struct MonitorView: View {
       alignment: .leading
     )
     .fixedSize()
-    .onReceive(SystemMetrics.shared.$bundle) { updateReadings($0) }
-    .onChange(of: selection, initial: true) { updateReadings(SystemMetrics.shared.bundle) }
   }
 
   private func metricRow(_ metric: Metric, layout: MonitorStatusLayout) -> some View {
@@ -164,42 +153,50 @@ struct MonitorView: View {
 
 }
 
-/// Draw compact monochrome template symbols at the display's backing scale.
-private struct MonitorStatusIcon: NSViewRepresentable {
-  let name: String
-  let size: CGSize
+@MainActor
+private enum MonitorStatusSymbols {
+  static var images: [String: NSImage] = [:]
 
-  func makeNSView(context: Context) -> MonitorSymbolImageView {
-    let view = MonitorSymbolImageView()
-    view.imageScaling = .scaleProportionallyUpOrDown
-    return view
-  }
-
-  func updateNSView(_ view: MonitorSymbolImageView, context: Context) {
-    if view.symbolName != name {
-      let configuration = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
-      view.image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
-        .withSymbolConfiguration(configuration)
-      view.image?.isTemplate = true
-      view.symbolName = name
-    }
-    let tint = NSColor.labelColor
-    if view.contentTintColor?.isEqual(tint) != true {
-      view.contentTintColor = tint
-    }
-  }
-
-  func sizeThatFits(_ proposal: ProposedViewSize, nsView: MonitorSymbolImageView,
-                   context: Context) -> CGSize? {
-    size
+  static func image(named name: String) -> NSImage {
+    if let image = images[name] { return image }
+    let configuration = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+    let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+      .withSymbolConfiguration(configuration) ?? NSImage()
+    image.isTemplate = true
+    images[name] = image
+    return image
   }
 }
 
-private final class MonitorSymbolImageView: NSImageView {
-  var symbolName: String?
-  override var allowsVibrancy: Bool { false }
+struct MonitorStatusSelection: Equatable {
+  let showCpu: Bool
+  let showMemory: Bool
+  let showStorage: Bool
+  let showBattery: Bool
+  let showNetWork: Bool
+  let compact: Bool
+
+  @MainActor
+  init(_ state: AppState = .shared) {
+    showCpu = state.showCpu
+    showMemory = state.showMemory
+    showStorage = state.showStorage
+    showBattery = state.showBattery
+    showNetWork = state.showNetWork
+    compact = state.monitorCompactLayout
+  }
+
+  var layout: MonitorStatusLayout {
+    MonitorStatusLayout(metricCount: [showCpu, showMemory, showStorage, showBattery].filter { $0 }.count,
+                        showsNetwork: showNetWork, compact: compact)
+  }
+
+  func readings(_ bundle: SystemInfoBundle?) -> MonitorStatusReadings {
+    MonitorStatusReadings(bundle, cpu: showCpu, memory: showMemory, storage: showStorage,
+                          battery: showBattery, network: showNetWork)
+  }
 }
 
 #Preview {
-  MonitorView()
+  MonitorView(state: MonitorStatusSelection(), readings: MonitorStatusSelection().readings(nil))
 }

@@ -16,7 +16,8 @@ class RunnerLayer {
 
   // MARK: - 挂载动画layer
   public func mount(button: NSStatusBarButton, scale: Double) {
-    self.layer?.removeFromSuperlayer()
+    if let layer, let parent = button.layer, layer.superlayer === parent { return }
+    unmount()
 
     let layer = CALayer()
     layer.frame = button.bounds
@@ -30,9 +31,15 @@ class RunnerLayer {
     self.layer = layer
   }
 
-  // MARK: - 模拟卸载动画layer
+  // MARK: - 卸载动画layer
   public func unmount(){
-    self.layer?.removeAnimation(forKey: "runner")
-    self.layer?.isHidden = true
+    guard let layer else { return }
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    layer.removeAllAnimations()
+    layer.contents = nil
+    layer.removeFromSuperlayer()
+    self.layer = nil
+    CATransaction.commit()
   }
 }

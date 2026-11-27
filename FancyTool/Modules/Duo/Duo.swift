@@ -1,11 +1,15 @@
 import AppKit
 import SwiftUI
+import Combine
 
 @MainActor
 final class Duo {
   static let shared = Duo()
   private var item: NSStatusItem?
-  private var hosting: HostingView?
+  private var statusSubscription: AnyCancellable?
+  private var statusSnapshot: DuoStatusSnapshot?
+  private let statusImage = StatusItemImage()
+  private var inputImages: [String: NSImage] = [:]
   private var panel: StatusItemPanel?
 
   func mount() {
@@ -15,16 +19,23 @@ final class Duo {
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     item.autosaveName = "FancyTool.Duo"
     self.item = item
-    hosting = HostingView(
-      view: DuoStatusView().frame(height: 22), item: item,
-      target: AppMenuActions.shared, action: #selector(AppMenuActions.duoPopover(_:)),
-      fixedSize: DuoStatusGlyph.size
-    )
+    item.length = DuoStatusGlyph.size.width
+    item.button?.target = AppMenuActions.shared
+    item.button?.action = #selector(AppMenuActions.duoPopover(_:))
+    item.button?.imagePosition = .imageOnly
+    statusSubscription = DuoMetrics.shared.objectWillChange
+      .merge(with: DuoInputSources.shared.objectWillChange)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] in self?.refreshStatus() }
+    refreshStatus()
   }
 
   func unmount() {
     panel?.close(); panel = nil
-    hosting?.unmount(); hosting = nil
+    statusSubscription = nil
+    statusSnapshot = nil
+    statusImage.clear()
+    inputImages.removeAll()
     if let item { NSStatusBar.system.removeStatusItem(item) }
     self.item = nil
     DuoMetrics.shared.stop()
@@ -45,32 +56,58 @@ final class Duo {
   }
 
   func closePanel() { panel?.close() }
+
+  private func refreshStatus() {
+    guard let button = item?.button else { return }
+    let snapshot = DuoStatusSnapshot()
+    guard statusSnapshot != snapshot else { return }
+    if statusSnapshot?.hasSameMetrics(as: snapshot) != true { inputImages.removeAll() }
+    guard let image = inputImages[snapshot.inputBadge] ?? StatusItemImage.render(snapshot.glyph) else { return }
+    inputImages[snapshot.inputBadge] = image
+    statusSnapshot = snapshot
+    statusImage.update(image, on: button)
+    button.toolTip = snapshot.description
+    button.setAccessibilityLabel(String(localized: "Quick Controls"))
+    button.setAccessibilityValue(snapshot.description)
+  }
 }
 
-struct DuoStatusView: View {
-  @ObservedObject private var metrics = DuoMetrics.shared
-  @ObservedObject private var input = DuoInputSources.shared
+@MainActor
+private struct DuoStatusSnapshot: Equatable {
+  let battery: DuoBattery?
+  let connected: Bool
+  let volume: Double?
+  let muted: Bool
+  let inputBadge: String
+  let inputName: String
 
-  var body: some View {
-    DuoStatusGlyph(batteryLevel: metrics.battery.map { Double($0.percentage) / 100 },
-                   charging: metrics.battery?.charging == true,
-                   pluggedIn: metrics.battery?.pluggedIn == true,
-                   connected: metrics.wifiConnected,
-                   volume: metrics.audio.volume, muted: metrics.audio.muted,
-                   inputBadge: input.shortName)
-      .help(statusDescription)
-      .accessibilityElement(children: .ignore)
-      .accessibilityLabel(Text("Quick Controls"))
-      .accessibilityValue(Text(statusDescription))
+  init() {
+    let metrics = DuoMetrics.shared
+    battery = metrics.battery
+    connected = metrics.wifiConnected
+    volume = metrics.audio.volume
+    muted = metrics.audio.muted
+    inputBadge = DuoInputSources.shared.shortName
+    inputName = DuoInputSources.shared.currentName
   }
 
-  private var statusDescription: String {
-    let battery = String(localized: "Battery") + ": " + (metrics.battery.map { PercentText.whole(Double($0.percentage)) } ?? "—")
-      + (metrics.battery?.charging == true ? " (" + String(localized: "Charging") + ")" : "")
-    let sound = String(localized: "Sound") + ": " + (metrics.audio.muted
+  var glyph: some View {
+    DuoStatusGlyph(batteryLevel: battery.map { Double($0.percentage) / 100 },
+                   charging: battery?.charging == true, pluggedIn: battery?.pluggedIn == true,
+                   connected: connected, volume: volume, muted: muted, inputBadge: inputBadge)
+  }
+
+  func hasSameMetrics(as other: Self) -> Bool {
+    battery == other.battery && connected == other.connected && volume == other.volume && muted == other.muted
+  }
+
+  var description: String {
+    let battery = String(localized: "Battery") + ": " + (battery.map { PercentText.whole(Double($0.percentage)) } ?? "—")
+      + (self.battery?.charging == true ? " (" + String(localized: "Charging") + ")" : "")
+    let sound = String(localized: "Sound") + ": " + (muted
       ? String(localized: "Mute")
-      : metrics.audio.volume.map { PercentText.whole($0 * 100) } ?? "—")
-    return [String(localized: "Duo"), battery, sound, input.currentName].joined(separator: " · ")
+      : volume.map { PercentText.whole($0 * 100) } ?? "—")
+    return [String(localized: "Duo"), battery, sound, inputName].joined(separator: " · ")
   }
 }
 
@@ -126,7 +163,7 @@ struct DuoStatusEmblem: View {
       .foregroundStyle(batteryColor)
       .mask {
         Rectangle().overlay {
-          if charging || pluggedIn {
+          if charging {
             Capsule().frame(width: 5.8, height: 8).position(DuoEmblemGeometry.powerPosition)
               .blendMode(.destinationOut)
           }
@@ -142,10 +179,6 @@ struct DuoStatusEmblem: View {
       if charging {
         DuoChargeBolt().fill(.green)
           .frame(width: 3.4, height: 5.6).position(DuoEmblemGeometry.powerPosition)
-      } else if pluggedIn {
-        DuoPowerPlug().fill(.white)
-          .frame(width: 5, height: 6.8).position(DuoEmblemGeometry.powerPosition)
-          .shadow(color: .black.opacity(0.5), radius: 0.5)
       }
     }
     .frame(width: 24, height: 22)
@@ -195,22 +228,6 @@ private struct DuoChargeBolt: Shape {
     path.addLine(to: CGPoint(x: 0.57, y: 0.39))
     path.closeSubpath()
     return path.applying(CGAffineTransform(scaleX: rect.width, y: rect.height))
-  }
-}
-
-private struct DuoPowerPlug: Shape {
-  func path(in rect: CGRect) -> Path {
-    var path = Path()
-    path.addRect(CGRect(x: rect.minX + rect.width * 0.2, y: rect.minY,
-                        width: rect.width * 0.16, height: rect.height * 0.34))
-    path.addRect(CGRect(x: rect.minX + rect.width * 0.64, y: rect.minY,
-                        width: rect.width * 0.16, height: rect.height * 0.34))
-    path.addRoundedRect(in: CGRect(x: rect.minX + rect.width * 0.1, y: rect.minY + rect.height * 0.28,
-                                   width: rect.width * 0.8, height: rect.height * 0.42),
-                        cornerSize: CGSize(width: rect.width * 0.12, height: rect.height * 0.12))
-    path.addRect(CGRect(x: rect.minX + rect.width * 0.42, y: rect.minY + rect.height * 0.68,
-                        width: rect.width * 0.16, height: rect.height * 0.32))
-    return path
   }
 }
 

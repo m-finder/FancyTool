@@ -106,10 +106,11 @@ struct DuoPopoverView: View {
           .accessibilityLabel("Action failed · Details")
       }
       HStack(spacing: 4) {
+        Text(metrics.battery.map { PercentText.whole(Double($0.percentage)) } ?? "—")
+          .monospacedDigit().font(.system(size: 11, weight: .regular))
+          .foregroundStyle(.secondary)
         Image(systemName: metrics.battery?.symbol ?? "battery.100percent").frame(width: 19)
           .foregroundStyle(batteryColor)
-        Text(metrics.battery.map { PercentText.whole(Double($0.percentage)) } ?? "—")
-          .monospacedDigit().font(.system(size: 9, weight: .medium))
       }.padding(.horizontal, 7).padding(.vertical, 4)
         .background(.primary.opacity(0.045), in: Capsule())
         .help(metrics.battery?.charging == true ? "Charging" : "Battery")

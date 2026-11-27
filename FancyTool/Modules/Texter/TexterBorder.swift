@@ -86,9 +86,20 @@ struct TexterBorderView: NSViewRepresentable {
     private var visible = false
     private var length: CGFloat = 0
     private var previousBounds = CGRect.zero
+    private weak var animationRoot: CALayer?
+    private struct Configuration: Equatable {
+      let palette: [CGColor]
+      let animated: Bool
+      let rainbow: Bool
+      let clockwise: Bool
+      let scale: CGFloat
+    }
+    private var configuration: Configuration?
 
     func install(in view: NSView) {
       guard let root = view.layer else { return }
+      animationRoot = root
+      LayerAnimationPlayback.setPaused(true, on: root)
       root.addSublayer(glowClip)
       glowClip.masksToBounds = true
       glowOutline.fillColor = NSColor.white.cgColor
@@ -134,6 +145,10 @@ struct TexterBorderView: NSViewRepresentable {
     func configure(colors: [Color], animated: Bool, rainbow: Bool = true, clockwise: Bool = false, scale: CGFloat = 2) {
       let resolved = !rainbow || colors.isEmpty ? [NSColor.labelColor.cgColor] : colors.map { NSColor($0).cgColor }
       let palette = resolved.count == 1 ? [resolved[0], resolved[0]] : resolved
+      let configuration = Configuration(palette: palette, animated: animated, rainbow: rainbow,
+                                        clockwise: clockwise, scale: scale)
+      guard self.configuration != configuration else { return }
+      self.configuration = configuration
       let lineWidth = rainbow ? TexterBorderStyle.lineWidth : TexterBorderStyle.normalLineWidth
       if border.lineWidth != lineWidth { previousBounds = .zero }
       CATransaction.begin()
@@ -162,7 +177,8 @@ struct TexterBorderView: NSViewRepresentable {
     func setVisible(_ visible: Bool) {
       guard self.visible != visible else { return }
       self.visible = visible
-      updateAnimation()
+      if visible, segments.first?.animation(forKey: "texter.borderFlow") == nil { updateAnimation() }
+      if let animationRoot { LayerAnimationPlayback.setPaused(!visible, on: animationRoot) }
     }
 
     func layout(in bounds: CGRect) {
@@ -221,7 +237,7 @@ struct TexterBorderView: NSViewRepresentable {
         animation.duration = TexterBorderStyle.cycleDuration
         animation.repeatCount = .infinity
         animation.timingFunction = CAMediaTimingFunction(name: .linear)
-        animation.beginTime = start
+        animation.beginTime = segment.convertTime(start, from: nil)
         segment.add(animation, forKey: "texter.borderFlow")
       }
     }

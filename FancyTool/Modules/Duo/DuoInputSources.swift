@@ -35,7 +35,19 @@ final class DuoInputSources: NSObject, ObservableObject {
     DistributedNotificationCenter.default().removeObserver(self)
     isObserving = false
   }
-  @objc private func inputSourcesChanged(_ notification: Notification) { refresh() }
+  @objc private func inputSourcesChanged(_ notification: Notification) {
+    if notification.name.rawValue == kTISNotifySelectedKeyboardInputSourceChanged as String {
+      let selected = string(TISCopyCurrentKeyboardInputSource().takeRetainedValue(), kTISPropertyInputSourceID)
+      guard selected != currentID else { return }
+      if sources.contains(where: { $0.id == selected }) {
+        currentID = selected
+      } else {
+        refresh()
+      }
+    } else {
+      refresh()
+    }
+  }
   private func string(_ source: TISInputSource, _ key: CFString) -> String {
     guard let pointer = TISGetInputSourceProperty(source, key) else { return "" }
     return Unmanaged<CFString>.fromOpaque(pointer).takeUnretainedValue() as String

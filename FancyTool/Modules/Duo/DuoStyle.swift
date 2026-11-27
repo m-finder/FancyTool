@@ -78,8 +78,9 @@ private final class DuoSliderCell: NSSliderCell {
     let track = NSRect(x: rect.minX, y: rect.midY - 3, width: rect.width, height: 6)
     NSColor.labelColor.withAlphaComponent(isEnabled ? 0.09 : 0.04).setFill()
     NSBezierPath(roundedRect: track, xRadius: 3, yRadius: 3).fill()
-    let fraction = CGFloat(min(1, max(0, (doubleValue - minValue) / max(0.001, maxValue - minValue))))
-    let fill = NSRect(x: track.minX, y: track.minY, width: track.width * fraction, height: track.height)
+    let fillWidth = doubleValue <= minValue ? 0 : doubleValue >= maxValue ? track.width
+      : min(track.width, max(0, knobRect(flipped: flipped).midX - track.minX))
+    let fill = NSRect(x: track.minX, y: track.minY, width: fillWidth, height: track.height)
     if fill.width > 0 {
       tint.withAlphaComponent(isEnabled ? 0.85 : 0.18).setFill()
       NSBezierPath(roundedRect: fill, xRadius: 3, yRadius: 3).fill()

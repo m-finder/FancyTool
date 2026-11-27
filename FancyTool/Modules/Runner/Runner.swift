@@ -3,6 +3,7 @@ import Combine
 
 @MainActor
 final class Runner: NSObject, CAAnimationDelegate {
+
   static let shared = Runner()
 
   private let item: NSStatusItem = {
@@ -10,10 +11,9 @@ final class Runner: NSObject, CAAnimationDelegate {
     item.autosaveName = "FancyTool.Runner"
     return item
   }()
+
   var statusButton: NSStatusBarButton? { item.button }
   private var cancellables = Set<AnyCancellable>()
-  private weak var observedWindow: NSWindow?
-  private var windowObservation: AnyCancellable?
   private var renderedScale: CGFloat = 0
   private var screenChangeWork: DispatchWorkItem?
   private var cpuUsage = 0.0
@@ -35,8 +35,8 @@ final class Runner: NSObject, CAAnimationDelegate {
   private var companionAnimationGeneration: UInt64 = 0
   private var reactionGate = CompanionReactionGate()
 
-  private var currentScale: CGFloat {
-    item.button?.window?.screen?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+  private var renderingScale: CGFloat {
+    NSScreen.screens.map(\.backingScaleFactor).max() ?? 2
   }
 
   private var shouldPause: Bool {
@@ -57,8 +57,7 @@ final class Runner: NSObject, CAAnimationDelegate {
   }
 
   func mount() {
-    guard let button = item.button else { return }
-    RunnerLayer.shared.mount(button: button, scale: currentScale)
+    guard item.button != nil else { return }
     observe()
     reload()
   }
@@ -70,8 +69,7 @@ final class Runner: NSObject, CAAnimationDelegate {
 
   private func reload() {
     companionAnimationGeneration &+= 1
-    renderedScale = currentScale
-    observeStatusWindow()
+    renderedScale = renderingScale
     renderedState = nil
     transitionSprites = []
     companionBehavior = RunnerCompanionBehavior()
@@ -93,7 +91,7 @@ final class Runner: NSObject, CAAnimationDelegate {
     item.button?.action = nil
     item.menu = AppMenu.shared.getMenus()
     item.button?.toolTip = nil
-    let frames = RunnerFrame.shared.refresh(for: currentScale)
+    let frames = RunnerFrame.shared.refresh(for: renderedScale)
     guard let first = frames.first else {
       RunnerLayer.shared.unmount()
       setWidth(RunnerConfig.defaultIconSize)
@@ -115,7 +113,9 @@ final class Runner: NSObject, CAAnimationDelegate {
   }
 
   private func installAnimation(frames: [CGImage], frameDuration: TimeInterval) {
-    guard let layer = RunnerLayer.shared.layer, let first = frames.first else { return }
+    guard let button = item.button, let first = frames.first else { return }
+    RunnerLayer.shared.mount(button: button, scale: renderedScale)
+    guard let layer = RunnerLayer.shared.layer else { return }
     item.button?.image = nil
     CATransaction.begin()
     CATransaction.setDisableActions(true)
@@ -123,7 +123,7 @@ final class Runner: NSObject, CAAnimationDelegate {
     layer.speed = 1
     layer.timeOffset = 0
     layer.beginTime = 0
-    layer.contentsScale = currentScale
+    layer.contentsScale = renderedScale
     let sharp = RunnerFrame.shared.runner.map { $0.isDefault && !$0.isPowerStar } == true
     layer.magnificationFilter = sharp ? .nearest : .linear
     layer.minificationFilter = sharp ? .nearest : .linear
@@ -189,12 +189,14 @@ final class Runner: NSObject, CAAnimationDelegate {
   }
 
   private func installCompanionAnimation(_ state: RunnerCompanionState) {
-    guard let layer = RunnerLayer.shared.layer else { return }
+    guard let button = item.button else { return }
     let source = companionPaused ? nil : currentCompanionSprite()
-    let frames = RunnerCompanionArt.frames(for: state, scale: currentScale)
+    let frames = RunnerCompanionArt.frames(for: state, scale: renderedScale)
     guard let first = frames.first else { return }
+    RunnerLayer.shared.mount(button: button, scale: renderedScale)
+    guard let layer = RunnerLayer.shared.layer else { return }
     let sprites = source.map { RunnerCompanionArt.transitionSprites(from: $0, to: state) } ?? []
-    let transition = RunnerCompanionArt.frames(for: sprites, scale: currentScale)
+    let transition = RunnerCompanionArt.frames(for: sprites, scale: renderedScale)
     let delay = transition.isEmpty ? 0 : RunnerCompanionState.transitionDuration
     companionAnimationGeneration &+= 1
 
@@ -204,7 +206,7 @@ final class Runner: NSObject, CAAnimationDelegate {
     layer.speed = 1
     layer.timeOffset = 0
     layer.beginTime = 0
-    layer.contentsScale = currentScale
+    layer.contentsScale = renderedScale
     layer.magnificationFilter = .nearest
     layer.minificationFilter = .nearest
     layer.contents = first
@@ -341,10 +343,8 @@ final class Runner: NSObject, CAAnimationDelegate {
       .store(in: &cancellables)
 
     NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
-      .receive(on: DispatchQueue.main)
       .sink { [weak self] _ in self?.screenChanged() }
       .store(in: &cancellables)
-    observeStatusWindow()
     let workspace = NSWorkspace.shared.notificationCenter
     workspace.publisher(for: NSWorkspace.screensDidSleepNotification)
       .receive(on: DispatchQueue.main)
@@ -376,30 +376,14 @@ final class Runner: NSObject, CAAnimationDelegate {
   }
 
   private func screenChanged() {
-    observeStatusWindow()
-    screenChangeWork?.cancel()
-    screenChangeWork = nil
-    guard renderedScale != currentScale else { return }
+    guard renderedScale != renderingScale, screenChangeWork == nil else { return }
     let work = DispatchWorkItem { [weak self] in
       guard let self else { return }
       self.screenChangeWork = nil
-      guard self.renderedScale != self.currentScale else { return }
+      guard self.renderedScale != self.renderingScale else { return }
       self.reload()
     }
     screenChangeWork = work
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: work)
-  }
-
-  private func observeStatusWindow() {
-    let window = item.button?.window
-    guard observedWindow !== window || window == nil else { return }
-    windowObservation?.cancel()
-    windowObservation = nil
-    observedWindow = window
-    guard let window else { return }
-    windowObservation = NotificationCenter.default.publisher(for: NSWindow.didChangeScreenNotification, object: window)
-      .merge(with: NotificationCenter.default.publisher(for: NSWindow.didChangeBackingPropertiesNotification, object: window))
-      .receive(on: DispatchQueue.main)
-      .sink { [weak self] _ in self?.screenChanged() }
+    DispatchQueue.main.async(execute: work)
   }
 }

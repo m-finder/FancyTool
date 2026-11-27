@@ -32,18 +32,20 @@ enum ShimmerColors {
   static let rainbow: [CGColor] = [NSColor.clear.cgColor] + rainbowPalette.map(\.cgColor) + [NSColor.clear.cgColor]
 }
 
-/// AppKit panels can be ordered out without SwiftUI sending onDisappear.
-/// Tie the layer's lifetime to actual window visibility instead.
 @MainActor
 final class ShimmerVisibilityView: NSView {
   var onVisibilityChange: ((Bool) -> Void)?
   private var observers: [(NotificationCenter, NSObjectProtocol)] = []
   private var displaySleeping = false
   private var systemSleeping = false
+  private weak var observedWindow: NSWindow?
+  private var lastVisibility: Bool?
 
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
+    guard observedWindow !== window else { updateVisibility(); return }
     removeObservers()
+    observedWindow = window
     if let window {
       for name in [NSWindow.didChangeOcclusionStateNotification,
                    NSWindow.didMiniaturizeNotification, NSWindow.didDeminiaturizeNotification,
@@ -64,7 +66,8 @@ final class ShimmerVisibilityView: NSView {
 
   func dismantle() {
     removeObservers()
-    onVisibilityChange?(false)
+    observedWindow = nil
+    publishVisibility(false)
     onVisibilityChange = nil
   }
 
@@ -78,7 +81,7 @@ final class ShimmerVisibilityView: NSView {
         case NSWorkspace.willSleepNotification: self.systemSleeping = true
         case NSWorkspace.didWakeNotification: self.systemSleeping = false
         case NSWindow.willCloseNotification:
-          self.onVisibilityChange?(false)
+          self.publishVisibility(false)
           return
         default: break
         }
@@ -89,8 +92,20 @@ final class ShimmerVisibilityView: NSView {
   }
 
   private func updateVisibility() {
-    let visible = window.map { $0.isVisible && $0.occlusionState.contains(.visible) } ?? false
-    onVisibilityChange?(visible && !isHiddenOrHasHiddenAncestor && !displaySleeping && !systemSleeping)
+    var ancestor = superview
+    var isStatusItem = false
+    while let view = ancestor {
+      if view is NSStatusBarButton { isStatusItem = true; break }
+      ancestor = view.superview
+    }
+    let visible = window.map { $0.isVisible && (isStatusItem || $0.occlusionState.contains(.visible)) } ?? false
+    publishVisibility(visible && !isHiddenOrHasHiddenAncestor && !displaySleeping && !systemSleeping)
+  }
+
+  private func publishVisibility(_ visible: Bool) {
+    guard lastVisibility != visible else { return }
+    lastVisibility = visible
+    onVisibilityChange?(visible)
   }
 
   private func removeObservers() {
@@ -99,13 +114,34 @@ final class ShimmerVisibilityView: NSView {
   }
 }
 
-private struct ShimmerView: NSViewRepresentable {
+@MainActor
+enum LayerAnimationPlayback {
+  static func setPaused(_ paused: Bool, on layer: CALayer) {
+    guard (layer.speed == 0) != paused else { return }
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    defer { CATransaction.commit() }
+    if paused {
+      let time = layer.convertTime(CACurrentMediaTime(), from: nil)
+      layer.speed = 0
+      layer.timeOffset = time
+    } else {
+      let time = layer.timeOffset
+      layer.speed = 1
+      layer.timeOffset = 0
+      layer.beginTime = 0
+      layer.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil) - time
+    }
+  }
+}
+
+struct ShimmerView: NSViewRepresentable {
   
   let rainbow: Bool
   let bounds: CGSize
   @Environment(\.layoutDirection) private var layoutDirection
   
-  private func configureLayer(_ layer: CAGradientLayer, rainbow: Bool, rtl: Bool) {
+  static func configureLayer(_ layer: CAGradientLayer, rainbow: Bool, rtl: Bool) {
     let colors = rainbow ? ShimmerColors.rainbow : ShimmerColors.plain
     let locations: [NSNumber] = rainbow ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1]
     layer.colors = colors
@@ -128,7 +164,7 @@ private struct ShimmerView: NSViewRepresentable {
     context.coordinator.rtl = rtl
     context.coordinator.rainbow = rainbow
     
-    configureLayer(gradLayer, rainbow: rainbow, rtl: rtl)
+    Self.configureLayer(gradLayer, rainbow: rainbow, rtl: rtl)
     view.layer?.addSublayer(gradLayer)
     view.onVisibilityChange = { [coordinator = context.coordinator] in coordinator.setVisible($0) }
     return view
@@ -144,10 +180,13 @@ private struct ShimmerView: NSViewRepresentable {
       context.coordinator.rainbow = rainbow
       
       guard let layer = context.coordinator.gradientLayer else { return }
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      defer { CATransaction.commit() }
       if boundsChanged {
         layer.frame = NSRect(origin: .zero, size: bounds)
       }
-      configureLayer(layer, rainbow: rainbow, rtl: newRtl)
+      Self.configureLayer(layer, rainbow: rainbow, rtl: newRtl)
       context.coordinator.reset()
     }
   }
@@ -157,7 +196,7 @@ private struct ShimmerView: NSViewRepresentable {
     coordinator.stop()
   }
   
-  private func applyInitialPoints(layer: CAGradientLayer, rtl: Bool) {
+  private static func applyInitialPoints(layer: CAGradientLayer, rtl: Bool) {
     let t = ShimmerConst.tiltFactor
     if rtl {
       layer.startPoint = CGPoint(x: ShimmerConst.maxP, y: ShimmerConst.minP * t)
@@ -178,11 +217,16 @@ private struct ShimmerView: NSViewRepresentable {
     func setVisible(_ visible: Bool) {
       guard isVisible != visible else { return }
       isVisible = visible
-      if visible { beginAnimation() } else { stop() }
+      guard let layer = gradientLayer else { return }
+      if visible, layer.animation(forKey: "shimmerCycleGroup") == nil { beginAnimation() }
+      LayerAnimationPlayback.setPaused(!visible, on: layer)
     }
     
     private func beginAnimation() {
       guard let layer = gradientLayer else { return }
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      defer { CATransaction.commit() }
       layer.opacity = 1
       runAnimation(layer: layer)
     }
@@ -194,6 +238,9 @@ private struct ShimmerView: NSViewRepresentable {
 
     func stop() {
       guard let layer = gradientLayer else { return }
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      defer { CATransaction.commit() }
       layer.opacity = 0
       layer.removeAllAnimations()
     }
@@ -234,6 +281,7 @@ private struct ShimmerView: NSViewRepresentable {
       group.duration = totalCycle
       group.repeatCount = .infinity
       group.isRemovedOnCompletion = false
+      group.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil)
       
       layer.add(group, forKey: "shimmerCycleGroup")
     }

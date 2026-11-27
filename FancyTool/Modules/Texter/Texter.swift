@@ -7,7 +7,7 @@ final class Texter {
 
   private var panel: StatusItemPanel?
   private var item: NSStatusItem?
-  private var hosting: HostingView?
+  private var statusView: TexterStatusView?
   private var textWhenOpened: String?
   private var panelContentHeight: CGFloat?
 
@@ -15,19 +15,16 @@ final class Texter {
     guard item == nil else { return }
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     self.item = item
-    hosting = HostingView(
-      view: TexterView().frame(height: 22),
-      item: item,
-      target: AppMenuActions.shared,
-      action: #selector(AppMenuActions.textPopover(_:))
-    )
+    item.button?.target = AppMenuActions.shared
+    item.button?.action = #selector(AppMenuActions.textPopover(_:))
+    statusView = TexterStatusView(item: item)
   }
 
   func unmount() {
     panel?.close()
     panel = nil
-    hosting?.unmount()
-    hosting = nil
+    statusView?.unmount()
+    statusView = nil
     if let item { NSStatusBar.system.removeStatusItem(item) }
     item = nil
   }

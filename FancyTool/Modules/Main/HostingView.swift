@@ -58,6 +58,7 @@ final class HostingView {
     let nextSize = fixedSize ?? size
     guard nextSize.width.isFinite, nextSize.height.isFinite,
           nextSize.width > 0, nextSize.height > 0 else { return }
+    guard contentSize != nextSize else { return }
     contentSize = nextSize
     guard resizeWork == nil else { return }
     let work = DispatchWorkItem { [weak self] in

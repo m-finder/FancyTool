@@ -10,14 +10,15 @@ import SwiftUI
 struct TexterView: View {
   
   @ObservedObject var state = AppState.shared
-  @State private var isVisible: Bool = false
   var previewColors: [Color]? = nil
   var fitsAvailableWidth = false
+  var rendersEffects = true
+  var maskOnly = false
   
   var body: some View {
     Text(previewColors != nil && state.text.isEmpty ? String(localized: "Keep happy.") : state.text)
       .shimmering(
-        active: (state.showShimmer || state.rainbowShimmer) && isVisible,
+        active: rendersEffects && (state.showShimmer || state.rainbowShimmer),
         rainbow: state.rainbowShimmer
       )
       .foregroundStyle(textGradient)
@@ -30,20 +31,14 @@ struct TexterView: View {
       .frame(height: 20)
       .texterBorder(colors: selectedColors,
                     borderColors: ShimmerColors.rainbowPalette.map { Color(nsColor: $0) },
-                    plain: state.normalBorder, rainbow: state.rainbowBorder,
-                    gradientBackground: state.gradientBackground, clockwise: state.borderClockwise)
-      .onAppear {
-        isVisible = true
-      }
-      .onDisappear {
-        isVisible = false
-      }
+                    plain: rendersEffects && state.normalBorder, rainbow: rendersEffects && state.rainbowBorder,
+                    gradientBackground: !maskOnly && state.gradientBackground, clockwise: state.borderClockwise)
   }
   
   // 文字颜色渐变
   private var textGradient: LinearGradient {
     LinearGradient(
-      colors: selectedColors,
+      colors: maskOnly ? [.white] : selectedColors,
       startPoint: .topLeading,
       endPoint: .bottomTrailing
     )

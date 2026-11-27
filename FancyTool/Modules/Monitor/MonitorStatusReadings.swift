@@ -21,4 +21,21 @@ struct MonitorStatusReadings: Equatable {
     upload = network ? bundle?.networkInfo?.upload.byteCount : nil
     download = network ? bundle?.networkInfo?.download.byteCount : nil
   }
+
+  @MainActor
+  func hasSameDisplay(as other: Self, networkOnly: Bool) -> Bool {
+    func percentage(_ value: Double?) -> String {
+      PercentText.whole(value.map { min(100, max(0, $0)) })
+    }
+    func rate(_ value: Double?) -> String {
+      networkOnly ? MonitorByteFormatter.string(value) : MonitorRateFormatter.compact(value)
+    }
+    return percentage(cpu) == percentage(other.cpu)
+      && percentage(memory) == percentage(other.memory)
+      && percentage(storage) == percentage(other.storage)
+      && percentage(battery) == percentage(other.battery)
+      && batterySymbol == other.batterySymbol
+      && rate(upload) == rate(other.upload)
+      && rate(download) == rate(other.download)
+  }
 }

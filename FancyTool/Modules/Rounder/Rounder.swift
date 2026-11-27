@@ -16,6 +16,11 @@ final class Rounder {
   enum CornerPosition { case topLeft, topRight, bottomLeft, bottomRight }
   
   private var windows: [NSWindow] = []
+  private struct ScreenLayout: Equatable {
+    let frame: NSRect
+    let scale: CGFloat
+  }
+  private var screenLayout: [CGDirectDisplayID: ScreenLayout] = [:]
   private var cancellables = Set<AnyCancellable>()
   private var remountTask: Task<Void, Never>?
   private var isMounted = false
@@ -42,9 +47,23 @@ final class Rounder {
     closeWindows()
   }
 
+  private func layout(for screens: [NSScreen]) -> [CGDirectDisplayID: ScreenLayout] {
+    Dictionary(uniqueKeysWithValues: screens.compactMap { screen in
+      guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else { return nil }
+      return (id, ScreenLayout(frame: screen.frame, scale: screen.backingScaleFactor))
+    })
+  }
+
   private func rebuildWindows() {
+    let screens = NSScreen.screens
+    let layout = layout(for: screens)
+    guard layout != screenLayout || windows.count != screens.count * 4 else {
+      windows.filter { !$0.isVisible }.forEach { $0.orderFrontRegardless() }
+      return
+    }
     closeWindows()
-    NSScreen.screens.forEach { createWindows(for: $0) }
+    screens.forEach { createWindows(for: $0) }
+    screenLayout = layout
   }
 
   private func closeWindows() {
@@ -54,6 +73,7 @@ final class Rounder {
       w.close()
     }
     windows.removeAll()
+    screenLayout.removeAll()
   }
   
   // MARK: - 刷新
@@ -93,7 +113,14 @@ final class Rounder {
   
   private func remountAfterDelay(_ delay: TimeInterval = 0.15) {
     guard isMounted else { return }
-    remountTask?.cancel()
+    let screens = NSScreen.screens
+    guard layout(for: screens) != screenLayout || windows.count != screens.count * 4
+      || windows.contains(where: { !$0.isVisible }) else {
+      remountTask?.cancel()
+      remountTask = nil
+      return
+    }
+    guard remountTask == nil else { return }
     remountTask = Task { [weak self] in
       do {
         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
