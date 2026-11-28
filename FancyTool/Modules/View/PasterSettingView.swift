@@ -11,6 +11,7 @@ import KeyboardShortcuts
 struct PasterSettingView: View {
   
   @ObservedObject var state = AppState.shared
+  @State private var hasAccessibilityPermission = AXIsProcessTrusted()
   
   var body: some View {
     
@@ -41,17 +42,25 @@ struct PasterSettingView: View {
         SettingsToggle("Auto Paste", isOn: $state.autoPaste)
           .onChange(of: state.autoPaste) { _, newValue in
             if newValue {
-              let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
-              if !AXIsProcessTrustedWithOptions(options) {
-                let alert = NSAlert()
-                alert.messageText = String(localized: "Need Accessibility Permissions")
-                alert.informativeText = String(localized: "Auto Paste requires Accessibility permission. Enable it in System Settings > Privacy & Security > Accessibility, then toggle Auto Paste again.")
-                alert.addButton(withTitle: String(localized: "OK"))
-                alert.runModal()
-                state.autoPaste = false
-              }
+              hasAccessibilityPermission = Paster.shared.requestAccessibilityPermission()
             }
           }
+
+        if state.autoPaste && !hasAccessibilityPermission {
+          Text("Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+          Button("Open Accessibility Settings") {
+            hasAccessibilityPermission = Paster.shared.requestAccessibilityPermission()
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+              NSWorkspace.shared.open(url)
+            }
+          }
+        }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+      hasAccessibilityPermission = AXIsProcessTrusted()
     }
   }
 }

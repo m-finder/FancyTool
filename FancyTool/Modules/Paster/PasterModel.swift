@@ -43,6 +43,12 @@ struct PasterDataCache {
     for key in order where !keys.contains(key) { remove(key) }
   }
 
+  mutating func removeAll() {
+    entries.removeAll()
+    order.removeAll()
+    byteCount = 0
+  }
+
   private mutating func remove(_ key: String) {
     if let old = entries.removeValue(forKey: key) { byteCount -= old.count }
     order.removeAll { $0 == key }

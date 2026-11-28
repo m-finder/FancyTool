@@ -10,6 +10,30 @@ enum RunnerGIFProcessor {
   static let displayHeight = 44
   static let displayWidth = 132
 
+  static func loadFrames(for runner: RunnerModel, height: Int, maximumHeight: Int,
+                         firstIndex: Int = 0, count: Int? = nil) async -> [CGImage] {
+    let task = Task.detached(priority: .utility) {
+      guard !Task.isCancelled, let source = runner.imageSource() else { return [CGImage]() }
+      let end = min(CGImageSourceGetCount(source), maximumFrames, firstIndex + (count ?? maximumFrames))
+      guard firstIndex >= 0, firstIndex < end else { return [] }
+      var frames: [CGImage] = []
+      frames.reserveCapacity(end - firstIndex)
+      for index in firstIndex..<end {
+        guard !Task.isCancelled else { return [] }
+        if let image = autoreleasepool(invoking: {
+          displayFrame(source: source, index: index, height: height, maximumHeight: maximumHeight,
+                       sharp: runner.isDefault && !runner.isPowerStar)
+        }) { frames.append(image) }
+      }
+      return frames
+    }
+    return await withTaskCancellationHandler {
+      await task.value
+    } onCancel: {
+      task.cancel()
+    }
+  }
+
   enum ImportError: LocalizedError {
     case invalid, tooLarge, tooManyFrames
     var errorDescription: String? {

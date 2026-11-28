@@ -70,7 +70,7 @@ final class Monitor {
       let content = MonitorStatusView(state: selection, readings: readings)
         .frame(height: MonitorStatusLayout.height)
         .padding(.horizontal, MonitorStatusLayout.horizontalPadding)
-      guard let image = StatusItemImage.render(content, template: selection.layout.metricCount > 0 || selection.showNetWork) else { return }
+      guard let image = statusImage.render(content, template: selection.layout.metricCount > 0 || selection.showNetWork) else { return }
       if item.length != selection.layout.size.width { item.length = selection.layout.size.width }
       statusImage.update(image, on: button)
     }

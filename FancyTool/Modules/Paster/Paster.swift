@@ -140,6 +140,7 @@ class Paster: ObservableObject{
     pasteTask = nil
     KeyboardShortcuts.disable(.paster)
     hide()
+    store.clearCache()
     targetApp = nil
   }
 
@@ -178,18 +179,12 @@ class Paster: ObservableObject{
       self.hide()
       guard let application else { return }
       do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
-      if self.state.autoPaste, self.hasAccessibilityPermission() {
+      if self.state.autoPaste {
         await self.simulatePaste(to: application)
       } else {
         application.activate(options: [.activateAllWindows])
       }
     }
-  }
-
-  // MARK: - 辅助功能权限（静默检查，不弹系统弹窗）
-  private func hasAccessibilityPermission() -> Bool {
-    let options = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
-    return AXIsProcessTrustedWithOptions(options)
   }
 
   // MARK: - 复制到剪切板
@@ -218,7 +213,7 @@ class Paster: ObservableObject{
   // MARK: - 模拟粘贴
   public func simulatePaste(to application: NSRunningApplication? = nil) async {
     let targetApp = application ?? self.targetApp
-    guard await requestAccessibilityPermission() else { return }
+    guard !Task.isCancelled, requestAccessibilityPermission() else { return }
 
     guard let source = CGEventSource(stateID: .hidSystemState) else {
       return
@@ -247,26 +242,9 @@ class Paster: ObservableObject{
   }
 
   // MARK: - 辅助功能权限申请
-  private func requestAccessibilityPermission() async -> Bool {
-      // 快速判断：已经授权就返回
-      let quickOptions = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
-      if AXIsProcessTrustedWithOptions(quickOptions) { return true }
-
-      // 未授权 → 弹系统设置，并等待用户完成授权
-      let promptOptions = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
-      AXIsProcessTrustedWithOptions(promptOptions)
-
-      for _ in 0..<40 {
-        do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return false }
-        if AXIsProcessTrustedWithOptions(quickOptions) { return true }
-      }
-
-      let alert = NSAlert()
-      alert.messageText = NSLocalizedString("Need Accessibility Permissions", comment: "Alert title for accessibility permission request")
-      alert.informativeText = NSLocalizedString("Please enable permissions for this app in System Settings > Security & Privacy > Privacy > Accessibility to allow paste operations.", comment: "Detailed explanation for accessibility permission request")
-      alert.addButton(withTitle: NSLocalizedString("OK", comment: "Confirm button text"))
-      alert.runModal()
-      return AXIsProcessTrustedWithOptions(quickOptions)
+  func requestAccessibilityPermission() -> Bool {
+    if AXIsProcessTrusted() { return true }
+    return AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
   }
 
   // MARK: - 持久化
@@ -284,7 +262,8 @@ class Paster: ObservableObject{
 
   private func receive(_ result: Result<[PasterModel], Error>) {
     switch result {
-    case .success(let records): history = records
+    case .success(let records):
+      if history != records { history = records }
     case .failure(let error): print("Failed to update paste history: \(error)")
     }
   }

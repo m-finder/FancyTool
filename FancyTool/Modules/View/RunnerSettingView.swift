@@ -94,6 +94,7 @@ struct RunnerSettingView: View {
       .contentMargins(.trailing, 18, for: .scrollContent)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+    .task { runnerHandler.loadCatalog() }
   }
 
   private var texterColors: [Color] {

@@ -7,16 +7,43 @@ final class RunnerHandler: ObservableObject {
   @Published private(set) var isImporting = false
   @Published var importError: String?
   private let store = RunnerStore()
+  private var catalogLoaded = false
+  private var catalogLoading = false
 
   private init() {
-    store.load { [weak self] result in
-      self?.receive(result)
+    let selectedID = AppState.shared.runnerId
+    store.load(selectedID: selectedID) { [weak self] result in
+      self?.receive(result, validateSelection: AppState.shared.runnerId == selectedID)
       Runner.shared.change()
     }
   }
 
   func getRunnerById(_ id: String) -> RunnerModel? {
     cachedRunners.first { $0.id.uuidString == id }
+  }
+
+  func loadCatalog() {
+    guard !catalogLoaded, !catalogLoading else { return }
+    catalogLoading = true
+    store.load(includeAllDefaults: true) { [weak self] result in
+      guard let self else { return }
+      self.catalogLoading = false
+      if case .success = result { self.catalogLoaded = true }
+      self.receive(result)
+    }
+  }
+
+  func prepareRunner(id: String) async -> RunnerModel? {
+    guard !id.isEmpty else { return nil }
+    return await withCheckedContinuation { continuation in
+      store.load(selectedID: id) { [weak self] result in
+        guard let self else { continuation.resume(returning: nil); return }
+        self.receive(result, validateSelection: AppState.shared.runnerId == id)
+        if case .success(let runners) = result {
+          continuation.resume(returning: runners.first { $0.id.uuidString == id })
+        } else { continuation.resume(returning: nil) }
+      }
+    }
   }
 
   func addRunner(url: URL) {
@@ -38,12 +65,15 @@ final class RunnerHandler: ObservableObject {
     }
   }
 
-  private func receive(_ result: Result<[RunnerModel], Error>) {
+  private func receive(_ result: Result<[RunnerModel], Error>, validateSelection: Bool = true) {
     switch result {
     case .success(let runners):
-      cachedRunners = runners
+      if !cachedRunners.elementsEqual(runners, by: {
+        $0.id == $1.id && $0.isDefault == $1.isDefault && $0.frameNumber == $1.frameNumber
+          && $0.dataFileName == $1.dataFileName && $0.createdAt == $1.createdAt
+      }) { cachedRunners = runners }
       let selectedID = AppState.shared.runnerId
-      if !selectedID.isEmpty && !runners.contains(where: { $0.id.uuidString == selectedID }) {
+      if validateSelection, !selectedID.isEmpty && !runners.contains(where: { $0.id.uuidString == selectedID }) {
         AppState.shared.runnerId = ""
         Runner.shared.change()
       }

@@ -1,10 +1,10 @@
 import AppKit
 
-enum ShotterTool: CaseIterable, Hashable {
+enum ShotterTool: CaseIterable, Hashable, Sendable {
   case none, rectangle, oval, arrow, pen, highlighter, text, number, redact
 }
 
-enum ShotterAnnotationColor: Int, CaseIterable {
+enum ShotterAnnotationColor: Int, CaseIterable, Sendable {
   case red, orange, yellow, green, blue, purple, white, black
 
   /// Fixed sRGB values keep saved annotations identical in light and dark mode.
@@ -43,7 +43,7 @@ enum ShotterAnnotationColor: Int, CaseIterable {
   }
 }
 
-struct ShotterAnnotationStyle: Equatable {
+struct ShotterAnnotationStyle: Equatable, Sendable {
   var color: ShotterAnnotationColor = .red
   var lineWidth: CGFloat = 3
   var fontSize: CGFloat = 22
@@ -54,7 +54,7 @@ struct ShotterAnnotationStyle: Equatable {
 
 /// Geometry is stored in the captured image's logical point space. The same
 /// renderer maps it into the preview or the original-resolution exported PNG.
-struct ShotterAnnotation: Equatable {
+struct ShotterAnnotation: Equatable, Sendable {
   var tool: ShotterTool
   var start: NSPoint
   var end: NSPoint
@@ -134,6 +134,17 @@ struct ShotterAnnotation: Equatable {
     copy.end = moved(end)
     copy.points = points.map(moved)
     return copy
+  }
+
+  func drawingBounds(in rect: NSRect, imageSize: NSSize, selected: Bool = false) -> NSRect {
+    guard imageSize.width > 0, imageSize.height > 0 else { return .zero }
+    let scaleX = rect.width / imageSize.width
+    let scaleY = rect.height / imageSize.height
+    let bounds = bounds
+    let padding: CGFloat = max(selected ? 8 : 2, tool == .text ? style.pointSize * max(scaleX, scaleY) : 0)
+    return NSRect(x: rect.minX + bounds.minX * scaleX, y: rect.minY + bounds.minY * scaleY,
+                  width: bounds.width * scaleX, height: bounds.height * scaleY)
+      .insetBy(dx: -padding, dy: -padding)
   }
 
   func draw(in rect: NSRect, imageSize: NSSize) {

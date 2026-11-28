@@ -62,7 +62,7 @@ final class Duo {
     let snapshot = DuoStatusSnapshot()
     guard statusSnapshot != snapshot else { return }
     if statusSnapshot?.hasSameMetrics(as: snapshot) != true { inputImages.removeAll() }
-    guard let image = inputImages[snapshot.inputBadge] ?? StatusItemImage.render(snapshot.glyph) else { return }
+    guard let image = inputImages[snapshot.inputBadge] ?? statusImage.render(snapshot.glyph) else { return }
     inputImages[snapshot.inputBadge] = image
     statusSnapshot = snapshot
     statusImage.update(image, on: button)

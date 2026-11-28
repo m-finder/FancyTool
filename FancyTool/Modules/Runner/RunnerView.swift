@@ -58,14 +58,9 @@ struct RunnerView: View {
       }
       let frameCount = isRunning ? min(runner.frameNumber, RunnerGIFProcessor.maximumFrames) : 1
       let previewIndex = runner.isDefault ? min(max(0, runner.frameNumber - 1), runner.frameNumber / 3) : 0
-      let loadedFrames = await Task.detached(priority: .utility) {
-        guard let source = runner.imageSource() else { return [CGImage]() }
-        return (0..<frameCount).compactMap {
-          RunnerGIFProcessor.displayFrame(source: source, index: isRunning ? $0 : previewIndex,
-                                          height: RunnerGIFProcessor.displayHeight,
-                                          sharp: runner.isDefault && !runner.isPowerStar)
-        }
-      }.value
+      let loadedFrames = await RunnerGIFProcessor.loadFrames(
+        for: runner, height: RunnerGIFProcessor.displayHeight, maximumHeight: RunnerGIFProcessor.displayHeight,
+        firstIndex: isRunning ? 0 : previewIndex, count: frameCount)
       guard !Task.isCancelled else { return }
       frames = loadedFrames
       imageIndex = 0

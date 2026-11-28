@@ -6,6 +6,8 @@ final class StatusItemImage {
   static let scale: CGFloat = 2
   private var content: NSImage?
   private var image: NSImage?
+  private var lightRenderer: ImageRenderer<AnyView>?
+  private var darkRenderer: ImageRenderer<AnyView>?
 
   func update(_ content: NSImage, on button: NSButton) {
     self.content = content
@@ -27,23 +29,37 @@ final class StatusItemImage {
   func clear() {
     content = nil
     image = nil
+    lightRenderer = nil
+    darkRenderer = nil
   }
 
   static func render(_ content: some View, template: Bool = false) -> NSImage? {
-    func render(_ scheme: ColorScheme) -> NSImage? {
-      guard let image = bitmap(content
+    StatusItemImage().render(content, template: template)
+  }
+
+  func render(_ content: some View, template: Bool = false) -> NSImage? {
+    func render(_ scheme: ColorScheme, using renderer: inout ImageRenderer<AnyView>?) -> NSImage? {
+      let view = AnyView(content
         .environment(\.colorScheme, scheme)
-        .environment(\.displayScale, scale)
-        .environment(\.layoutDirection, NSApp?.userInterfaceLayoutDirection == .rightToLeft ? .rightToLeft : .leftToRight)) else { return nil }
-      return NSImage(cgImage: image, size: NSSize(width: CGFloat(image.width) / scale,
-                                               height: CGFloat(image.height) / scale))
+        .environment(\.displayScale, Self.scale)
+        .environment(\.layoutDirection, NSApp?.userInterfaceLayoutDirection == .rightToLeft ? .rightToLeft : .leftToRight))
+      if let renderer {
+        renderer.content = view
+      } else {
+        renderer = ImageRenderer(content: view)
+        renderer?.scale = Self.scale
+      }
+      guard let renderer, let image = Self.bitmap(renderer: renderer) else { return nil }
+      return NSImage(cgImage: image, size: NSSize(width: CGFloat(image.width) / Self.scale,
+                                               height: CGFloat(image.height) / Self.scale))
     }
-    guard let light = render(.light) else { return nil }
+    guard let light = render(.light, using: &lightRenderer) else { return nil }
     if template {
+      darkRenderer = nil
       light.isTemplate = true
       return light
     }
-    guard let dark = render(.dark) else { return nil }
+    guard let dark = render(.dark, using: &darkRenderer) else { return nil }
     let image = NSImage(size: light.size, flipped: false) { rect in
       let appearance = NSAppearance.currentDrawing()
       let variant = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
@@ -57,6 +73,10 @@ final class StatusItemImage {
   static func bitmap(_ content: some View) -> CGImage? {
     let renderer = ImageRenderer(content: content.environment(\.displayScale, scale))
     renderer.scale = scale
+    return bitmap(renderer: renderer)
+  }
+
+  private static func bitmap(renderer: ImageRenderer<some View>) -> CGImage? {
     var image: CGImage?
     renderer.render(rasterizationScale: scale) { size, draw in
       guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0,

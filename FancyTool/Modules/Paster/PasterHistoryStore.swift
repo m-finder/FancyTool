@@ -22,9 +22,22 @@ final class PasterHistoryStore: @unchecked Sendable {
   private let directory: URL?
   private var history: [PasterModel] = []
   private var loaded = false
+  private var manifestNeedsSave = false
+  private var needsFullCleanup = true
+  private var pendingMedia = Set<String>()
   private var cache = PasterDataCache(capacity: cacheBytes)
+  private let memoryPressure: DispatchSourceMemoryPressure
 
-  init(directory: URL? = nil) { self.directory = directory }
+  init(directory: URL? = nil) {
+    self.directory = directory
+    memoryPressure = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: queue)
+    memoryPressure.setEventHandler { [weak self] in self?.cache.removeAll() }
+    memoryPressure.resume()
+  }
+
+  deinit { memoryPressure.cancel() }
+
+  func clearCache() { queue.async { self.cache.removeAll() } }
 
   func load(limit: Int, byteLimit: Int = maximumBytes, completion: @escaping Completion) {
     perform(limit: limit, byteLimit: byteLimit, completion: completion) { _ in }
@@ -55,8 +68,8 @@ final class PasterHistoryStore: @unchecked Sendable {
         }
         item.imageFileName = "\(item.id).image"
         item.thumbnailFileName = "\(item.id).thumbnail"
-        try FancyToolFileStore.writeAtomically(image.original, to: store.mediaURL(item.imageFileName!))
-        try FancyToolFileStore.writeAtomically(image.thumbnail, to: store.mediaURL(item.thumbnailFileName!))
+        try store.writeMedia(image.original, named: item.imageFileName!)
+        try store.writeMedia(image.thumbnail, named: item.thumbnailFileName!)
       }
       if let text = item.content, let index = store.history.firstIndex(where: { $0.content == text }) {
         store.history[index].createdAt = item.createdAt
@@ -94,16 +107,26 @@ final class PasterHistoryStore: @unchecked Sendable {
         do {
           try self.loadIfNeeded()
           let previous = self.history
+          self.pendingMedia.removeAll()
           do {
             try mutation(self)
             self.history = Self.trimmed(self.history, limit: limit, byteLimit: byteLimit)
-            let data = try JSONEncoder().encode(Manifest(records: self.history))
-            try FancyToolFileStore.writeAtomically(data, to: self.rootURL().appendingPathComponent("history.json"))
+            if self.manifestNeedsSave || self.history != previous {
+              let data = try JSONEncoder().encode(Manifest(records: self.history))
+              try FancyToolFileStore.writeAtomically(data, to: self.rootURL().appendingPathComponent("history.json"))
+              self.manifestNeedsSave = false
+            }
           } catch {
             self.history = previous
+            self.removeMedia(self.pendingMedia.subtracting(Self.mediaNames(previous)))
+            self.pendingMedia.removeAll()
             throw error
           }
-          self.cleanup()
+          let names = Self.mediaNames(self.history)
+          self.removeMedia(Self.mediaNames(previous).union(self.pendingMedia).subtracting(names))
+          self.pendingMedia.removeAll()
+          self.cache.retain(keys: names)
+          if self.needsFullCleanup { self.cleanup() }
           return .success(self.history)
         } catch { return .failure(error) }
       }
@@ -144,6 +167,9 @@ final class PasterHistoryStore: @unchecked Sendable {
           history[index].imageDigest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         }
       }
+      manifestNeedsSave = history != manifest.records
+    } else {
+      manifestNeedsSave = true
     }
     loaded = true
   }
@@ -164,11 +190,26 @@ final class PasterHistoryStore: @unchecked Sendable {
   }
 
   private func cleanup() {
-    let names = Set(history.flatMap { [$0.imageFileName, $0.thumbnailFileName].compactMap { $0 } })
-    cache.retain(keys: names)
+    needsFullCleanup = false
+    let names = Self.mediaNames(history)
     guard let directory = try? rootURL().appendingPathComponent("Media"),
           let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
     for file in files where !names.contains(file.lastPathComponent) { FancyToolFileStore.removeIfExists(file) }
+  }
+
+  private static func mediaNames(_ records: [PasterModel]) -> Set<String> {
+    Set(records.flatMap { [$0.imageFileName, $0.thumbnailFileName].compactMap { $0 } })
+  }
+
+  private func writeMedia(_ data: Data, named name: String) throws {
+    pendingMedia.insert(name)
+    try FancyToolFileStore.writeAtomically(data, to: mediaURL(name))
+  }
+
+  private func removeMedia(_ names: Set<String>) {
+    for name in names {
+      if let url = try? mediaURL(name) { FancyToolFileStore.removeIfExists(url) }
+    }
   }
 
   private static func prepareImage(_ data: Data) throws -> (original: Data, thumbnail: Data, width: Int, height: Int) {

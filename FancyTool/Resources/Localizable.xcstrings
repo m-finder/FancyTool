@@ -1140,6 +1140,7 @@
       }
     },
     "Auto Paste requires Accessibility permission. Enable it in System Settings > Privacy & Security > Accessibility, then toggle Auto Paste again." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5278,6 +5279,7 @@
     },
     "Need Accessibility Permissions" : {
       "comment" : "Alert title for accessibility permission request",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

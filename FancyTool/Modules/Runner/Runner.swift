@@ -16,6 +16,7 @@ final class Runner: NSObject, CAAnimationDelegate {
   private var cancellables = Set<AnyCancellable>()
   private var renderedScale: CGFloat = 0
   private var screenChangeWork: DispatchWorkItem?
+  private var frameLoadTask: Task<Void, Never>?
   private var cpuUsage = 0.0
   private var smoothedCPU = 0.0
   private var lastCPUSample: UInt64?
@@ -63,11 +64,13 @@ final class Runner: NSObject, CAAnimationDelegate {
   }
 
   func change() {
-    RunnerFrame.shared.cache.removeAll()
+    RunnerFrame.shared.clear()
     reload()
   }
 
   private func reload() {
+    frameLoadTask?.cancel()
+    frameLoadTask = nil
     companionAnimationGeneration &+= 1
     renderedScale = renderingScale
     renderedState = nil
@@ -91,16 +94,24 @@ final class Runner: NSObject, CAAnimationDelegate {
     item.button?.action = nil
     item.menu = AppMenu.shared.getMenus()
     item.button?.toolTip = nil
-    let frames = RunnerFrame.shared.refresh(for: renderedScale)
-    guard let first = frames.first else {
-      RunnerLayer.shared.unmount()
-      setWidth(RunnerConfig.defaultIconSize)
-      item.button?.image = NSImage(named: RunnerConfig.defaultIconName)?.resized(to: RunnerConfig.defaultIconSize)
-      return
+    RunnerLayer.shared.unmount()
+    setWidth(RunnerConfig.defaultIconSize)
+    item.button?.image = NSImage(named: RunnerConfig.defaultIconName)?.resized(to: RunnerConfig.defaultIconSize)
+    let id = AppState.shared.runnerId
+    guard !id.isEmpty else { return }
+    let scale = renderedScale
+    let generation = companionAnimationGeneration
+    frameLoadTask = Task { [weak self] in
+      guard let runner = await RunnerHandler.shared.prepareRunner(id: id), !Task.isCancelled else { return }
+      let frames = await RunnerFrame.shared.refresh(for: scale, runner: runner)
+      guard !Task.isCancelled, let self, self.companionAnimationGeneration == generation,
+            !AppState.shared.runnerCompanion, AppState.shared.runnerId == id,
+            let first = frames.first else { return }
+      self.frameLoadTask = nil
+      self.setWidth(RunnerConfig.baseSize * CGFloat(first.width) / CGFloat(first.height))
+      self.installAnimation(frames: frames, frameDuration: 1 / RunnerConfig.minFPS)
+      self.refreshBehavior()
     }
-    setWidth(RunnerConfig.baseSize * CGFloat(first.width) / CGFloat(first.height))
-    installAnimation(frames: frames, frameDuration: 1 / RunnerConfig.minFPS)
-    refreshBehavior()
   }
 
   private func setWidth(_ width: CGFloat) {

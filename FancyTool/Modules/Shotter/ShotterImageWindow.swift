@@ -392,6 +392,7 @@ final class ShotterImageWindow: NSWindow, NSWindowDelegate {
   }
 
   func windowWillClose(_ notification: Notification) {
+    editorView.cancelExport()
     dismissToolbarWindow()
     onClose?()
     onClose = nil
@@ -493,6 +494,7 @@ final class ShotterEditorView: NSView {
   private var isPinned = false
   private var toolbar: ShotterToolbarView!
   private var activeSavePanel: NSSavePanel?
+  private var exportTask: Task<Void, Never>?
   private var textField: NSTextField?
   private var textEntryPoint: NSPoint?
   private var editingTextIndex: Int?
@@ -542,7 +544,10 @@ final class ShotterEditorView: NSView {
       image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
     }
     for (index, annotation) in annotations.enumerated() where index != editingTextIndex {
-      (index == selectedIndex ? (movedAnnotation ?? annotation) : annotation).draw(in: rect, imageSize: image.size)
+      let displayed = index == selectedIndex ? (movedAnnotation ?? annotation) : annotation
+      if displayed.drawingBounds(in: rect, imageSize: image.size).intersects(dirtyRect) {
+        displayed.draw(in: rect, imageSize: image.size)
+      }
     }
     draft?.draw(in: rect, imageSize: image.size)
     if let index = selectedIndex, annotations.indices.contains(index), editingTextIndex == nil {
@@ -571,6 +576,7 @@ final class ShotterEditorView: NSView {
   }
 
   override func mouseDown(with event: NSEvent) {
+    guard exportTask == nil else { return }
     commitTextEntry()
     window?.makeFirstResponder(self)
     let local = convert(event.locationInWindow, from: nil)
@@ -605,6 +611,8 @@ final class ShotterEditorView: NSView {
   }
 
   override func mouseDragged(with event: NSEvent) {
+    guard exportTask == nil else { return }
+    let previous = dragDrawingBounds
     let point = imagePoint(from: convert(event.locationInWindow, from: nil))
     if let origin = dragOrigin, let original = originalAnnotation {
       movedAnnotation = translatedWithinImage(original, by: NSPoint(x: point.x-origin.x, y: point.y-origin.y))
@@ -628,10 +636,17 @@ final class ShotterEditorView: NSView {
       }
       draft = annotation
     }
-    needsDisplay = true
+    if let previous { setNeedsDisplay(previous) }
+    if let current = dragDrawingBounds { setNeedsDisplay(current) }
+  }
+
+  private var dragDrawingBounds: NSRect? {
+    let annotation = movedAnnotation ?? originalAnnotation ?? draft
+    return annotation?.drawingBounds(in: imageRect, imageSize: image.size, selected: selectedIndex != nil)
   }
 
   override func mouseUp(with event: NSEvent) {
+    guard exportTask == nil else { return }
     if let index = selectedIndex, let movedAnnotation {
       var updated = annotations
       updated[index] = movedAnnotation
@@ -655,6 +670,7 @@ final class ShotterEditorView: NSView {
       else { hostWindow?.dismissWindow() }
       return true
     }
+    guard exportTask == nil else { return true }
     if textField?.currentEditor() != nil { return false }
     let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
     let key = event.charactersIgnoringModifiers?.lowercased()
@@ -691,6 +707,7 @@ final class ShotterEditorView: NSView {
   }
 
   private func select(_ tool: Tool) {
+    guard exportTask == nil else { return }
     commitTextEntry(); clearDrag()
     selectedTool = selectedTool == tool ? .none : tool
     selectedIndex = nil
@@ -738,6 +755,10 @@ final class ShotterEditorView: NSView {
     toolbar.onOpacity = { [weak self] in self?.hostWindow?.alphaValue = $0 }
     toolbar.onAction = { [weak self] action in
       guard let self else { return }
+      if self.exportTask != nil {
+        if action == .close { self.hostWindow?.dismissWindow() }
+        return
+      }
       switch action {
       case .undo: self.undo()
       case .redo: self.redo()
@@ -759,6 +780,7 @@ final class ShotterEditorView: NSView {
   }
 
   private func changeStyle(_ mutation: (inout ShotterAnnotationStyle) -> Void) {
+    guard exportTask == nil else { return }
     mutation(&style)
     if let field = textField {
       field.font = .systemFont(ofSize: style.fontSize * displayScale, weight: .medium)
@@ -781,7 +803,7 @@ final class ShotterEditorView: NSView {
   }
   fileprivate var isPristineForScrollingCapture: Bool {
     !isPinned && annotations.isEmpty && !editHistory.canUndo && !editHistory.canRedo
-      && draft == nil && textField == nil && activeSavePanel == nil
+      && draft == nil && textField == nil && activeSavePanel == nil && exportTask == nil
   }
   fileprivate func refreshScrollingCaptureAvailability() { updateToolbar() }
   var toolbarPreferredSize: NSSize { ShotterToolbarView.preferredSize }
@@ -849,6 +871,7 @@ final class ShotterEditorView: NSView {
   }
 
   private func saveImage() {
+    guard exportTask == nil, activeSavePanel == nil else { return }
     commitTextEntry()
     let panel = NSSavePanel()
     activeSavePanel = panel
@@ -861,15 +884,23 @@ final class ShotterEditorView: NSView {
       panel?.level = level; panel?.makeKeyAndOrderFront(nil); panel?.orderFrontRegardless()
     }
     guard panel.runModal() == .OK, let url = panel.url else { releaseSavePanel(); return }
-    guard let data = pngData() else {
+    guard let snapshot = exportSnapshot() else {
       releaseSavePanel(); showSaveError(String(localized: "Unable to create PNG data.")); return
     }
-    do {
-      try data.write(to: url, options: .atomic)
-      DispatchQueue.main.asyncAfter(deadline: .now()+0.15) { [weak self] in
-        self?.activeSavePanel = nil; self?.hostWindow?.dismissWindow()
+    exportTask = Task { [weak self] in
+      do {
+        _ = try await ShotterImageExporter.export(snapshot, to: url)
+        guard !Task.isCancelled, let self else { return }
+        self.exportTask = nil
+        self.activeSavePanel = nil
+        self.hostWindow?.dismissWindow()
+      } catch {
+        guard !Task.isCancelled, let self else { return }
+        self.exportTask = nil
+        self.releaseSavePanel()
+        self.showSaveError(error.localizedDescription)
       }
-    } catch { releaseSavePanel(); showSaveError(error.localizedDescription) }
+    }
   }
   private func releaseSavePanel() { DispatchQueue.main.async { [weak self] in self?.activeSavePanel = nil } }
   private func showSaveError(_ message: String) {
@@ -879,28 +910,31 @@ final class ShotterEditorView: NSView {
     alert.runModal()
   }
   private func copyImage() {
+    guard exportTask == nil, activeSavePanel == nil else { return }
     commitTextEntry()
-    guard let data = pngData() else { return }
-    let pasteboard = NSPasteboard.general
-    pasteboard.clearContents()
-    guard pasteboard.setData(data, forType: .png) else { return }
-    InteractionFeedback.events.send(.screenshotCopied)
-    hostWindow?.dismissWindow()
+    guard let snapshot = exportSnapshot() else { return }
+    exportTask = Task { [weak self] in
+      let data = try? await ShotterImageExporter.export(snapshot)
+      guard !Task.isCancelled, let self else { return }
+      self.exportTask = nil
+      guard let data else { return }
+      let pasteboard = NSPasteboard.general
+      pasteboard.clearContents()
+      guard pasteboard.setData(data, forType: .png) else { return }
+      InteractionFeedback.events.send(.screenshotCopied)
+      self.hostWindow?.dismissWindow()
+    }
   }
 
-  func pngData() -> Data? {
+  fileprivate func cancelExport() {
+    exportTask?.cancel()
+    exportTask = nil
+    activeSavePanel = nil
+  }
+
+  private func exportSnapshot() -> ShotterImageExport? {
     var proposedRect = NSRect(origin: .zero, size: image.size)
-    guard let source = sourceCGImage ?? image.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil),
-          let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: source.width, pixelsHigh: source.height,
-            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-            colorSpaceName: .deviceRGB, bitmapFormat: [], bytesPerRow: 0, bitsPerPixel: 0),
-          let context = NSGraphicsContext(bitmapImageRep: bitmap) else { return nil }
-    let rect = NSRect(x: 0, y: 0, width: source.width, height: source.height)
-    NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = context
-    context.imageInterpolation = .none
-    NSImage(cgImage: source, size: rect.size).draw(in: rect, from: .zero, operation: .copy, fraction: 1)
-    annotations.forEach { $0.draw(in: rect, imageSize: image.size) }
-    NSGraphicsContext.restoreGraphicsState()
-    return bitmap.representation(using: .png, properties: [:])
+    guard let source = sourceCGImage ?? image.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil) else { return nil }
+    return ShotterImageExport(source: source, imageSize: image.size, annotations: annotations)
   }
 }
