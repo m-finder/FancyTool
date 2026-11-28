@@ -15,7 +15,11 @@ final class Rounder {
   
   enum CornerPosition { case topLeft, topRight, bottomLeft, bottomRight }
   
-  private var windows: [NSWindow] = []
+  private struct CornerWindow {
+    let window: NSWindow
+    let targetFrame: NSRect
+  }
+  private var windows: [CornerWindow] = []
   private struct ScreenLayout: Equatable {
     let frame: NSRect
     let scale: CGFloat
@@ -33,16 +37,14 @@ final class Rounder {
       isMounted = true
       setupObservers()
     }
-    remountTask?.cancel()
-    remountTask = nil
+    cancelRemount()
     rebuildWindows()
   }
   
   // MARK: - 卸载
   public func unmount() {
     isMounted = false
-    remountTask?.cancel()
-    remountTask = nil
+    cancelRemount()
     cancellables.removeAll()
     closeWindows()
   }
@@ -58,7 +60,14 @@ final class Rounder {
     let screens = NSScreen.screens
     let layout = layout(for: screens)
     guard layout != screenLayout || windows.count != screens.count * 4 else {
-      windows.filter { !$0.isVisible }.forEach { $0.orderFrontRegardless() }
+      for corner in windows {
+        if corner.window.frame != corner.targetFrame {
+          corner.window.setFrame(corner.targetFrame, display: true)
+        }
+        if !corner.window.isVisible {
+          corner.window.orderFrontRegardless()
+        }
+      }
       return
     }
     closeWindows()
@@ -67,7 +76,8 @@ final class Rounder {
   }
 
   private func closeWindows() {
-    windows.forEach { w in
+    windows.forEach { corner in
+      let w = corner.window
       w.orderOut(nil)
       w.contentView = nil
       w.close()
@@ -78,8 +88,8 @@ final class Rounder {
   
   // MARK: - 刷新
   public func refresh(_ radius: CGFloat) {
-    windows.forEach { (w) in
-      (w.contentView as? RounderView)?.radius = radius
+    windows.forEach { corner in
+      (corner.window.contentView as? RounderView)?.radius = radius
     }
   }
   
@@ -101,33 +111,43 @@ final class Rounder {
       .store(in: &cancellables)
     
     // 睡眠/唤醒
+    NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidSleepNotification)
+      .merge(with: NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification))
+      .sink { [weak self] _ in self?.cancelRemount() }
+      .store(in: &cancellables)
+
     NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidWakeNotification)
-      .sink { [weak self] _ in self?.remountAfterDelay(0.3) }
+      .sink { [weak self] _ in self?.remountAfterDelay(0.3, retryAfterWake: true) }
       .store(in: &cancellables)
     
     // 作为兜底：系统唤醒
     NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
-      .sink { [weak self] _ in self?.remountAfterDelay(0.3) }
+      .sink { [weak self] _ in self?.remountAfterDelay(0.3, retryAfterWake: true) }
       .store(in: &cancellables)
   }
   
-  private func remountAfterDelay(_ delay: TimeInterval = 0.15) {
+  private func cancelRemount() {
+    remountTask?.cancel()
+    remountTask = nil
+  }
+
+  private func remountAfterDelay(_ delay: TimeInterval = 0.15, retryAfterWake: Bool = false) {
     guard isMounted else { return }
-    let screens = NSScreen.screens
-    guard layout(for: screens) != screenLayout || windows.count != screens.count * 4
-      || windows.contains(where: { !$0.isVisible }) else {
-      remountTask?.cancel()
-      remountTask = nil
-      return
+    if retryAfterWake {
+      cancelRemount()
+    } else {
+      guard remountTask == nil else { return }
     }
-    guard remountTask == nil else { return }
+    let delays = retryAfterWake ? [delay, 0.7, 1.0, 2.0] : [delay]
     remountTask = Task { [weak self] in
-      do {
-        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-      } catch { return }
-      guard !Task.isCancelled, let self, self.isMounted else { return }
-      self.remountTask = nil
-      self.rebuildWindows()
+      for delay in delays {
+        do {
+          try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        } catch { return }
+        guard !Task.isCancelled, let self, self.isMounted else { return }
+        self.rebuildWindows()
+      }
+      self?.remountTask = nil
     }
   }
   
@@ -141,7 +161,7 @@ final class Rounder {
       let origin = calculateOrigin(for: position, in: frame, cornerSize: cornerSize)
       let rect = NSRect(origin: origin, size: NSSize(width: cornerSize, height: cornerSize))
       if let window = createWindow(frame: rect, screen: screen, position: position, radius: radius) {
-        windows.append(window)
+        windows.append(CornerWindow(window: window, targetFrame: rect))
       }
     }
   }
